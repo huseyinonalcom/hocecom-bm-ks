@@ -46,250 +46,9 @@ function isUser({ session }: { session?: Session }) {
 }
 
 export const lists: Lists = {
-  User: list({
+  WorkOrder: list({
     ui: {
       labelField: "name",
-    },
-    access: {
-      operation: {
-        query: isUser,
-        create: isManager,
-        update: isManager,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      username: text({ validation: { isRequired: true }, isIndexed: "unique" }),
-      email: text({
-        isIndexed: "unique",
-      }),
-      isBlocked: checkbox({ defaultValue: false }),
-      phone: text(),
-      role: select({
-        type: "string",
-        options: ["admin", "customer", "employee", "manager"],
-        defaultValue: "customer",
-        validation: { isRequired: true },
-        isIndexed: true,
-        access: {
-          update: isAdmin,
-        },
-      }),
-      permissions: multiselect({
-        type: "enum",
-        options: [
-          { label: "Warranty", value: "warranty" },
-          { label: "Price", value: "price" },
-        ],
-        access: {
-          update: isAdmin,
-        },
-      }),
-      ssid: text(),
-      password: password({
-        validation: {
-          isRequired: true,
-          length: {
-            min: 6,
-          },
-        },
-      }),
-      operations: relationship({ ref: "Operation.creator", many: true }),
-      notes: relationship({ ref: "Note.creator", many: true }),
-      documents: relationship({ ref: "Document.creator", many: true }),
-      customerDocuments: relationship({ ref: "Document.customer", many: true }),
-      customerMovements: relationship({
-        ref: "StockMovement.customer",
-        many: true,
-      }),
-      extraFields: json(),
-    },
-  }),
-  Note: list({
-    ui: {
-      labelField: "note",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      note: text({ validation: { isRequired: true } }),
-      creator: relationship({
-        ref: "User.notes",
-        many: false,
-      }),
-      extraFields: json(),
-    },
-  }),
-  File: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      url: text(),
-      operation: relationship({
-        ref: "Operation.files",
-        many: false,
-      }),
-      material: relationship({
-        ref: "Material.files",
-        many: false,
-      }),
-      extraFields: json(),
-    },
-  }),
-  Document: list({
-    ui: {
-      labelField: "createdAt",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isManager,
-      },
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const products = await context.query.DocumentProduct.findMany({
-            where: { document: { id: { equals: item.id } } },
-            query: "id",
-          });
-          products.forEach(async (dp) => {
-            await context.query.DocumentProduct.deleteOne({
-              where: { id: dp.id },
-            });
-          });
-          if (item.paymentPlanId) {
-            await context.query.PaymentPlan.deleteOne({
-              where: { id: item.paymentPlanId },
-            });
-          }
-        }
-      },
-    },
-    fields: {
-      createdAt: timestamp({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-        access: {
-          create: denyAll,
-          update: denyAll,
-        },
-      }),
-      total: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const materials = await context.query.DocumentProduct.findMany({
-                where: { document: { id: { equals: item.id } } },
-                query: "amount material { value }",
-              });
-              let total = 0;
-              materials.forEach((docProd) => {
-                total += docProd.amount * docProd.mat.value;
-              });
-              return total - (total * (item.reduction ?? 0)) / 100;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      documentType: select({
-        type: "string",
-        options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu"],
-        defaultValue: "satış",
-        validation: { isRequired: true },
-      }),
-      creator: relationship({
-        ref: "User.documents",
-        many: false,
-        access: {
-          update: denyAll,
-        },
-      }),
-      customer: relationship({
-        ref: "User.customerDocuments",
-        many: false,
-        access: {
-          update: denyAll,
-        },
-      }),
-      reduction: float({ defaultValue: 0 }),
-      isDeleted: checkbox({ defaultValue: false }),
-      fromDocument: relationship({
-        ref: "Document.toDocument",
-        many: false,
-      }),
-      toDocument: relationship({
-        ref: "Document.fromDocument",
-        many: false,
-      }),
-      products: relationship({
-        ref: "DocumentProduct.document",
-        many: true,
-      }),
-      payments: relationship({
-        ref: "Payment.document",
-        many: true,
-      }),
-      extraFields: json(),
-    },
-  }),
-  DocumentProduct: list({
-    ui: {
-      labelField: "amount",
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const movements = await context.query.StockMovement.findMany({
-            where: { documentProduct: { id: { equals: item.id } } },
-            query: "id",
-          });
-          movements.forEach(async (movement) => {
-            await context.query.StockMovement.deleteOne({
-              where: { id: movement.id },
-            });
-          });
-        }
-      },
-      afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          const generalStorage = await context.query.Storage.findMany({
-            where: { name: { equals: "Genel" } },
-            query: "id",
-          });
-          await context.query.StockMovement.createOne({
-            data: {
-              product: { connect: { id: item.productId } },
-              storage: { connect: { id: generalStorage.at(0)!.id } },
-              amount: item.amount,
-              movementType: "çıkış",
-              documentProduct: { connect: { id: item.id } },
-            },
-          });
-        }
-      },
     },
     access: {
       operation: {
@@ -300,43 +59,25 @@ export const lists: Lists = {
       },
     },
     fields: {
-      amount: float({ validation: { isRequired: true, min: 1 } }),
-      stockMovements: relationship({
-        ref: "StockMovement.documentProduct",
+      materials: relationship({
+        ref: "Material.workOrders",
         many: true,
       }),
-      product: relationship({
-        ref: "Material.documentProducts",
-        many: false,
+      operations: relationship({
+        ref: "Operation.workOrders",
+        many: true,
       }),
-      price: float({ validation: { isRequired: true, min: 0 } }),
-      total: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
-                query: "reduction",
-              });
-              let total = item.price * item.amount;
-
-              total -= (total * (document.reduction ?? 0)) / 100;
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      document: relationship({
-        ref: "Document.products",
+      datePlanned: timestamp(),
+      dateStarted: timestamp(),
+      dateFinished: timestamp(),
+      creator: relationship({
+        ref: "User.workOrders",
         many: false,
       }),
       extraFields: json(),
     },
   }),
-  Operation: list({
+  WorkOrderOperation: list({
     ui: {
       labelField: "name",
     },
@@ -454,7 +195,7 @@ export const lists: Lists = {
     },
     fields: {
       files: relationship({
-        ref: "File.operation",
+        ref: "File",
         many: true,
       }),
       startedAt: timestamp(),
@@ -481,17 +222,444 @@ export const lists: Lists = {
           },
         }),
       }),
+      reduction: float({ defaultValue: 0 }),
       amount: float({ validation: { isRequired: true, min: 0 } }),
+      total: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const workOrder = await context.query.WorkOrder.findOne({
+                where: { id: item.workOrderId },
+                query: "reduction",
+              });
+              let total = item.value * item.amount - (item.value * item.amount * (item.reduction ?? 0)) / 100;
+
+              total -= (total * (workOrder.reduction ?? 0)) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
       wastage: float({
         validation: { min: 0 },
         defaultValue: 0,
+      }),
+      workOrder: relationship({
+        ref: "WorkOrder.operations",
+        many: false,
+      }),
+      operation: relationship({
+        ref: "Operation.workOrderOperations",
+        many: false,
+      }),
+      extraFields: json(),
+    },
+  }),
+  Operation: list({
+    ui: {
+      labelField: "name",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee,
+      },
+    },
+    fields: {
+      files: relationship({
+        ref: "File",
+        many: true,
       }),
       material: relationship({
         ref: "Material.operations",
         many: false,
       }),
+      workOrderOperations: relationship({
+        ref: "WorkOrderOperation.operation",
+        many: true,
+      }),
+      cost: float(),
+      value: float({ validation: { isRequired: true, min: 0 } }),
+      duration: integer(),
+      description: text(),
+      extraFields: json(),
+    },
+  }),
+  Payment: list({
+    ui: {
+      labelField: "timestamp",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isManager,
+        delete: denyAll,
+      },
+    },
+    fields: {
+      value: float({ validation: { isRequired: true, min: 0 } }),
+      document: relationship({
+        ref: "Document.payments",
+        many: false,
+      }),
+      out: virtual({
+        field: graphql.field({
+          type: graphql.Boolean,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "type",
+              });
+              switch (document.type) {
+                case "satış":
+                  return false;
+                case "irsaliye":
+                  return false;
+                case "fatura":
+                  return false;
+                case "borç dekontu":
+                  return false;
+                case "alacak dekontu":
+                  return true;
+                default:
+                  return false;
+              }
+            } catch (e) {
+              return false;
+            }
+          },
+        }),
+      }),
+      isDeleted: checkbox({ defaultValue: false }),
       creator: relationship({
-        ref: "User.operations",
+        ref: "User.payments",
+        many: false,
+      }),
+      reference: text(),
+      type: select({
+        type: "string",
+        options: ["nakit", "kredi kartı", "havale", "çek", "senet", "banka kartı", "kredi"],
+        defaultValue: "nakit",
+        validation: { isRequired: true },
+      }),
+      timestamp: timestamp({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+      }),
+      extraFields: json(),
+    },
+  }),
+  User: list({
+    ui: {
+      labelField: "name",
+    },
+    access: {
+      operation: {
+        query: isUser,
+        create: isManager,
+        update: isManager,
+        delete: isAdmin,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      username: text({ validation: { isRequired: true }, isIndexed: "unique" }),
+      email: text({
+        isIndexed: "unique",
+      }),
+      isBlocked: checkbox({ defaultValue: false }),
+      phone: text(),
+      role: select({
+        type: "string",
+        options: ["admin", "customer", "employee", "manager"],
+        defaultValue: "customer",
+        validation: { isRequired: true },
+        isIndexed: true,
+        access: {
+          update: isAdmin,
+        },
+      }),
+      permissions: multiselect({
+        type: "enum",
+        options: [
+          { label: "Warranty", value: "warranty" },
+          { label: "Price", value: "price" },
+        ],
+        access: {
+          update: isAdmin,
+        },
+      }),
+      ssid: text(),
+      password: password({
+        validation: {
+          isRequired: true,
+          length: {
+            min: 6,
+          },
+        },
+      }),
+      operations: relationship({ ref: "Operation.user", many: true }),
+      notes: relationship({ ref: "Note.creator", many: true }),
+      documents: relationship({ ref: "Document.creator", many: true }),
+      customerDocuments: relationship({ ref: "Document.customer", many: true }),
+      customerMovements: relationship({
+        ref: "StockMovement.customer",
+        many: true,
+      }),
+      address: text(),
+      workOrders: relationship({ ref: "WorkOrder.creator", many: true }),
+      extraFields: json(),
+    },
+  }),
+  Note: list({
+    ui: {
+      labelField: "note",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isAdmin,
+        delete: isAdmin,
+      },
+    },
+    fields: {
+      note: text({ validation: { isRequired: true } }),
+      creator: relationship({
+        ref: "User.notes",
+        many: false,
+      }),
+      extraFields: json(),
+    },
+  }),
+  File: list({
+    ui: {
+      labelField: "name",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isAdmin,
+        delete: isAdmin,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      url: text(),
+      extraFields: json(),
+    },
+  }),
+  Document: list({
+    ui: {
+      labelField: "createdAt",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isManager,
+        delete: isManager,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        if (operation === "delete") {
+          const products = await context.query.DocumentProduct.findMany({
+            where: { document: { id: { equals: item.id } } },
+            query: "id",
+          });
+          products.forEach(async (dp) => {
+            await context.query.DocumentProduct.deleteOne({
+              where: { id: dp.id },
+            });
+          });
+          if (item.paymentPlanId) {
+            await context.query.PaymentPlan.deleteOne({
+              where: { id: item.paymentPlanId },
+            });
+          }
+        }
+      },
+    },
+    fields: {
+      createdAt: timestamp({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+        access: {
+          create: denyAll,
+          update: denyAll,
+        },
+      }),
+      total: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "amount material { value }",
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += docProd.amount * docProd.mat.value;
+              });
+              return total - (total * (item.reduction ?? 0)) / 100;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      type: select({
+        type: "string",
+        options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu"],
+        defaultValue: "satış",
+        validation: { isRequired: true },
+      }),
+      creator: relationship({
+        ref: "User.documents",
+        many: false,
+        access: {
+          update: denyAll,
+        },
+      }),
+      customer: relationship({
+        ref: "User.customerDocuments",
+        many: false,
+        access: {
+          update: denyAll,
+        },
+      }),
+      reduction: float({ defaultValue: 0 }),
+      isDeleted: checkbox({ defaultValue: false }),
+      fromDocument: relationship({
+        ref: "Document.toDocument",
+        many: false,
+      }),
+      toDocument: relationship({
+        ref: "Document.fromDocument",
+        many: false,
+      }),
+      products: relationship({
+        ref: "DocumentProduct.document",
+        many: true,
+      }),
+      operations: relationship({
+        ref: "WorkOrderOperation.document",
+        many: true,
+      }),
+      payments: relationship({
+        ref: "Payment.document",
+        many: true,
+      }),
+      totalPaid: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const payments = await context.query.Payment.findMany({
+                where: { document: { id: { equals: item.id } }, isDeleted: { equals: false } },
+                query: "value",
+              });
+              let total = 0;
+              payments.forEach((payment) => {
+                total += payment.value;
+              });
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      extraFields: json(),
+    },
+  }),
+  DocumentProduct: list({
+    ui: {
+      labelField: "amount",
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        if (operation === "delete") {
+          const movements = await context.query.StockMovement.findMany({
+            where: { documentProduct: { id: { equals: item.id } } },
+            query: "id",
+          });
+          movements.forEach(async (movement) => {
+            await context.query.StockMovement.deleteOne({
+              where: { id: movement.id },
+            });
+          });
+        }
+      },
+      afterOperation: async ({ operation, item, context }) => {
+        if (operation === "create") {
+          const generalStorage = await context.query.Storage.findMany({
+            where: { name: { equals: "Genel" } },
+            query: "id",
+          });
+          await context.query.StockMovement.createOne({
+            data: {
+              product: { connect: { id: item.productId } },
+              storage: { connect: { id: generalStorage.at(0)!.id } },
+              amount: item.amount,
+              movementType: "çıkış",
+              documentProduct: { connect: { id: item.id } },
+            },
+          });
+        }
+      },
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager,
+      },
+    },
+    fields: {
+      amount: float({ validation: { isRequired: true, min: 1 } }),
+      stockMovements: relationship({
+        ref: "StockMovement.documentProduct",
+        many: true,
+      }),
+      product: relationship({
+        ref: "Material.documentProducts",
+        many: false,
+      }),
+      price: float({ validation: { isRequired: true, min: 0 } }),
+      reduction: float({ defaultValue: 0 }),
+      total: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "reduction",
+              });
+              let total = item.price * item.amount - (item.price * item.amount * (item.reduction ?? 0)) / 100;
+
+              total -= (total * (document.reduction ?? 0)) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      document: relationship({
+        ref: "Document.products",
         many: false,
       }),
       extraFields: json(),
@@ -691,67 +859,6 @@ export const lists: Lists = {
     fields: {
       name: text({ validation: { isRequired: true } }),
       materials: relationship({ ref: "Material.brand", many: true }),
-      extraFields: json(),
-    },
-  }),
-  Payment: list({
-    ui: {
-      labelField: "timestamp",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isManager,
-      },
-    },
-    fields: {
-      amount: float({ validation: { isRequired: true, min: 0 } }),
-      document: relationship({
-        ref: "Document.payments",
-        many: false,
-      }),
-      out: virtual({
-        field: graphql.field({
-          type: graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
-                query: "type",
-              });
-              switch (document.type) {
-                case "satış":
-                  return false;
-                case "irsaliye":
-                  return false;
-                case "fatura":
-                  return false;
-                case "borç dekontu":
-                  return false;
-                case "alacak dekontu":
-                  return true;
-                default:
-                  return false;
-              }
-            } catch (e) {
-              return false;
-            }
-          },
-        }),
-      }),
-      reference: text(),
-      type: select({
-        type: "string",
-        options: ["nakit", "kredi kartı", "havale", "çek", "senet", "banka kartı", "kredi"],
-        defaultValue: "nakit",
-        validation: { isRequired: true },
-      }),
-      timestamp: timestamp({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-      }),
       extraFields: json(),
     },
   }),
