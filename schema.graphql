@@ -1736,59 +1736,59 @@ input CreateInitialUserInput {
 }
 
 type Query {
-  workOrder(where: WorkOrderWhereUniqueInput!): WorkOrder
   workOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
+  workOrder(where: WorkOrderWhereUniqueInput!): WorkOrder
   workOrdersCount(where: WorkOrderWhereInput! = {}): Int
-  workOrderOperation(where: WorkOrderOperationWhereUniqueInput!): WorkOrderOperation
   workOrderOperations(where: WorkOrderOperationWhereInput! = {}, orderBy: [WorkOrderOperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderOperationWhereUniqueInput): [WorkOrderOperation!]
+  workOrderOperation(where: WorkOrderOperationWhereUniqueInput!): WorkOrderOperation
   workOrderOperationsCount(where: WorkOrderOperationWhereInput! = {}): Int
-  operation(where: OperationWhereUniqueInput!): Operation
   operations(where: OperationWhereInput! = {}, orderBy: [OperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OperationWhereUniqueInput): [Operation!]
+  operation(where: OperationWhereUniqueInput!): Operation
   operationsCount(where: OperationWhereInput! = {}): Int
-  payment(where: PaymentWhereUniqueInput!): Payment
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
+  payment(where: PaymentWhereUniqueInput!): Payment
   paymentsCount(where: PaymentWhereInput! = {}): Int
-  user(where: UserWhereUniqueInput!): User
   users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
+  user(where: UserWhereUniqueInput!): User
   usersCount(where: UserWhereInput! = {}): Int
-  note(where: NoteWhereUniqueInput!): Note
   notes(where: NoteWhereInput! = {}, orderBy: [NoteOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NoteWhereUniqueInput): [Note!]
+  note(where: NoteWhereUniqueInput!): Note
   notesCount(where: NoteWhereInput! = {}): Int
-  file(where: FileWhereUniqueInput!): File
   files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
+  file(where: FileWhereUniqueInput!): File
   filesCount(where: FileWhereInput! = {}): Int
-  document(where: DocumentWhereUniqueInput!): Document
   documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
+  document(where: DocumentWhereUniqueInput!): Document
   documentsCount(where: DocumentWhereInput! = {}): Int
-  documentProduct(where: DocumentProductWhereUniqueInput!): DocumentProduct
   documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
+  documentProduct(where: DocumentProductWhereUniqueInput!): DocumentProduct
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
-  assemblyComponent(where: AssemblyComponentWhereUniqueInput!): AssemblyComponent
   assemblyComponents(where: AssemblyComponentWhereInput! = {}, orderBy: [AssemblyComponentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AssemblyComponentWhereUniqueInput): [AssemblyComponent!]
+  assemblyComponent(where: AssemblyComponentWhereUniqueInput!): AssemblyComponent
   assemblyComponentsCount(where: AssemblyComponentWhereInput! = {}): Int
-  material(where: MaterialWhereUniqueInput!): Material
   materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
+  material(where: MaterialWhereUniqueInput!): Material
   materialsCount(where: MaterialWhereInput! = {}): Int
-  storage(where: StorageWhereUniqueInput!): Storage
   storages(where: StorageWhereInput! = {}, orderBy: [StorageOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StorageWhereUniqueInput): [Storage!]
+  storage(where: StorageWhereUniqueInput!): Storage
   storagesCount(where: StorageWhereInput! = {}): Int
-  stockMovement(where: StockMovementWhereUniqueInput!): StockMovement
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
+  stockMovement(where: StockMovementWhereUniqueInput!): StockMovement
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
-  supplier(where: SupplierWhereUniqueInput!): Supplier
   suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
+  supplier(where: SupplierWhereUniqueInput!): Supplier
   suppliersCount(where: SupplierWhereInput! = {}): Int
-  brand(where: BrandWhereUniqueInput!): Brand
   brands(where: BrandWhereInput! = {}, orderBy: [BrandOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: BrandWhereUniqueInput): [Brand!]
+  brand(where: BrandWhereUniqueInput!): Brand
   brandsCount(where: BrandWhereInput! = {}): Int
-  notification(where: NotificationWhereUniqueInput!): Notification
   notifications(where: NotificationWhereInput! = {}, orderBy: [NotificationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationWhereUniqueInput): [Notification!]
+  notification(where: NotificationWhereUniqueInput!): Notification
   notificationsCount(where: NotificationWhereInput! = {}): Int
-  softwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}): SoftwareVersion
   softwareVersions(where: SoftwareVersionWhereInput! = {id: {equals: 1}}, orderBy: [SoftwareVersionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SoftwareVersionWhereUniqueInput): [SoftwareVersion!]
+  softwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}): SoftwareVersion
   softwareVersionsCount(where: SoftwareVersionWhereInput! = {id: {equals: 1}}): Int
-  config(where: ConfigWhereUniqueInput! = {id: 1}): Config
   configs(where: ConfigWhereInput! = {id: {equals: 1}}, orderBy: [ConfigOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ConfigWhereUniqueInput): [Config!]
+  config(where: ConfigWhereUniqueInput! = {id: 1}): Config
   configsCount(where: ConfigWhereInput! = {id: {equals: 1}}): Int
   keystone: KeystoneMeta!
   authenticatedItem: AuthenticatedItem
@@ -1821,7 +1821,6 @@ type KeystoneAdminUIListMeta {
   labelField: String!
   fields: [KeystoneAdminUIFieldMeta!]!
   groups: [KeystoneAdminUIFieldGroupMeta!]!
-  graphql: KeystoneAdminUIGraphQL!
   initialSort: KeystoneAdminUISort
   isHidden: Boolean!
   isSingleton: Boolean!
@@ -1892,33 +1891,6 @@ type KeystoneAdminUIFieldGroupMeta {
   label: String!
   description: String
   fields: [KeystoneAdminUIFieldMeta!]!
-}
-
-type KeystoneAdminUIGraphQL {
-  names: KeystoneAdminUIGraphQLNames!
-}
-
-type KeystoneAdminUIGraphQLNames {
-  outputTypeName: String!
-  whereInputName: String!
-  whereUniqueInputName: String!
-  createInputName: String!
-  createMutationName: String!
-  createManyMutationName: String!
-  relateToOneForCreateInputName: String!
-  relateToManyForCreateInputName: String!
-  itemQueryName: String!
-  listOrderName: String!
-  listQueryCountName: String!
-  listQueryName: String!
-  updateInputName: String!
-  updateMutationName: String!
-  updateManyInputName: String!
-  updateManyMutationName: String!
-  relateToOneForUpdateInputName: String!
-  relateToManyForUpdateInputName: String!
-  deleteMutationName: String!
-  deleteManyMutationName: String!
 }
 
 type KeystoneAdminUISort {
