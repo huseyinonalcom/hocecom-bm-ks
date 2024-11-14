@@ -48,7 +48,7 @@ function isUser({ session }: { session?: Session }) {
 export const lists: Lists = {
   WorkOrder: list({
     ui: {
-      labelField: "name",
+      labelField: "number",
     },
     access: {
       operation: {
@@ -59,12 +59,13 @@ export const lists: Lists = {
       },
     },
     fields: {
+      number: text({ validation: { isRequired: true } }),
       materials: relationship({
         ref: "Material.workOrders",
         many: true,
       }),
       operations: relationship({
-        ref: "Operation.workOrders",
+        ref: "WorkOrderOperation.workOrder",
         many: true,
       }),
       datePlanned: timestamp(),
@@ -271,6 +272,7 @@ export const lists: Lists = {
       },
     },
     fields: {
+      name: text({ validation: { isRequired: true } }),
       files: relationship({
         ref: "File",
         many: true,
@@ -283,6 +285,7 @@ export const lists: Lists = {
         ref: "WorkOrderOperation.operation",
         many: true,
       }),
+      user: relationship({ ref: "User.operations", many: false }),
       cost: float(),
       value: float({ validation: { isRequired: true, min: 0 } }),
       duration: integer(),
@@ -413,6 +416,7 @@ export const lists: Lists = {
         ref: "StockMovement.customer",
         many: true,
       }),
+      payments: relationship({ ref: "Payment.creator", many: true }),
       address: text(),
       workOrders: relationship({ ref: "WorkOrder.creator", many: true }),
       extraFields: json(),
@@ -552,10 +556,6 @@ export const lists: Lists = {
         ref: "DocumentProduct.document",
         many: true,
       }),
-      operations: relationship({
-        ref: "WorkOrderOperation.document",
-        many: true,
-      }),
       payments: relationship({
         ref: "Payment.document",
         many: true,
@@ -665,6 +665,33 @@ export const lists: Lists = {
       extraFields: json(),
     },
   }),
+  AssemblyComponent: list({
+    ui: {
+      labelField: "name",
+    },
+    access: {
+      operation: {
+        create: isManager,
+        query: isEmployee,
+        update: isManager,
+        delete: isManager,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      description: text(),
+      amount: integer(),
+      assembly: relationship({
+        ref: "Material.components",
+        many: false,
+      }),
+      material: relationship({
+        ref: "Material.assemblyComponents",
+        many: false,
+      }),
+      extraFields: json(),
+    },
+  }),
   Material: list({
     ui: {
       labelField: "name",
@@ -679,6 +706,14 @@ export const lists: Lists = {
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
+      components: relationship({
+        ref: "AssemblyComponent.assembly",
+        many: true,
+      }),
+      assemblyComponents: relationship({
+        ref: "AssemblyComponent.material",
+        many: true,
+      }),
       description: text(),
       price: float({ validation: { isRequired: true, min: 0 } }),
       currentStock: virtual({
@@ -719,7 +754,11 @@ export const lists: Lists = {
         validation: { isRequired: true },
       }),
       files: relationship({
-        ref: "File.material",
+        ref: "File",
+        many: true,
+      }),
+      workOrders: relationship({
+        ref: "WorkOrder.materials",
         many: true,
       }),
       code: text(),

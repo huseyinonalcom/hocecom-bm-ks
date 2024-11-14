@@ -11,6 +11,78 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model WorkOrder {
+  id           String               @id @default(cuid())
+  number       String               @default("")
+  materials    Material[]           @relation("Material_workOrders")
+  operations   WorkOrderOperation[] @relation("WorkOrderOperation_workOrder")
+  datePlanned  DateTime?
+  dateStarted  DateTime?
+  dateFinished DateTime?
+  creator      User?                @relation("WorkOrder_creator", fields: [creatorId], references: [id])
+  creatorId    String?              @map("creator")
+  extraFields  String?
+
+  @@index([creatorId])
+}
+
+model WorkOrderOperation {
+  id          String     @id @default(cuid())
+  files       File[]     @relation("WorkOrderOperation_files")
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  name        String     @default("")
+  description String     @default("")
+  value       Float
+  reduction   Float?     @default(0)
+  amount      Float
+  wastage     Float?     @default(0)
+  workOrder   WorkOrder? @relation("WorkOrderOperation_workOrder", fields: [workOrderId], references: [id])
+  workOrderId String?    @map("workOrder")
+  operation   Operation? @relation("WorkOrderOperation_operation", fields: [operationId], references: [id])
+  operationId String?    @map("operation")
+  extraFields String?
+
+  @@index([workOrderId])
+  @@index([operationId])
+}
+
+model Operation {
+  id                  String               @id @default(cuid())
+  name                String               @default("")
+  files               File[]               @relation("Operation_files")
+  material            Material?            @relation("Operation_material", fields: [materialId], references: [id])
+  materialId          String?              @map("material")
+  workOrderOperations WorkOrderOperation[] @relation("WorkOrderOperation_operation")
+  user                User?                @relation("Operation_user", fields: [userId], references: [id])
+  userId              String?              @map("user")
+  cost                Float?
+  value               Float
+  duration            Int?
+  description         String               @default("")
+  extraFields         String?
+
+  @@index([materialId])
+  @@index([userId])
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  value       Float
+  document    Document? @relation("Payment_document", fields: [documentId], references: [id])
+  documentId  String?   @map("document")
+  isDeleted   Boolean   @default(false)
+  creator     User?     @relation("Payment_creator", fields: [creatorId], references: [id])
+  creatorId   String?   @map("creator")
+  reference   String    @default("")
+  type        String    @default("nakit")
+  timestamp   DateTime? @default(now())
+  extraFields String?
+
+  @@index([documentId])
+  @@index([creatorId])
+}
+
 model User {
   id                String          @id @default(cuid())
   name              String          @default("")
@@ -22,11 +94,14 @@ model User {
   permissions       String          @default("[]")
   ssid              String          @default("")
   password          String
-  operations        Operation[]     @relation("Operation_creator")
+  operations        Operation[]     @relation("Operation_user")
   notes             Note[]          @relation("Note_creator")
   documents         Document[]      @relation("Document_creator")
   customerDocuments Document[]      @relation("Document_customer")
   customerMovements StockMovement[] @relation("StockMovement_customer")
+  payments          Payment[]       @relation("Payment_creator")
+  address           String          @default("")
+  workOrders        WorkOrder[]     @relation("WorkOrder_creator")
   extraFields       String?
 
   @@index([role])
@@ -43,23 +118,19 @@ model Note {
 }
 
 model File {
-  id          String     @id @default(cuid())
-  name        String     @default("")
-  url         String     @default("")
-  operation   Operation? @relation("File_operation", fields: [operationId], references: [id])
-  operationId String?    @map("operation")
-  material    Material?  @relation("File_material", fields: [materialId], references: [id])
-  materialId  String?    @map("material")
-  extraFields String?
-
-  @@index([operationId])
-  @@index([materialId])
+  id                            String               @id @default(cuid())
+  name                          String               @default("")
+  url                           String               @default("")
+  extraFields                   String?
+  from_WorkOrderOperation_files WorkOrderOperation[] @relation("WorkOrderOperation_files")
+  from_Operation_files          Operation[]          @relation("Operation_files")
+  from_Material_files           Material[]           @relation("Material_files")
 }
 
 model Document {
   id             String            @id @default(cuid())
   createdAt      DateTime?         @default(now())
-  documentType   String            @default("satış")
+  type           String            @default("satış")
   creator        User?             @relation("Document_creator", fields: [creatorId], references: [id])
   creatorId      String?           @map("creator")
   customer       User?             @relation("Document_customer", fields: [customerId], references: [id])
@@ -84,6 +155,7 @@ model DocumentProduct {
   product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
   productId      String?         @map("product")
   price          Float
+  reduction      Float?          @default(0)
   document       Document?       @relation("DocumentProduct_document", fields: [documentId], references: [id])
   documentId     String?         @map("document")
   extraFields    String?
@@ -92,43 +164,41 @@ model DocumentProduct {
   @@index([documentId])
 }
 
-model Operation {
+model AssemblyComponent {
   id          String    @id @default(cuid())
-  files       File[]    @relation("File_operation")
-  startedAt   DateTime?
-  finishedAt  DateTime?
   name        String    @default("")
   description String    @default("")
-  value       Float
-  amount      Float
-  wastage     Float?    @default(0)
-  material    Material? @relation("Operation_material", fields: [materialId], references: [id])
+  amount      Int?
+  assembly    Material? @relation("AssemblyComponent_assembly", fields: [assemblyId], references: [id])
+  assemblyId  String?   @map("assembly")
+  material    Material? @relation("AssemblyComponent_material", fields: [materialId], references: [id])
   materialId  String?   @map("material")
-  creator     User?     @relation("Operation_creator", fields: [creatorId], references: [id])
-  creatorId   String?   @map("creator")
   extraFields String?
 
+  @@index([assemblyId])
   @@index([materialId])
-  @@index([creatorId])
 }
 
 model Material {
-  id               String            @id @default(cuid())
-  name             String            @default("")
-  description      String            @default("")
-  price            Float
-  status           String            @default("aktif")
-  files            File[]            @relation("File_material")
-  code             String            @default("")
-  ean              String            @default("")
-  brand            Brand?            @relation("Material_brand", fields: [brandId], references: [id])
-  brandId          String?           @map("brand")
-  suppliers        Supplier[]        @relation("Material_suppliers")
-  pricedBy         String            @default("amount")
-  operations       Operation[]       @relation("Operation_material")
-  stockMovements   StockMovement[]   @relation("StockMovement_material")
-  documentProducts DocumentProduct[] @relation("DocumentProduct_product")
-  extraFields      String?
+  id                 String              @id @default(cuid())
+  name               String              @default("")
+  components         AssemblyComponent[] @relation("AssemblyComponent_assembly")
+  assemblyComponents AssemblyComponent[] @relation("AssemblyComponent_material")
+  description        String              @default("")
+  price              Float
+  status             String              @default("aktif")
+  files              File[]              @relation("Material_files")
+  workOrders         WorkOrder[]         @relation("Material_workOrders")
+  code               String              @default("")
+  ean                String              @default("")
+  brand              Brand?              @relation("Material_brand", fields: [brandId], references: [id])
+  brandId            String?             @map("brand")
+  suppliers          Supplier[]          @relation("Material_suppliers")
+  pricedBy           String              @default("amount")
+  operations         Operation[]         @relation("Operation_material")
+  stockMovements     StockMovement[]     @relation("StockMovement_material")
+  documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
+  extraFields        String?
 
   @@index([brandId])
 }
@@ -175,19 +245,6 @@ model Brand {
   name        String     @default("")
   materials   Material[] @relation("Material_brand")
   extraFields String?
-}
-
-model Payment {
-  id          String    @id @default(cuid())
-  amount      Float
-  document    Document? @relation("Payment_document", fields: [documentId], references: [id])
-  documentId  String?   @map("document")
-  reference   String    @default("")
-  type        String    @default("nakit")
-  timestamp   DateTime? @default(now())
-  extraFields String?
-
-  @@index([documentId])
 }
 
 model Notification {

@@ -75,250 +75,9 @@ function isUser({ session: session2 }) {
   return !session2.data.isBlocked;
 }
 var lists = {
-  User: (0, import_core.list)({
+  WorkOrder: (0, import_core.list)({
     ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        query: isUser,
-        create: isManager,
-        update: isManager,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      username: (0, import_fields.text)({ validation: { isRequired: true }, isIndexed: "unique" }),
-      email: (0, import_fields.text)({
-        isIndexed: "unique"
-      }),
-      isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
-      phone: (0, import_fields.text)(),
-      role: (0, import_fields.select)({
-        type: "string",
-        options: ["admin", "customer", "employee", "manager"],
-        defaultValue: "customer",
-        validation: { isRequired: true },
-        isIndexed: true,
-        access: {
-          update: isAdmin
-        }
-      }),
-      permissions: (0, import_fields.multiselect)({
-        type: "enum",
-        options: [
-          { label: "Warranty", value: "warranty" },
-          { label: "Price", value: "price" }
-        ],
-        access: {
-          update: isAdmin
-        }
-      }),
-      ssid: (0, import_fields.text)(),
-      password: (0, import_fields.password)({
-        validation: {
-          isRequired: true,
-          length: {
-            min: 6
-          }
-        }
-      }),
-      operations: (0, import_fields.relationship)({ ref: "Operation.creator", many: true }),
-      notes: (0, import_fields.relationship)({ ref: "Note.creator", many: true }),
-      documents: (0, import_fields.relationship)({ ref: "Document.creator", many: true }),
-      customerDocuments: (0, import_fields.relationship)({ ref: "Document.customer", many: true }),
-      customerMovements: (0, import_fields.relationship)({
-        ref: "StockMovement.customer",
-        many: true
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Note: (0, import_core.list)({
-    ui: {
-      labelField: "note"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      note: (0, import_fields.text)({ validation: { isRequired: true } }),
-      creator: (0, import_fields.relationship)({
-        ref: "User.notes",
-        many: false
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  File: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      url: (0, import_fields.text)(),
-      operation: (0, import_fields.relationship)({
-        ref: "Operation.files",
-        many: false
-      }),
-      material: (0, import_fields.relationship)({
-        ref: "Material.files",
-        many: false
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Document: (0, import_core.list)({
-    ui: {
-      labelField: "createdAt"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isManager
-      }
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const products = await context.query.DocumentProduct.findMany({
-            where: { document: { id: { equals: item.id } } },
-            query: "id"
-          });
-          products.forEach(async (dp) => {
-            await context.query.DocumentProduct.deleteOne({
-              where: { id: dp.id }
-            });
-          });
-          if (item.paymentPlanId) {
-            await context.query.PaymentPlan.deleteOne({
-              where: { id: item.paymentPlanId }
-            });
-          }
-        }
-      }
-    },
-    fields: {
-      createdAt: (0, import_fields.timestamp)({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-        access: {
-          create: import_access.denyAll,
-          update: import_access.denyAll
-        }
-      }),
-      total: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const materials = await context.query.DocumentProduct.findMany({
-                where: { document: { id: { equals: item.id } } },
-                query: "amount material { value }"
-              });
-              let total = 0;
-              materials.forEach((docProd) => {
-                total += docProd.amount * docProd.mat.value;
-              });
-              return total - total * (item.reduction ?? 0) / 100;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      documentType: (0, import_fields.select)({
-        type: "string",
-        options: ["teklif", "sat\u0131\u015F", "irsaliye", "fatura", "bor\xE7 dekontu", "alacak dekontu"],
-        defaultValue: "sat\u0131\u015F",
-        validation: { isRequired: true }
-      }),
-      creator: (0, import_fields.relationship)({
-        ref: "User.documents",
-        many: false,
-        access: {
-          update: import_access.denyAll
-        }
-      }),
-      customer: (0, import_fields.relationship)({
-        ref: "User.customerDocuments",
-        many: false,
-        access: {
-          update: import_access.denyAll
-        }
-      }),
-      reduction: (0, import_fields.float)({ defaultValue: 0 }),
-      isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
-      fromDocument: (0, import_fields.relationship)({
-        ref: "Document.toDocument",
-        many: false
-      }),
-      toDocument: (0, import_fields.relationship)({
-        ref: "Document.fromDocument",
-        many: false
-      }),
-      products: (0, import_fields.relationship)({
-        ref: "DocumentProduct.document",
-        many: true
-      }),
-      payments: (0, import_fields.relationship)({
-        ref: "Payment.document",
-        many: true
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  DocumentProduct: (0, import_core.list)({
-    ui: {
-      labelField: "amount"
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const movements = await context.query.StockMovement.findMany({
-            where: { documentProduct: { id: { equals: item.id } } },
-            query: "id"
-          });
-          movements.forEach(async (movement) => {
-            await context.query.StockMovement.deleteOne({
-              where: { id: movement.id }
-            });
-          });
-        }
-      },
-      afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          const generalStorage = await context.query.Storage.findMany({
-            where: { name: { equals: "Genel" } },
-            query: "id"
-          });
-          await context.query.StockMovement.createOne({
-            data: {
-              product: { connect: { id: item.productId } },
-              storage: { connect: { id: generalStorage.at(0).id } },
-              amount: item.amount,
-              movementType: "\xE7\u0131k\u0131\u015F",
-              documentProduct: { connect: { id: item.id } }
-            }
-          });
-        }
-      }
+      labelField: "number"
     },
     access: {
       operation: {
@@ -329,42 +88,26 @@ var lists = {
       }
     },
     fields: {
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 1 } }),
-      stockMovements: (0, import_fields.relationship)({
-        ref: "StockMovement.documentProduct",
+      number: (0, import_fields.text)({ validation: { isRequired: true } }),
+      materials: (0, import_fields.relationship)({
+        ref: "Material.workOrders",
         many: true
       }),
-      product: (0, import_fields.relationship)({
-        ref: "Material.documentProducts",
-        many: false
+      operations: (0, import_fields.relationship)({
+        ref: "WorkOrderOperation.workOrder",
+        many: true
       }),
-      price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      total: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
-                query: "reduction"
-              });
-              let total = item.price * item.amount;
-              total -= total * (document.reduction ?? 0) / 100;
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      document: (0, import_fields.relationship)({
-        ref: "Document.products",
+      datePlanned: (0, import_fields.timestamp)(),
+      dateStarted: (0, import_fields.timestamp)(),
+      dateFinished: (0, import_fields.timestamp)(),
+      creator: (0, import_fields.relationship)({
+        ref: "User.workOrders",
         many: false
       }),
       extraFields: (0, import_fields.json)()
     }
   }),
-  Operation: (0, import_core.list)({
+  WorkOrderOperation: (0, import_core.list)({
     ui: {
       labelField: "name"
     },
@@ -482,7 +225,7 @@ var lists = {
     },
     fields: {
       files: (0, import_fields.relationship)({
-        ref: "File.operation",
+        ref: "File",
         many: true
       }),
       startedAt: (0, import_fields.timestamp)(),
@@ -508,17 +251,468 @@ var lists = {
           }
         })
       }),
+      reduction: (0, import_fields.float)({ defaultValue: 0 }),
       amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      total: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const workOrder = await context.query.WorkOrder.findOne({
+                where: { id: item.workOrderId },
+                query: "reduction"
+              });
+              let total = item.value * item.amount - item.value * item.amount * (item.reduction ?? 0) / 100;
+              total -= total * (workOrder.reduction ?? 0) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
       wastage: (0, import_fields.float)({
         validation: { min: 0 },
         defaultValue: 0
+      }),
+      workOrder: (0, import_fields.relationship)({
+        ref: "WorkOrder.operations",
+        many: false
+      }),
+      operation: (0, import_fields.relationship)({
+        ref: "Operation.workOrderOperations",
+        many: false
+      }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Operation: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      files: (0, import_fields.relationship)({
+        ref: "File",
+        many: true
       }),
       material: (0, import_fields.relationship)({
         ref: "Material.operations",
         many: false
       }),
+      workOrderOperations: (0, import_fields.relationship)({
+        ref: "WorkOrderOperation.operation",
+        many: true
+      }),
+      user: (0, import_fields.relationship)({ ref: "User.operations", many: false }),
+      cost: (0, import_fields.float)(),
+      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      duration: (0, import_fields.integer)(),
+      description: (0, import_fields.text)(),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Payment: (0, import_core.list)({
+    ui: {
+      labelField: "timestamp"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isManager,
+        delete: import_access.denyAll
+      }
+    },
+    fields: {
+      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      document: (0, import_fields.relationship)({
+        ref: "Document.payments",
+        many: false
+      }),
+      out: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Boolean,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "type"
+              });
+              switch (document.type) {
+                case "sat\u0131\u015F":
+                  return false;
+                case "irsaliye":
+                  return false;
+                case "fatura":
+                  return false;
+                case "bor\xE7 dekontu":
+                  return false;
+                case "alacak dekontu":
+                  return true;
+                default:
+                  return false;
+              }
+            } catch (e) {
+              return false;
+            }
+          }
+        })
+      }),
+      isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
       creator: (0, import_fields.relationship)({
-        ref: "User.operations",
+        ref: "User.payments",
+        many: false
+      }),
+      reference: (0, import_fields.text)(),
+      type: (0, import_fields.select)({
+        type: "string",
+        options: ["nakit", "kredi kart\u0131", "havale", "\xE7ek", "senet", "banka kart\u0131", "kredi"],
+        defaultValue: "nakit",
+        validation: { isRequired: true }
+      }),
+      timestamp: (0, import_fields.timestamp)({
+        defaultValue: { kind: "now" },
+        isOrderable: true
+      }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  User: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
+    access: {
+      operation: {
+        query: isUser,
+        create: isManager,
+        update: isManager,
+        delete: isAdmin
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      username: (0, import_fields.text)({ validation: { isRequired: true }, isIndexed: "unique" }),
+      email: (0, import_fields.text)({
+        isIndexed: "unique"
+      }),
+      isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
+      phone: (0, import_fields.text)(),
+      role: (0, import_fields.select)({
+        type: "string",
+        options: ["admin", "customer", "employee", "manager"],
+        defaultValue: "customer",
+        validation: { isRequired: true },
+        isIndexed: true,
+        access: {
+          update: isAdmin
+        }
+      }),
+      permissions: (0, import_fields.multiselect)({
+        type: "enum",
+        options: [
+          { label: "Warranty", value: "warranty" },
+          { label: "Price", value: "price" }
+        ],
+        access: {
+          update: isAdmin
+        }
+      }),
+      ssid: (0, import_fields.text)(),
+      password: (0, import_fields.password)({
+        validation: {
+          isRequired: true,
+          length: {
+            min: 6
+          }
+        }
+      }),
+      operations: (0, import_fields.relationship)({ ref: "Operation.user", many: true }),
+      notes: (0, import_fields.relationship)({ ref: "Note.creator", many: true }),
+      documents: (0, import_fields.relationship)({ ref: "Document.creator", many: true }),
+      customerDocuments: (0, import_fields.relationship)({ ref: "Document.customer", many: true }),
+      customerMovements: (0, import_fields.relationship)({
+        ref: "StockMovement.customer",
+        many: true
+      }),
+      payments: (0, import_fields.relationship)({ ref: "Payment.creator", many: true }),
+      address: (0, import_fields.text)(),
+      workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.creator", many: true }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Note: (0, import_core.list)({
+    ui: {
+      labelField: "note"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isAdmin,
+        delete: isAdmin
+      }
+    },
+    fields: {
+      note: (0, import_fields.text)({ validation: { isRequired: true } }),
+      creator: (0, import_fields.relationship)({
+        ref: "User.notes",
+        many: false
+      }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  File: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isAdmin,
+        delete: isAdmin
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      url: (0, import_fields.text)(),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Document: (0, import_core.list)({
+    ui: {
+      labelField: "createdAt"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isManager,
+        delete: isManager
+      }
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        if (operation === "delete") {
+          const products = await context.query.DocumentProduct.findMany({
+            where: { document: { id: { equals: item.id } } },
+            query: "id"
+          });
+          products.forEach(async (dp) => {
+            await context.query.DocumentProduct.deleteOne({
+              where: { id: dp.id }
+            });
+          });
+          if (item.paymentPlanId) {
+            await context.query.PaymentPlan.deleteOne({
+              where: { id: item.paymentPlanId }
+            });
+          }
+        }
+      }
+    },
+    fields: {
+      createdAt: (0, import_fields.timestamp)({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+        access: {
+          create: import_access.denyAll,
+          update: import_access.denyAll
+        }
+      }),
+      total: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "amount material { value }"
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += docProd.amount * docProd.mat.value;
+              });
+              return total - total * (item.reduction ?? 0) / 100;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      type: (0, import_fields.select)({
+        type: "string",
+        options: ["teklif", "sat\u0131\u015F", "irsaliye", "fatura", "bor\xE7 dekontu", "alacak dekontu"],
+        defaultValue: "sat\u0131\u015F",
+        validation: { isRequired: true }
+      }),
+      creator: (0, import_fields.relationship)({
+        ref: "User.documents",
+        many: false,
+        access: {
+          update: import_access.denyAll
+        }
+      }),
+      customer: (0, import_fields.relationship)({
+        ref: "User.customerDocuments",
+        many: false,
+        access: {
+          update: import_access.denyAll
+        }
+      }),
+      reduction: (0, import_fields.float)({ defaultValue: 0 }),
+      isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
+      fromDocument: (0, import_fields.relationship)({
+        ref: "Document.toDocument",
+        many: false
+      }),
+      toDocument: (0, import_fields.relationship)({
+        ref: "Document.fromDocument",
+        many: false
+      }),
+      products: (0, import_fields.relationship)({
+        ref: "DocumentProduct.document",
+        many: true
+      }),
+      payments: (0, import_fields.relationship)({
+        ref: "Payment.document",
+        many: true
+      }),
+      totalPaid: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const payments = await context.query.Payment.findMany({
+                where: { document: { id: { equals: item.id } }, isDeleted: { equals: false } },
+                query: "value"
+              });
+              let total = 0;
+              payments.forEach((payment) => {
+                total += payment.value;
+              });
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  DocumentProduct: (0, import_core.list)({
+    ui: {
+      labelField: "amount"
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        if (operation === "delete") {
+          const movements = await context.query.StockMovement.findMany({
+            where: { documentProduct: { id: { equals: item.id } } },
+            query: "id"
+          });
+          movements.forEach(async (movement) => {
+            await context.query.StockMovement.deleteOne({
+              where: { id: movement.id }
+            });
+          });
+        }
+      },
+      afterOperation: async ({ operation, item, context }) => {
+        if (operation === "create") {
+          const generalStorage = await context.query.Storage.findMany({
+            where: { name: { equals: "Genel" } },
+            query: "id"
+          });
+          await context.query.StockMovement.createOne({
+            data: {
+              product: { connect: { id: item.productId } },
+              storage: { connect: { id: generalStorage.at(0).id } },
+              amount: item.amount,
+              movementType: "\xE7\u0131k\u0131\u015F",
+              documentProduct: { connect: { id: item.id } }
+            }
+          });
+        }
+      }
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager
+      }
+    },
+    fields: {
+      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 1 } }),
+      stockMovements: (0, import_fields.relationship)({
+        ref: "StockMovement.documentProduct",
+        many: true
+      }),
+      product: (0, import_fields.relationship)({
+        ref: "Material.documentProducts",
+        many: false
+      }),
+      price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      reduction: (0, import_fields.float)({ defaultValue: 0 }),
+      total: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "reduction"
+              });
+              let total = item.price * item.amount - item.price * item.amount * (item.reduction ?? 0) / 100;
+              total -= total * (document.reduction ?? 0) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      document: (0, import_fields.relationship)({
+        ref: "Document.products",
+        many: false
+      }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  AssemblyComponent: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
+    access: {
+      operation: {
+        create: isManager,
+        query: isEmployee,
+        update: isManager,
+        delete: isManager
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      description: (0, import_fields.text)(),
+      amount: (0, import_fields.integer)(),
+      assembly: (0, import_fields.relationship)({
+        ref: "Material.components",
+        many: false
+      }),
+      material: (0, import_fields.relationship)({
+        ref: "Material.assemblyComponents",
         many: false
       }),
       extraFields: (0, import_fields.json)()
@@ -538,6 +732,14 @@ var lists = {
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      components: (0, import_fields.relationship)({
+        ref: "AssemblyComponent.assembly",
+        many: true
+      }),
+      assemblyComponents: (0, import_fields.relationship)({
+        ref: "AssemblyComponent.material",
+        many: true
+      }),
       description: (0, import_fields.text)(),
       price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       currentStock: (0, import_fields.virtual)({
@@ -578,7 +780,11 @@ var lists = {
         validation: { isRequired: true }
       }),
       files: (0, import_fields.relationship)({
-        ref: "File.material",
+        ref: "File",
+        many: true
+      }),
+      workOrders: (0, import_fields.relationship)({
+        ref: "WorkOrder.materials",
         many: true
       }),
       code: (0, import_fields.text)(),
@@ -718,67 +924,6 @@ var lists = {
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       materials: (0, import_fields.relationship)({ ref: "Material.brand", many: true }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Payment: (0, import_core.list)({
-    ui: {
-      labelField: "timestamp"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isManager
-      }
-    },
-    fields: {
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      document: (0, import_fields.relationship)({
-        ref: "Document.payments",
-        many: false
-      }),
-      out: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
-                query: "type"
-              });
-              switch (document.type) {
-                case "sat\u0131\u015F":
-                  return false;
-                case "irsaliye":
-                  return false;
-                case "fatura":
-                  return false;
-                case "bor\xE7 dekontu":
-                  return false;
-                case "alacak dekontu":
-                  return true;
-                default:
-                  return false;
-              }
-            } catch (e) {
-              return false;
-            }
-          }
-        })
-      }),
-      reference: (0, import_fields.text)(),
-      type: (0, import_fields.select)({
-        type: "string",
-        options: ["nakit", "kredi kart\u0131", "havale", "\xE7ek", "senet", "banka kart\u0131", "kredi"],
-        defaultValue: "nakit",
-        validation: { isRequired: true }
-      }),
-      timestamp: (0, import_fields.timestamp)({
-        defaultValue: { kind: "now" },
-        isOrderable: true
-      }),
       extraFields: (0, import_fields.json)()
     }
   }),
