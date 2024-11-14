@@ -38,7 +38,7 @@ var { withAuth } = (0, import_auth.createAuth)({
   sessionData: "id username role permissions isBlocked",
   secretField: "password",
   initFirstItem: {
-    fields: ["username", "firstname", "role", "email", "password"]
+    fields: ["username", "name", "role", "email", "password"]
   }
 });
 var sessionMaxAge = 60 * 60 * 24 * 30;
@@ -54,99 +54,47 @@ var import_core2 = require("@keystone-6/core");
 var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
-
-// utils.ts
-var calculateDate = ({ number, unit, startDate }) => {
-  const date = startDate;
-  switch (unit.toLowerCase()) {
-    case "g\xFCn":
-      date.setDate(date.getDate() + number);
-      break;
-    case "hafta":
-      date.setDate(date.getDate() + number * 7);
-      break;
-    case "ay":
-      date.setMonth(date.getMonth() + number);
-      break;
-    case "y\u0131l":
-      date.setFullYear(date.getFullYear() + number);
-      break;
-    default:
-      throw new Error('Invalid unit. Use "day", "month", or "year".');
-  }
-  return date;
-};
-
-// schema.ts
 function isAdmin({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "admin")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "admin") return true;
   return !session2.data.isBlocked;
 }
 function isManager({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "admin" || session2.data.role == "manager")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "admin" || session2.data.role == "manager") return true;
   return !session2.data.isBlocked;
 }
 function isEmployee({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager") return true;
   return !session2.data.isBlocked;
 }
 function isUser({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager" || session2.data.role == "customer")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager" || session2.data.role == "customer") return true;
   return !session2.data.isBlocked;
 }
 var lists = {
   User: (0, import_core.list)({
     ui: {
-      labelField: "firstname"
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "create") {
-          const existingUsers = await context.query.User.findMany({
-            query: "id",
-            where: {
-              OR: [
-                { role: { equals: "employee" } },
-                { role: { equals: "admin" } },
-                { role: { equals: "manager" } }
-              ]
-            }
-          });
-          if (existingUsers.length > 14) {
-            throw new Error("User limit reached");
-          }
-        }
-      }
+      labelField: "name"
     },
     access: {
       operation: {
-        create: isManager,
         query: isUser,
+        create: isManager,
         update: isManager,
         delete: isAdmin
       }
     },
     fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
       username: (0, import_fields.text)({ validation: { isRequired: true }, isIndexed: "unique" }),
       email: (0, import_fields.text)({
         isIndexed: "unique"
       }),
       isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
-      phone: (0, import_fields.text)({ validation: { isRequired: false } }),
-      firstname: (0, import_fields.text)({ validation: { isRequired: true } }),
-      lastname: (0, import_fields.text)({ validation: { isRequired: false } }),
+      phone: (0, import_fields.text)(),
       role: (0, import_fields.select)({
         type: "string",
         options: ["admin", "customer", "employee", "manager"],
@@ -167,7 +115,7 @@ var lists = {
           update: isAdmin
         }
       }),
-      ssid: (0, import_fields.text)({ validation: { isRequired: false } }),
+      ssid: (0, import_fields.text)(),
       password: (0, import_fields.password)({
         validation: {
           isRequired: true,
@@ -176,27 +124,15 @@ var lists = {
           }
         }
       }),
-      qcWorkOrders: (0, import_fields.relationship)({
-        ref: "WorkOrder.qcUser",
-        many: true
-      }),
-      workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.creator", many: true }),
-      clientOrders: (0, import_fields.relationship)({ ref: "WorkOrder.customer", many: true }),
-      applicationsToApply: (0, import_fields.relationship)({
-        ref: "Application.applicant",
-        many: true
-      }),
-      applications: (0, import_fields.relationship)({
-        ref: "Application.creator",
-        many: true
-      }),
+      operations: (0, import_fields.relationship)({ ref: "Operation.creator", many: true }),
       notes: (0, import_fields.relationship)({ ref: "Note.creator", many: true }),
       documents: (0, import_fields.relationship)({ ref: "Document.creator", many: true }),
       customerDocuments: (0, import_fields.relationship)({ ref: "Document.customer", many: true }),
       customerMovements: (0, import_fields.relationship)({
         ref: "StockMovement.customer",
         many: true
-      })
+      }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   Note: (0, import_core.list)({
@@ -213,14 +149,11 @@ var lists = {
     },
     fields: {
       note: (0, import_fields.text)({ validation: { isRequired: true } }),
-      workOrder: (0, import_fields.relationship)({
-        ref: "WorkOrder.notes",
-        many: false
-      }),
       creator: (0, import_fields.relationship)({
         ref: "User.notes",
         many: false
-      })
+      }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   File: (0, import_core.list)({
@@ -238,18 +171,15 @@ var lists = {
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       url: (0, import_fields.text)(),
-      application: (0, import_fields.relationship)({
-        ref: "Application.images",
+      operation: (0, import_fields.relationship)({
+        ref: "Operation.files",
         many: false
       }),
-      workOrder: (0, import_fields.relationship)({
-        ref: "WorkOrder.images",
+      material: (0, import_fields.relationship)({
+        ref: "Material.files",
         many: false
       }),
-      product: (0, import_fields.relationship)({
-        ref: "Product.images",
-        many: false
-      })
+      extraFields: (0, import_fields.json)()
     }
   }),
   Document: (0, import_core.list)({
@@ -298,13 +228,13 @@ var lists = {
           type: import_core.graphql.Float,
           async resolve(item, args, context) {
             try {
-              const products = await context.query.DocumentProduct.findMany({
+              const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "amount product { price }"
+                query: "amount material { value }"
               });
               let total = 0;
-              products.forEach((product) => {
-                total += product.amount * product.product.price;
+              materials.forEach((docProd) => {
+                total += docProd.amount * docProd.mat.value;
               });
               return total - total * (item.reduction ?? 0) / 100;
             } catch (e) {
@@ -315,30 +245,43 @@ var lists = {
       }),
       documentType: (0, import_fields.select)({
         type: "string",
-        options: ["sat\u0131\u015F", "fatura", "irsaliye", "s\xF6zle\u015Fme", "di\u011Fer"],
+        options: ["teklif", "sat\u0131\u015F", "irsaliye", "fatura", "bor\xE7 dekontu", "alacak dekontu"],
         defaultValue: "sat\u0131\u015F",
         validation: { isRequired: true }
       }),
       creator: (0, import_fields.relationship)({
         ref: "User.documents",
-        many: false
+        many: false,
+        access: {
+          update: import_access.denyAll
+        }
       }),
       customer: (0, import_fields.relationship)({
         ref: "User.customerDocuments",
-        many: false
+        many: false,
+        access: {
+          update: import_access.denyAll
+        }
       }),
       reduction: (0, import_fields.float)({ defaultValue: 0 }),
       isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
-      number: (0, import_fields.text)({}),
-      invoiced: (0, import_fields.checkbox)({ defaultValue: false }),
+      fromDocument: (0, import_fields.relationship)({
+        ref: "Document.toDocument",
+        many: false
+      }),
+      toDocument: (0, import_fields.relationship)({
+        ref: "Document.fromDocument",
+        many: false
+      }),
       products: (0, import_fields.relationship)({
         ref: "DocumentProduct.document",
         many: true
       }),
-      paymentPlan: (0, import_fields.relationship)({
-        ref: "PaymentPlan.document",
-        many: false
-      })
+      payments: (0, import_fields.relationship)({
+        ref: "Payment.document",
+        many: true
+      }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   DocumentProduct: (0, import_core.list)({
@@ -386,13 +329,13 @@ var lists = {
       }
     },
     fields: {
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 1 } }),
       stockMovements: (0, import_fields.relationship)({
         ref: "StockMovement.documentProduct",
         many: true
       }),
       product: (0, import_fields.relationship)({
-        ref: "Product.documentProducts",
+        ref: "Material.documentProducts",
         many: false
       }),
       price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
@@ -417,202 +360,11 @@ var lists = {
       document: (0, import_fields.relationship)({
         ref: "Document.products",
         many: false
-      })
+      }),
+      extraFields: (0, import_fields.json)()
     }
   }),
-  WorkOrder: (0, import_core.list)({
-    ui: {
-      labelField: "createdAt"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager
-      }
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const applications = await context.query.Application.findMany({
-            where: { workOrder: { id: { equals: item.id } } },
-            query: "id"
-          });
-          applications.forEach(async (app) => {
-            await context.query.Application.deleteOne({
-              where: { id: app.id }
-            });
-          });
-          try {
-            let paymentPlan;
-            paymentPlan = await context.query.PaymentPlan.findMany({
-              where: { workOrder: { id: { equals: item.id } } },
-              query: "id"
-            }).then((plans) => plans.at(0));
-            if (paymentPlan) {
-              await context.query.PaymentPlan.deleteOne({
-                where: { id: paymentPlan.id }
-              });
-            }
-          } catch (e) {
-          }
-        }
-      }
-    },
-    fields: {
-      creator: (0, import_fields.relationship)({
-        ref: "User.workOrders",
-        many: false
-      }),
-      createdAt: (0, import_fields.timestamp)({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-        access: {
-          create: import_access.denyAll,
-          update: import_access.denyAll
-        }
-      }),
-      images: (0, import_fields.relationship)({
-        ref: "File.workOrder",
-        many: true
-      }),
-      notes: (0, import_fields.relationship)({
-        ref: "Note.workOrder",
-        many: true
-      }),
-      status: (0, import_fields.select)({
-        type: "string",
-        options: ["aktif", "pasif", "tamamland\u0131", "iptal", "teklif"],
-        defaultValue: "pasif",
-        access: {
-          update: isManager
-        }
-      }),
-      reduction: (0, import_fields.float)({}),
-      paymentPlan: (0, import_fields.relationship)({
-        ref: "PaymentPlan.workOrder",
-        many: false
-      }),
-      qcDone: (0, import_fields.checkbox)({ defaultValue: false }),
-      qcUser: (0, import_fields.relationship)({
-        ref: "User.qcWorkOrders",
-        many: false
-      }),
-      checkDate: (0, import_fields.timestamp)({
-        validation: { isRequired: false }
-      }),
-      checkDone: (0, import_fields.checkbox)({ defaultValue: false }),
-      notifications: (0, import_fields.relationship)({
-        ref: "Notification.workOrder",
-        many: true
-      }),
-      startedAt: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.String,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "startedAt"
-              });
-              let earliestStart = applications.at(0).startedAt;
-              applications.forEach((app) => {
-                if (app.startedAt < earliestStart) {
-                  earliestStart = app.startedAt;
-                }
-              });
-              if (!earliestStart) {
-                return null;
-              }
-              return new Date(earliestStart).toLocaleString("tr-TR").slice(0, -3);
-            } catch (e) {
-              return null;
-            }
-          }
-        })
-      }),
-      finishedAt: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.String,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "finishedAt"
-              });
-              if (applications.every((app) => app.finishedAt)) {
-                let latestFinish = applications.at(0).finishedAt;
-                applications.forEach((app) => {
-                  if (app.finishedAt > latestFinish) {
-                    latestFinish = app.finishedAt;
-                  }
-                });
-                return new Date(latestFinish).toLocaleString("tr-TR").slice(0, -3);
-              } else {
-                return null;
-              }
-            } catch (e) {
-              return null;
-            }
-          }
-        })
-      }),
-      car: (0, import_fields.relationship)({
-        ref: "Car.workOrders",
-        many: false
-      }),
-      customer: (0, import_fields.relationship)({
-        ref: "User.clientOrders",
-        many: false
-      }),
-      value: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "value"
-              });
-              let total = 0;
-              applications.forEach((app) => {
-                total += app.value;
-              });
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      total: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "price"
-              });
-              let total = 0;
-              applications.forEach((app) => {
-                total += app.price;
-              });
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      applications: (0, import_fields.relationship)({
-        ref: "Application.workOrder",
-        many: true
-      })
-    }
-  }),
-  Application: (0, import_core.list)({
+  Operation: (0, import_core.list)({
     ui: {
       labelField: "name"
     },
@@ -620,28 +372,19 @@ var lists = {
       beforeOperation: async ({ operation, item, inputData, context }) => {
         if (operation === "update") {
           if (inputData.startedAt) {
-            if (item.startedAt) {
-              throw new Error("Application already started");
-            }
-            if (!inputData.applicant) {
-              throw new Error("Applicant is required");
+            if (item.finishedAt) {
+              throw new Error("Application already finished");
             }
           }
           if (inputData.finishedAt) {
             if (!item.startedAt) {
               throw new Error("Application not started");
             }
-            if (!inputData.applicant) {
-              throw new Error("Applicant is required");
-            }
             if (item.finishedAt) {
               throw new Error("Application already finished");
             }
             if (inputData.finishedAt < item.startedAt) {
               throw new Error("Finish date cannot be before start date");
-            }
-            if (inputData.applicant.connect?.id != item.applicantId) {
-              throw new Error("Applicant cannot be changed");
             }
           }
           if (inputData.wastage && inputData.wastage > (item.wastage ?? 0)) {
@@ -738,18 +481,14 @@ var lists = {
       }
     },
     fields: {
-      workOrder: (0, import_fields.relationship)({
-        ref: "WorkOrder.applications",
-        many: false
-      }),
-      images: (0, import_fields.relationship)({
-        ref: "File.application",
+      files: (0, import_fields.relationship)({
+        ref: "File.operation",
         many: true
       }),
       startedAt: (0, import_fields.timestamp)(),
       finishedAt: (0, import_fields.timestamp)(),
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      description: (0, import_fields.text)({}),
+      description: (0, import_fields.text)(),
       value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       price: (0, import_fields.virtual)({
         field: import_core.graphql.field({
@@ -771,78 +510,35 @@ var lists = {
       }),
       amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       wastage: (0, import_fields.float)({
-        validation: { isRequired: false, min: 0 },
+        validation: { min: 0 },
         defaultValue: 0
       }),
-      location: (0, import_fields.relationship)({
-        ref: "ApplicationLocation.applications",
-        many: false
-      }),
-      product: (0, import_fields.relationship)({
-        ref: "Product.applications",
-        many: false
-      }),
-      applicant: (0, import_fields.relationship)({
-        ref: "User.applicationsToApply",
+      material: (0, import_fields.relationship)({
+        ref: "Material.operations",
         many: false
       }),
       creator: (0, import_fields.relationship)({
-        ref: "User.applications",
+        ref: "User.operations",
         many: false
       }),
-      type: (0, import_fields.relationship)({
-        ref: "ApplicationType.applications",
-        many: false
-      }),
-      stockMovements: (0, import_fields.relationship)({
-        ref: "StockMovement.application",
-        many: true
-      })
+      extraFields: (0, import_fields.json)()
     }
   }),
-  ApplicationType: (0, import_core.list)({
+  Material: (0, import_core.list)({
     ui: {
       labelField: "name"
     },
     access: {
       operation: {
         create: isManager,
-        query: isEmployee,
-        update: isManager,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      applications: (0, import_fields.relationship)({
-        ref: "Application.type",
-        many: true
-      }),
-      products: (0, import_fields.relationship)({
-        ref: "Product.applicationType",
-        many: true
-      }),
-      locations: (0, import_fields.relationship)({
-        ref: "ApplicationLocation.applicationTypes",
-        many: true
-      })
-    }
-  }),
-  Product: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isManager,
-        query: isEmployee,
+        query: isUser,
         update: isManager,
         delete: isManager
       }
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      description: (0, import_fields.text)({}),
+      description: (0, import_fields.text)(),
       price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       currentStock: (0, import_fields.virtual)({
         field: import_core.graphql.field({
@@ -881,73 +577,39 @@ var lists = {
         defaultValue: "aktif",
         validation: { isRequired: true }
       }),
-      images: (0, import_fields.relationship)({
-        ref: "File.product",
+      files: (0, import_fields.relationship)({
+        ref: "File.material",
         many: true
       }),
-      code: (0, import_fields.text)({}),
-      ean: (0, import_fields.text)({}),
-      productBrand: (0, import_fields.relationship)({
-        ref: "ProductBrand.products",
+      code: (0, import_fields.text)(),
+      ean: (0, import_fields.text)(),
+      brand: (0, import_fields.relationship)({
+        ref: "Brand.materials",
         many: false
+      }),
+      suppliers: (0, import_fields.relationship)({
+        ref: "Supplier.materials",
+        many: true
       }),
       pricedBy: (0, import_fields.select)({
         type: "string",
-        options: ["amount", "length"],
+        options: ["amount", "length(mm)", "weight(g)", "area(m\xB2)"],
         defaultValue: "amount",
         validation: { isRequired: true }
       }),
-      applications: (0, import_fields.relationship)({
-        ref: "Application.product",
+      operations: (0, import_fields.relationship)({
+        ref: "Operation.material",
         many: true
       }),
-      applicationType: (0, import_fields.relationship)({
-        ref: "ApplicationType.products",
-        many: false
-      }),
       stockMovements: (0, import_fields.relationship)({
-        ref: "StockMovement.product",
+        ref: "StockMovement.material",
         many: true
       }),
       documentProducts: (0, import_fields.relationship)({
         ref: "DocumentProduct.product",
         many: true
       }),
-      warrantyType: (0, import_fields.select)({
-        type: "string",
-        options: ["\xF6m\xFCr", "garanti", "\xF6mur_boyu", "yok"],
-        defaultValue: "yok",
-        validation: { isRequired: true }
-      }),
-      warrantyTimeScale: (0, import_fields.select)({
-        type: "string",
-        options: ["g\xFCn", "ay", "y\u0131l"],
-        defaultValue: "y\u0131l",
-        validation: { isRequired: true }
-      }),
-      warrantyTime: (0, import_fields.float)({ validation: { isRequired: false, min: 0 } }),
-      color: (0, import_fields.text)({}),
-      width: (0, import_fields.float)({}),
-      length: (0, import_fields.float)({}),
-      height: (0, import_fields.float)({}),
-      depth: (0, import_fields.float)({}),
-      weight: (0, import_fields.float)({}),
-      thickness: (0, import_fields.float)({}),
-      extraFields: (0, import_fields.json)({
-        defaultValue: {
-          colorWarranty: false,
-          customPricing: {
-            sideWindow: "",
-            windshield: "",
-            sunroof: "",
-            glassTop: "",
-            hood: "",
-            hoodFender: "",
-            hoodFenderBumper: "",
-            complete: ""
-          }
-        }
-      })
+      extraFields: (0, import_fields.json)()
     }
   }),
   Storage: (0, import_core.list)({
@@ -967,7 +629,8 @@ var lists = {
       stockMovements: (0, import_fields.relationship)({
         ref: "StockMovement.storage",
         many: true
-      })
+      }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   StockMovement: (0, import_core.list)({
@@ -983,8 +646,8 @@ var lists = {
       }
     },
     fields: {
-      product: (0, import_fields.relationship)({
-        ref: "Product.stockMovements",
+      material: (0, import_fields.relationship)({
+        ref: "Material.stockMovements",
         many: false
       }),
       storage: (0, import_fields.relationship)({
@@ -1002,7 +665,7 @@ var lists = {
         ref: "DocumentProduct.stockMovements",
         many: false
       }),
-      note: (0, import_fields.text)({}),
+      note: (0, import_fields.text)(),
       customer: (0, import_fields.relationship)({
         ref: "User.customerMovements",
         many: false
@@ -1011,10 +674,6 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
-      application: (0, import_fields.relationship)({
-        ref: "Application.stockMovements",
-        many: false
-      }),
       createdAt: (0, import_fields.timestamp)({
         defaultValue: { kind: "now" },
         isOrderable: true,
@@ -1022,395 +681,49 @@ var lists = {
           create: import_access.denyAll,
           update: import_access.denyAll
         }
-      })
-    }
-  }),
-  ProductBrand: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      products: (0, import_fields.relationship)({ ref: "Product.productBrand", many: true })
-    }
-  }),
-  Car: (0, import_core.list)({
-    ui: {
-      labelField: "licensePlate"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      vin: (0, import_fields.text)(),
-      carModel: (0, import_fields.relationship)({
-        ref: "CarModel.cars",
-        many: false
       }),
-      licensePlate: (0, import_fields.text)(),
-      workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.car", many: true })
+      extraFields: (0, import_fields.json)()
     }
   }),
-  CarModel: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({
-        validation: { isRequired: true },
-        isFilterable: true,
-        isIndexed: true
-      }),
-      cars: (0, import_fields.relationship)({ ref: "Car.carModel", many: true }),
-      carBrand: (0, import_fields.relationship)({ ref: "CarBrand.carModels", many: false })
-    }
-  }),
-  CarBrand: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({
-        validation: { isRequired: true },
-        isFilterable: true,
-        isIndexed: true
-      }),
-      carModels: (0, import_fields.relationship)({ ref: "CarModel.carBrand", many: true })
-    }
-  }),
-  ApplicationLocation: (0, import_core.list)({
+  Supplier: (0, import_core.list)({
     ui: {
       labelField: "name"
     },
     access: {
       operation: {
         create: isManager,
-        query: isEmployee,
+        query: isUser,
         update: isManager,
         delete: isAdmin
       }
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      applicationTypes: (0, import_fields.relationship)({
-        ref: "ApplicationType.locations",
-        many: true
-      }),
-      applications: (0, import_fields.relationship)({
-        ref: "Application.location",
-        many: true
-      })
+      materials: (0, import_fields.relationship)({ ref: "Material.suppliers", many: true }),
+      extraFields: (0, import_fields.json)()
     }
   }),
-  PaymentPlan: (0, import_core.list)({
+  Brand: (0, import_core.list)({
     ui: {
       labelField: "name"
     },
     access: {
       operation: {
         create: isEmployee,
-        query: isEmployee,
-        update: isManager,
+        query: isUser,
+        update: isEmployee,
         delete: isAdmin
-      }
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const payments = await context.query.Payment.findMany({
-            where: { paymentPlan: { id: { equals: item.id } } },
-            query: "id"
-          });
-          payments.forEach(async (payment) => {
-            await context.query.Payment.deleteOne({
-              where: { id: payment.id }
-            });
-          });
-        }
-      },
-      afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          for (let i = 1; i < item.periods; i++) {
-            await context.query.Notification.createOne({
-              data: {
-                paymentPlan: { connect: { id: item.id } },
-                date: new Date(
-                  (/* @__PURE__ */ new Date()).getTime() + i * item.periodDuration * 24 * 60 * 60 * 1e3
-                ),
-                message: "\xD6deme tarihi",
-                notifyRoles: ["admin"]
-              }
-            });
-          }
-        } else if (operation === "update") {
-          const exitingNotifications = await context.query.Notification.findMany({
-            where: { paymentPlan: { id: { equals: item.id } } },
-            query: "id date"
-          });
-          exitingNotifications.forEach(async (notification) => {
-            await context.query.Notification.deleteOne({
-              where: { id: notification.id }
-            });
-          });
-          for (let i = 1; i < item.periods; i++) {
-            await context.query.Notification.createOne({
-              data: {
-                paymentPlan: { connect: { id: item.id } },
-                date: new Date(
-                  (/* @__PURE__ */ new Date()).getTime() + i * item.periodDuration * 24 * 60 * 60 * 1e3
-                ),
-                message: "\xD6deme tarihi",
-                notifyRoles: ["admin"]
-              }
-            });
-          }
-        }
       }
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      workOrder: (0, import_fields.relationship)({
-        ref: "WorkOrder.paymentPlan",
-        many: false
-      }),
-      payments: (0, import_fields.relationship)({
-        ref: "Payment.paymentPlan",
-        many: true
-      }),
-      document: (0, import_fields.relationship)({
-        ref: "Document.paymentPlan",
-        many: false
-      }),
-      periods: (0, import_fields.float)({
-        validation: { isRequired: true, min: 0 },
-        defaultValue: 1
-      }),
-      periodDuration: (0, import_fields.float)({
-        validation: { isRequired: true, min: 0 },
-        defaultValue: 1
-      }),
-      periodPayment: (0, import_fields.float)({
-        validation: { isRequired: true, min: 0 },
-        defaultValue: 1
-      }),
-      periodDurationScale: (0, import_fields.select)({
-        type: "string",
-        options: ["g\xFCn", "hafta", "ay"],
-        defaultValue: "ay",
-        validation: { isRequired: true }
-      }),
-      total: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              let workOrder;
-              if (item.workOrderId) {
-                workOrder = await context.query.WorkOrder.findOne({
-                  where: { id: item.workOrderId },
-                  query: "total"
-                });
-              }
-              let document;
-              document = await context.query.Document.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "total"
-              }).then((docs) => docs.at(0));
-              let total = 0;
-              if (workOrder) {
-                total = workOrder.total;
-              } else if (document) {
-                total = document.total;
-              }
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      paid: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const payments = await context.query.Payment.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "amount"
-              });
-              let total = 0;
-              payments.forEach((payment) => {
-                total += payment.amount;
-              });
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      toPay: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const total = async () => {
-                try {
-                  let workOrder;
-                  if (item.workOrderId) {
-                    workOrder = await context.query.WorkOrder.findOne({
-                      where: { id: item.workOrderId },
-                      query: "total"
-                    });
-                  }
-                  let document;
-                  document = await context.query.Document.findMany({
-                    where: { paymentPlan: { id: { equals: item.id } } },
-                    query: "total"
-                  }).then((docs) => docs.at(0));
-                  let total2 = 0;
-                  if (workOrder) {
-                    total2 = workOrder.total;
-                  } else if (document) {
-                    total2 = document.total;
-                  }
-                  return total2;
-                } catch (e) {
-                  return 0;
-                }
-              };
-              const paid = async () => {
-                try {
-                  const payments = await context.query.Payment.findMany({
-                    where: { paymentPlan: { id: { equals: item.id } } },
-                    query: "amount"
-                  });
-                  let total2 = 0;
-                  payments.forEach((payment) => {
-                    total2 += payment.amount;
-                  });
-                  return total2;
-                } catch (e) {
-                  return 0;
-                }
-              };
-              return await total() - await paid();
-            } catch (e) {
-              return 123456;
-            }
-          }
-        })
-      }),
-      nextPaymentDate: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.String,
-          async resolve(item, args, context) {
-            try {
-              const payments = await context.query.Payment.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "amount date",
-                orderBy: { date: "asc" }
-              });
-              if (payments.length == 0) {
-                return "-";
-              }
-              const firstPayment = payments.at(0);
-              const firstPaymentDate = firstPayment.date;
-              let dates = [];
-              for (let i = 1; i < item.periods; i++) {
-                dates.push(
-                  calculateDate({
-                    number: i * item.periodDuration,
-                    unit: item.periodDurationScale,
-                    startDate: new Date(firstPaymentDate)
-                  })
-                );
-              }
-              const now = /* @__PURE__ */ new Date();
-              const nextPaymentDate = dates.find((date) => date.getTime() > now.getTime()) || "-";
-              if (nextPaymentDate === "-") {
-                return "-";
-              }
-              return new Date(nextPaymentDate).toLocaleString("tr-TR").split(" ")[0];
-            } catch (e) {
-              return "-";
-            }
-          }
-        })
-      }),
-      completed: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const workOrder = await context.query.WorkOrder.findOne({
-                where: { id: item.workOrderId },
-                query: "total"
-              });
-              let document;
-              document = await context.query.Document.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "total"
-              }).then((docs) => docs.at(0));
-              let total = 0;
-              if (workOrder) {
-                total = workOrder.total;
-              } else if (document) {
-                total = document.total;
-              }
-              const payments = await context.query.Payment.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "amount"
-              });
-              let paid = 0;
-              payments.forEach((payment) => {
-                paid += payment.amount;
-              });
-              return total <= paid;
-            } catch (e) {
-              return false;
-            }
-          }
-        })
-      }),
-      notifications: (0, import_fields.relationship)({
-        ref: "Notification.paymentPlan",
-        many: true
-      })
+      materials: (0, import_fields.relationship)({ ref: "Material.brand", many: true }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   Payment: (0, import_core.list)({
     ui: {
-      labelField: "date"
+      labelField: "timestamp"
     },
     access: {
       operation: {
@@ -1422,28 +735,51 @@ var lists = {
     },
     fields: {
       amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      paymentPlan: (0, import_fields.relationship)({
-        ref: "PaymentPlan.payments",
+      document: (0, import_fields.relationship)({
+        ref: "Document.payments",
         many: false
       }),
-      reference: (0, import_fields.text)({}),
+      out: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Boolean,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "type"
+              });
+              switch (document.type) {
+                case "sat\u0131\u015F":
+                  return false;
+                case "irsaliye":
+                  return false;
+                case "fatura":
+                  return false;
+                case "bor\xE7 dekontu":
+                  return false;
+                case "alacak dekontu":
+                  return true;
+                default:
+                  return false;
+              }
+            } catch (e) {
+              return false;
+            }
+          }
+        })
+      }),
+      reference: (0, import_fields.text)(),
       type: (0, import_fields.select)({
         type: "string",
-        options: [
-          "nakit",
-          "kredi kart\u0131",
-          "havale",
-          "\xE7ek",
-          "senet",
-          "banka kart\u0131"
-        ],
+        options: ["nakit", "kredi kart\u0131", "havale", "\xE7ek", "senet", "banka kart\u0131", "kredi"],
         defaultValue: "nakit",
         validation: { isRequired: true }
       }),
-      date: (0, import_fields.timestamp)({
+      timestamp: (0, import_fields.timestamp)({
         defaultValue: { kind: "now" },
         isOrderable: true
-      })
+      }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   Notification: (0, import_core.list)({
@@ -1453,7 +789,7 @@ var lists = {
     access: {
       operation: {
         create: isAdmin,
-        query: isEmployee,
+        query: isUser,
         update: isAdmin,
         delete: isAdmin
       }
@@ -1464,15 +800,7 @@ var lists = {
         isOrderable: true
       }),
       message: (0, import_fields.text)({ validation: { isRequired: true } }),
-      paymentPlan: (0, import_fields.relationship)({
-        ref: "PaymentPlan.notifications",
-        many: false
-      }),
-      workOrder: (0, import_fields.relationship)({
-        ref: "WorkOrder.notifications",
-        many: false
-      }),
-      link: (0, import_fields.text)({}),
+      link: (0, import_fields.text)(),
       handled: (0, import_fields.checkbox)({ defaultValue: false }),
       notifyRoles: (0, import_fields.multiselect)({
         type: "enum",
@@ -1492,15 +820,33 @@ var lists = {
     },
     fields: {
       version: (0, import_fields.integer)({ validation: { isRequired: true } }),
-      iosLink: (0, import_fields.text)({}),
-      androidLink: (0, import_fields.text)({}),
-      webLink: (0, import_fields.text)({}),
-      windowsLink: (0, import_fields.text)({}),
-      macLink: (0, import_fields.text)({}),
+      iosLink: (0, import_fields.text)(),
+      androidLink: (0, import_fields.text)(),
+      webLink: (0, import_fields.text)(),
+      windowsLink: (0, import_fields.text)(),
+      macLink: (0, import_fields.text)(),
       date: (0, import_fields.timestamp)({
         defaultValue: { kind: "now" },
         isOrderable: true
       })
+    }
+  }),
+  Config: (0, import_core.list)({
+    isSingleton: true,
+    access: {
+      operation: {
+        create: () => false,
+        query: isUser,
+        update: isAdmin,
+        delete: () => false
+      }
+    },
+    ui: {
+      labelField: "name"
+    },
+    fields: {
+      defaultCurrency: (0, import_fields.text)({ defaultValue: "TRY" }),
+      extraFieldsProduct: (0, import_fields.json)()
     }
   })
 };
@@ -1528,7 +874,8 @@ var keystone_default = withAuth(
         }
         const storage = multer.diskStorage({
           destination: UPLOAD_DIR,
-          filename: (req, file, cb) => {
+          // @ts-ignore
+          filename: (file, cb) => {
             const uniqueName = Date.now() + "-" + (Math.random() * 1e3).toFixed(0) + "-" + file.originalname;
             cb(null, uniqueName);
           }
@@ -1541,9 +888,13 @@ var keystone_default = withAuth(
           const fileUrl = `${req.protocol}://${req.get("host")}/rest/files/${req.file.filename}`;
           context.lists.File.create({
             data: {
+              // @ts-ignore
               filename: req.file.filename,
+              // @ts-ignore
               mimetype: req.file.mimetype,
+              // @ts-ignore
               encoding: req.file.encoding,
+              // @ts-ignore
               size: req.file.size,
               url: fileUrl
             }

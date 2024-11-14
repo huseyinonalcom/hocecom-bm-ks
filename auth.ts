@@ -13,7 +13,7 @@ const { withAuth } = createAuth({
   sessionData: "id username role permissions isBlocked",
   secretField: "password",
   initFirstItem: {
-    fields: ["username", "firstname", "role", "email", "password"],
+    fields: ["username", "name", "role", "email", "password"],
   },
 });
 

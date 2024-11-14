@@ -12,73 +12,66 @@ generator client {
 }
 
 model User {
-  id                  String          @id @default(cuid())
-  username            String          @unique @default("")
-  email               String          @unique @default("")
-  isBlocked           Boolean         @default(false)
-  phone               String          @default("")
-  firstname           String          @default("")
-  lastname            String          @default("")
-  role                String          @default("customer")
-  permissions         String          @default("[]")
-  ssid                String          @default("")
-  password            String
-  qcWorkOrders        WorkOrder[]     @relation("WorkOrder_qcUser")
-  workOrders          WorkOrder[]     @relation("WorkOrder_creator")
-  clientOrders        WorkOrder[]     @relation("WorkOrder_customer")
-  applicationsToApply Application[]   @relation("Application_applicant")
-  applications        Application[]   @relation("Application_creator")
-  notes               Note[]          @relation("Note_creator")
-  documents           Document[]      @relation("Document_creator")
-  customerDocuments   Document[]      @relation("Document_customer")
-  customerMovements   StockMovement[] @relation("StockMovement_customer")
+  id                String          @id @default(cuid())
+  name              String          @default("")
+  username          String          @unique @default("")
+  email             String          @unique @default("")
+  isBlocked         Boolean         @default(false)
+  phone             String          @default("")
+  role              String          @default("customer")
+  permissions       String          @default("[]")
+  ssid              String          @default("")
+  password          String
+  operations        Operation[]     @relation("Operation_creator")
+  notes             Note[]          @relation("Note_creator")
+  documents         Document[]      @relation("Document_creator")
+  customerDocuments Document[]      @relation("Document_customer")
+  customerMovements StockMovement[] @relation("StockMovement_customer")
+  extraFields       String?
 
   @@index([role])
 }
 
 model Note {
-  id          String     @id @default(cuid())
-  note        String     @default("")
-  workOrder   WorkOrder? @relation("Note_workOrder", fields: [workOrderId], references: [id])
-  workOrderId String?    @map("workOrder")
-  creator     User?      @relation("Note_creator", fields: [creatorId], references: [id])
-  creatorId   String?    @map("creator")
+  id          String  @id @default(cuid())
+  note        String  @default("")
+  creator     User?   @relation("Note_creator", fields: [creatorId], references: [id])
+  creatorId   String? @map("creator")
+  extraFields String?
 
-  @@index([workOrderId])
   @@index([creatorId])
 }
 
 model File {
-  id            String       @id @default(cuid())
-  name          String       @default("")
-  url           String       @default("")
-  application   Application? @relation("File_application", fields: [applicationId], references: [id])
-  applicationId String?      @map("application")
-  workOrder     WorkOrder?   @relation("File_workOrder", fields: [workOrderId], references: [id])
-  workOrderId   String?      @map("workOrder")
-  product       Product?     @relation("File_product", fields: [productId], references: [id])
-  productId     String?      @map("product")
+  id          String     @id @default(cuid())
+  name        String     @default("")
+  url         String     @default("")
+  operation   Operation? @relation("File_operation", fields: [operationId], references: [id])
+  operationId String?    @map("operation")
+  material    Material?  @relation("File_material", fields: [materialId], references: [id])
+  materialId  String?    @map("material")
+  extraFields String?
 
-  @@index([applicationId])
-  @@index([workOrderId])
-  @@index([productId])
+  @@index([operationId])
+  @@index([materialId])
 }
 
 model Document {
-  id            String            @id @default(cuid())
-  createdAt     DateTime?         @default(now())
-  documentType  String            @default("satış")
-  creator       User?             @relation("Document_creator", fields: [creatorId], references: [id])
-  creatorId     String?           @map("creator")
-  customer      User?             @relation("Document_customer", fields: [customerId], references: [id])
-  customerId    String?           @map("customer")
-  reduction     Float?            @default(0)
-  isDeleted     Boolean           @default(false)
-  number        String            @default("")
-  invoiced      Boolean           @default(false)
-  products      DocumentProduct[] @relation("DocumentProduct_document")
-  paymentPlan   PaymentPlan?      @relation("Document_paymentPlan", fields: [paymentPlanId], references: [id])
-  paymentPlanId String?           @unique @map("paymentPlan")
+  id             String            @id @default(cuid())
+  createdAt      DateTime?         @default(now())
+  documentType   String            @default("satış")
+  creator        User?             @relation("Document_creator", fields: [creatorId], references: [id])
+  creatorId      String?           @map("creator")
+  customer       User?             @relation("Document_customer", fields: [customerId], references: [id])
+  customerId     String?           @map("customer")
+  reduction      Float?            @default(0)
+  isDeleted      Boolean           @default(false)
+  fromDocument   Document?         @relation("Document_fromDocument", fields: [fromDocumentId], references: [id])
+  fromDocumentId String?           @unique @map("fromDocument")
+  toDocument     Document?         @relation("Document_fromDocument")
+  products       DocumentProduct[] @relation("DocumentProduct_document")
+  payments       Payment[]         @relation("Payment_document")
+  extraFields    String?
 
   @@index([creatorId])
   @@index([customerId])
@@ -88,127 +81,69 @@ model DocumentProduct {
   id             String          @id @default(cuid())
   amount         Float
   stockMovements StockMovement[] @relation("StockMovement_documentProduct")
-  product        Product?        @relation("DocumentProduct_product", fields: [productId], references: [id])
+  product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
   productId      String?         @map("product")
   price          Float
   document       Document?       @relation("DocumentProduct_document", fields: [documentId], references: [id])
   documentId     String?         @map("document")
+  extraFields    String?
 
   @@index([productId])
   @@index([documentId])
 }
 
-model WorkOrder {
-  id            String         @id @default(cuid())
-  creator       User?          @relation("WorkOrder_creator", fields: [creatorId], references: [id])
-  creatorId     String?        @map("creator")
-  createdAt     DateTime?      @default(now())
-  images        File[]         @relation("File_workOrder")
-  notes         Note[]         @relation("Note_workOrder")
-  status        String?        @default("pasif")
-  reduction     Float?
-  paymentPlan   PaymentPlan?   @relation("PaymentPlan_workOrder")
-  qcDone        Boolean        @default(false)
-  qcUser        User?          @relation("WorkOrder_qcUser", fields: [qcUserId], references: [id])
-  qcUserId      String?        @map("qcUser")
-  checkDate     DateTime?
-  checkDone     Boolean        @default(false)
-  notifications Notification[] @relation("Notification_workOrder")
-  car           Car?           @relation("WorkOrder_car", fields: [carId], references: [id])
-  carId         String?        @map("car")
-  customer      User?          @relation("WorkOrder_customer", fields: [customerId], references: [id])
-  customerId    String?        @map("customer")
-  applications  Application[]  @relation("Application_workOrder")
+model Operation {
+  id          String    @id @default(cuid())
+  files       File[]    @relation("File_operation")
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  name        String    @default("")
+  description String    @default("")
+  value       Float
+  amount      Float
+  wastage     Float?    @default(0)
+  material    Material? @relation("Operation_material", fields: [materialId], references: [id])
+  materialId  String?   @map("material")
+  creator     User?     @relation("Operation_creator", fields: [creatorId], references: [id])
+  creatorId   String?   @map("creator")
+  extraFields String?
 
+  @@index([materialId])
   @@index([creatorId])
-  @@index([qcUserId])
-  @@index([carId])
-  @@index([customerId])
 }
 
-model Application {
-  id             String               @id @default(cuid())
-  workOrder      WorkOrder?           @relation("Application_workOrder", fields: [workOrderId], references: [id])
-  workOrderId    String?              @map("workOrder")
-  images         File[]               @relation("File_application")
-  startedAt      DateTime?
-  finishedAt     DateTime?
-  name           String               @default("")
-  description    String               @default("")
-  value          Float
-  amount         Float
-  wastage        Float?               @default(0)
-  location       ApplicationLocation? @relation("Application_location", fields: [locationId], references: [id])
-  locationId     String?              @map("location")
-  product        Product?             @relation("Application_product", fields: [productId], references: [id])
-  productId      String?              @map("product")
-  applicant      User?                @relation("Application_applicant", fields: [applicantId], references: [id])
-  applicantId    String?              @map("applicant")
-  creator        User?                @relation("Application_creator", fields: [creatorId], references: [id])
-  creatorId      String?              @map("creator")
-  type           ApplicationType?     @relation("Application_type", fields: [typeId], references: [id])
-  typeId         String?              @map("type")
-  stockMovements StockMovement[]      @relation("StockMovement_application")
+model Material {
+  id               String            @id @default(cuid())
+  name             String            @default("")
+  description      String            @default("")
+  price            Float
+  status           String            @default("aktif")
+  files            File[]            @relation("File_material")
+  code             String            @default("")
+  ean              String            @default("")
+  brand            Brand?            @relation("Material_brand", fields: [brandId], references: [id])
+  brandId          String?           @map("brand")
+  suppliers        Supplier[]        @relation("Material_suppliers")
+  pricedBy         String            @default("amount")
+  operations       Operation[]       @relation("Operation_material")
+  stockMovements   StockMovement[]   @relation("StockMovement_material")
+  documentProducts DocumentProduct[] @relation("DocumentProduct_product")
+  extraFields      String?
 
-  @@index([workOrderId])
-  @@index([locationId])
-  @@index([productId])
-  @@index([applicantId])
-  @@index([creatorId])
-  @@index([typeId])
-}
-
-model ApplicationType {
-  id           String                @id @default(cuid())
-  name         String                @default("")
-  applications Application[]         @relation("Application_type")
-  products     Product[]             @relation("Product_applicationType")
-  locations    ApplicationLocation[] @relation("ApplicationLocation_applicationTypes")
-}
-
-model Product {
-  id                String            @id @default(cuid())
-  name              String            @default("")
-  description       String            @default("")
-  price             Float
-  status            String            @default("aktif")
-  images            File[]            @relation("File_product")
-  code              String            @default("")
-  ean               String            @default("")
-  productBrand      ProductBrand?     @relation("Product_productBrand", fields: [productBrandId], references: [id])
-  productBrandId    String?           @map("productBrand")
-  pricedBy          String            @default("amount")
-  applications      Application[]     @relation("Application_product")
-  applicationType   ApplicationType?  @relation("Product_applicationType", fields: [applicationTypeId], references: [id])
-  applicationTypeId String?           @map("applicationType")
-  stockMovements    StockMovement[]   @relation("StockMovement_product")
-  documentProducts  DocumentProduct[] @relation("DocumentProduct_product")
-  warrantyType      String            @default("yok")
-  warrantyTimeScale String            @default("yıl")
-  warrantyTime      Float?
-  color             String            @default("")
-  width             Float?
-  length            Float?
-  height            Float?
-  depth             Float?
-  weight            Float?
-  thickness         Float?
-  extraFields       String?           @default("{\"colorWarranty\":false,\"customPricing\":{\"sideWindow\":\"\",\"windshield\":\"\",\"sunroof\":\"\",\"glassTop\":\"\",\"hood\":\"\",\"hoodFender\":\"\",\"hoodFenderBumper\":\"\",\"complete\":\"\"}}")
-
-  @@index([productBrandId])
-  @@index([applicationTypeId])
+  @@index([brandId])
 }
 
 model Storage {
   id             String          @id @default(cuid())
   name           String          @default("")
   stockMovements StockMovement[] @relation("StockMovement_storage")
+  extraFields    String?
 }
 
 model StockMovement {
   id                String           @id @default(cuid())
-  product           Product?         @relation("StockMovement_product", fields: [productId], references: [id])
-  productId         String?          @map("product")
+  material          Material?        @relation("StockMovement_material", fields: [materialId], references: [id])
+  materialId        String?          @map("material")
   storage           Storage?         @relation("StockMovement_storage", fields: [storageId], references: [id])
   storageId         String?          @map("storage")
   amount            Float
@@ -219,100 +154,49 @@ model StockMovement {
   customer          User?            @relation("StockMovement_customer", fields: [customerId], references: [id])
   customerId        String?          @map("customer")
   date              DateTime?        @default(now())
-  application       Application?     @relation("StockMovement_application", fields: [applicationId], references: [id])
-  applicationId     String?          @map("application")
   createdAt         DateTime?        @default(now())
+  extraFields       String?
 
-  @@index([productId])
+  @@index([materialId])
   @@index([storageId])
   @@index([documentProductId])
   @@index([customerId])
-  @@index([applicationId])
 }
 
-model ProductBrand {
-  id       String    @id @default(cuid())
-  name     String    @default("")
-  products Product[] @relation("Product_productBrand")
+model Supplier {
+  id          String     @id @default(cuid())
+  name        String     @default("")
+  materials   Material[] @relation("Material_suppliers")
+  extraFields String?
 }
 
-model Car {
-  id           String      @id @default(cuid())
-  vin          String      @default("")
-  carModel     CarModel?   @relation("Car_carModel", fields: [carModelId], references: [id])
-  carModelId   String?     @map("carModel")
-  licensePlate String      @default("")
-  workOrders   WorkOrder[] @relation("WorkOrder_car")
-
-  @@index([carModelId])
-}
-
-model CarModel {
-  id         String    @id @default(cuid())
-  name       String    @default("")
-  cars       Car[]     @relation("Car_carModel")
-  carBrand   CarBrand? @relation("CarModel_carBrand", fields: [carBrandId], references: [id])
-  carBrandId String?   @map("carBrand")
-
-  @@index([name])
-  @@index([carBrandId])
-}
-
-model CarBrand {
-  id        String     @id @default(cuid())
-  name      String     @default("")
-  carModels CarModel[] @relation("CarModel_carBrand")
-
-  @@index([name])
-}
-
-model ApplicationLocation {
-  id               String            @id @default(cuid())
-  name             String            @default("")
-  applicationTypes ApplicationType[] @relation("ApplicationLocation_applicationTypes")
-  applications     Application[]     @relation("Application_location")
-}
-
-model PaymentPlan {
-  id                  String         @id @default(cuid())
-  name                String         @default("")
-  workOrder           WorkOrder?     @relation("PaymentPlan_workOrder", fields: [workOrderId], references: [id])
-  workOrderId         String?        @unique @map("workOrder")
-  payments            Payment[]      @relation("Payment_paymentPlan")
-  document            Document?      @relation("Document_paymentPlan")
-  periods             Float          @default(1)
-  periodDuration      Float          @default(1)
-  periodPayment       Float          @default(1)
-  periodDurationScale String         @default("ay")
-  notifications       Notification[] @relation("Notification_paymentPlan")
+model Brand {
+  id          String     @id @default(cuid())
+  name        String     @default("")
+  materials   Material[] @relation("Material_brand")
+  extraFields String?
 }
 
 model Payment {
-  id            String       @id @default(cuid())
-  amount        Float
-  paymentPlan   PaymentPlan? @relation("Payment_paymentPlan", fields: [paymentPlanId], references: [id])
-  paymentPlanId String?      @map("paymentPlan")
-  reference     String       @default("")
-  type          String       @default("nakit")
-  date          DateTime?    @default(now())
+  id          String    @id @default(cuid())
+  amount      Float
+  document    Document? @relation("Payment_document", fields: [documentId], references: [id])
+  documentId  String?   @map("document")
+  reference   String    @default("")
+  type        String    @default("nakit")
+  timestamp   DateTime? @default(now())
+  extraFields String?
 
-  @@index([paymentPlanId])
+  @@index([documentId])
 }
 
 model Notification {
-  id            String       @id @default(cuid())
-  date          DateTime?    @default(now())
-  message       String       @default("")
-  paymentPlan   PaymentPlan? @relation("Notification_paymentPlan", fields: [paymentPlanId], references: [id])
-  paymentPlanId String?      @map("paymentPlan")
-  workOrder     WorkOrder?   @relation("Notification_workOrder", fields: [workOrderId], references: [id])
-  workOrderId   String?      @map("workOrder")
-  link          String       @default("")
-  handled       Boolean      @default(false)
-  notifyRoles   String       @default("[]")
-
-  @@index([paymentPlanId])
-  @@index([workOrderId])
+  id          String    @id @default(cuid())
+  date        DateTime? @default(now())
+  message     String    @default("")
+  link        String    @default("")
+  handled     Boolean   @default(false)
+  notifyRoles String    @default("[]")
 }
 
 model SoftwareVersion {
@@ -324,4 +208,10 @@ model SoftwareVersion {
   windowsLink String    @default("")
   macLink     String    @default("")
   date        DateTime? @default(now())
+}
+
+model Config {
+  id                 Int     @id
+  defaultCurrency    String  @default("TRY")
+  extraFieldsProduct String?
 }

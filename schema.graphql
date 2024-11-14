@@ -3,26 +3,17 @@
 
 type User {
   id: ID!
+  name: String
   username: String
   email: String
   isBlocked: Boolean
   phone: String
-  firstname: String
-  lastname: String
   role: String
   permissions: [UserPermissionType!]
   ssid: String
   password: PasswordState
-  qcWorkOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
-  qcWorkOrdersCount(where: WorkOrderWhereInput! = {}): Int
-  workOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
-  workOrdersCount(where: WorkOrderWhereInput! = {}): Int
-  clientOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
-  clientOrdersCount(where: WorkOrderWhereInput! = {}): Int
-  applicationsToApply(where: ApplicationWhereInput! = {}, orderBy: [ApplicationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationWhereUniqueInput): [Application!]
-  applicationsToApplyCount(where: ApplicationWhereInput! = {}): Int
-  applications(where: ApplicationWhereInput! = {}, orderBy: [ApplicationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationWhereUniqueInput): [Application!]
-  applicationsCount(where: ApplicationWhereInput! = {}): Int
+  operations(where: OperationWhereInput! = {}, orderBy: [OperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OperationWhereUniqueInput): [Operation!]
+  operationsCount(where: OperationWhereInput! = {}): Int
   notes(where: NoteWhereInput! = {}, orderBy: [NoteOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NoteWhereUniqueInput): [Note!]
   notesCount(where: NoteWhereInput! = {}): Int
   documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
@@ -31,6 +22,7 @@ type User {
   customerDocumentsCount(where: DocumentWhereInput! = {}): Int
   customerMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   customerMovementsCount(where: StockMovementWhereInput! = {}): Int
+  extraFields: JSON
 }
 
 enum UserPermissionType {
@@ -53,19 +45,14 @@ input UserWhereInput {
   OR: [UserWhereInput!]
   NOT: [UserWhereInput!]
   id: IDFilter
+  name: StringFilter
   username: StringFilter
   email: StringFilter
   isBlocked: BooleanFilter
   phone: StringFilter
-  firstname: StringFilter
-  lastname: StringFilter
   role: StringFilter
   ssid: StringFilter
-  qcWorkOrders: WorkOrderManyRelationFilter
-  workOrders: WorkOrderManyRelationFilter
-  clientOrders: WorkOrderManyRelationFilter
-  applicationsToApply: ApplicationManyRelationFilter
-  applications: ApplicationManyRelationFilter
+  operations: OperationManyRelationFilter
   notes: NoteManyRelationFilter
   documents: DocumentManyRelationFilter
   customerDocuments: DocumentManyRelationFilter
@@ -116,16 +103,10 @@ input BooleanFilter {
   not: BooleanFilter
 }
 
-input WorkOrderManyRelationFilter {
-  every: WorkOrderWhereInput
-  some: WorkOrderWhereInput
-  none: WorkOrderWhereInput
-}
-
-input ApplicationManyRelationFilter {
-  every: ApplicationWhereInput
-  some: ApplicationWhereInput
-  none: ApplicationWhereInput
+input OperationManyRelationFilter {
+  every: OperationWhereInput
+  some: OperationWhereInput
+  none: OperationWhereInput
 }
 
 input NoteManyRelationFilter {
@@ -148,12 +129,11 @@ input StockMovementManyRelationFilter {
 
 input UserOrderByInput {
   id: OrderDirection
+  name: OrderDirection
   username: OrderDirection
   email: OrderDirection
   isBlocked: OrderDirection
   phone: OrderDirection
-  firstname: OrderDirection
-  lastname: OrderDirection
   role: OrderDirection
   ssid: OrderDirection
 }
@@ -164,39 +144,28 @@ enum OrderDirection {
 }
 
 input UserUpdateInput {
+  name: String
   username: String
   email: String
   isBlocked: Boolean
   phone: String
-  firstname: String
-  lastname: String
   role: String
   permissions: [UserPermissionType!]
   ssid: String
   password: String
-  qcWorkOrders: WorkOrderRelateToManyForUpdateInput
-  workOrders: WorkOrderRelateToManyForUpdateInput
-  clientOrders: WorkOrderRelateToManyForUpdateInput
-  applicationsToApply: ApplicationRelateToManyForUpdateInput
-  applications: ApplicationRelateToManyForUpdateInput
+  operations: OperationRelateToManyForUpdateInput
   notes: NoteRelateToManyForUpdateInput
   documents: DocumentRelateToManyForUpdateInput
   customerDocuments: DocumentRelateToManyForUpdateInput
   customerMovements: StockMovementRelateToManyForUpdateInput
+  extraFields: JSON
 }
 
-input WorkOrderRelateToManyForUpdateInput {
-  disconnect: [WorkOrderWhereUniqueInput!]
-  set: [WorkOrderWhereUniqueInput!]
-  create: [WorkOrderCreateInput!]
-  connect: [WorkOrderWhereUniqueInput!]
-}
-
-input ApplicationRelateToManyForUpdateInput {
-  disconnect: [ApplicationWhereUniqueInput!]
-  set: [ApplicationWhereUniqueInput!]
-  create: [ApplicationCreateInput!]
-  connect: [ApplicationWhereUniqueInput!]
+input OperationRelateToManyForUpdateInput {
+  disconnect: [OperationWhereUniqueInput!]
+  set: [OperationWhereUniqueInput!]
+  create: [OperationCreateInput!]
+  connect: [OperationWhereUniqueInput!]
 }
 
 input NoteRelateToManyForUpdateInput {
@@ -226,35 +195,26 @@ input UserUpdateArgs {
 }
 
 input UserCreateInput {
+  name: String
   username: String
   email: String
   isBlocked: Boolean
   phone: String
-  firstname: String
-  lastname: String
   role: String
   permissions: [UserPermissionType!]
   ssid: String
   password: String
-  qcWorkOrders: WorkOrderRelateToManyForCreateInput
-  workOrders: WorkOrderRelateToManyForCreateInput
-  clientOrders: WorkOrderRelateToManyForCreateInput
-  applicationsToApply: ApplicationRelateToManyForCreateInput
-  applications: ApplicationRelateToManyForCreateInput
+  operations: OperationRelateToManyForCreateInput
   notes: NoteRelateToManyForCreateInput
   documents: DocumentRelateToManyForCreateInput
   customerDocuments: DocumentRelateToManyForCreateInput
   customerMovements: StockMovementRelateToManyForCreateInput
+  extraFields: JSON
 }
 
-input WorkOrderRelateToManyForCreateInput {
-  create: [WorkOrderCreateInput!]
-  connect: [WorkOrderWhereUniqueInput!]
-}
-
-input ApplicationRelateToManyForCreateInput {
-  create: [ApplicationCreateInput!]
-  connect: [ApplicationWhereUniqueInput!]
+input OperationRelateToManyForCreateInput {
+  create: [OperationCreateInput!]
+  connect: [OperationWhereUniqueInput!]
 }
 
 input NoteRelateToManyForCreateInput {
@@ -275,8 +235,8 @@ input StockMovementRelateToManyForCreateInput {
 type Note {
   id: ID!
   note: String
-  workOrder: WorkOrder
   creator: User
+  extraFields: JSON
 }
 
 input NoteWhereUniqueInput {
@@ -289,7 +249,6 @@ input NoteWhereInput {
   NOT: [NoteWhereInput!]
   id: IDFilter
   note: StringFilter
-  workOrder: WorkOrderWhereInput
   creator: UserWhereInput
 }
 
@@ -300,14 +259,8 @@ input NoteOrderByInput {
 
 input NoteUpdateInput {
   note: String
-  workOrder: WorkOrderRelateToOneForUpdateInput
   creator: UserRelateToOneForUpdateInput
-}
-
-input WorkOrderRelateToOneForUpdateInput {
-  create: WorkOrderCreateInput
-  connect: WorkOrderWhereUniqueInput
-  disconnect: Boolean
+  extraFields: JSON
 }
 
 input UserRelateToOneForUpdateInput {
@@ -323,13 +276,8 @@ input NoteUpdateArgs {
 
 input NoteCreateInput {
   note: String
-  workOrder: WorkOrderRelateToOneForCreateInput
   creator: UserRelateToOneForCreateInput
-}
-
-input WorkOrderRelateToOneForCreateInput {
-  create: WorkOrderCreateInput
-  connect: WorkOrderWhereUniqueInput
+  extraFields: JSON
 }
 
 input UserRelateToOneForCreateInput {
@@ -341,9 +289,9 @@ type File {
   id: ID!
   name: String
   url: String
-  application: Application
-  workOrder: WorkOrder
-  product: Product
+  operation: Operation
+  material: Material
+  extraFields: JSON
 }
 
 input FileWhereUniqueInput {
@@ -357,9 +305,8 @@ input FileWhereInput {
   id: IDFilter
   name: StringFilter
   url: StringFilter
-  application: ApplicationWhereInput
-  workOrder: WorkOrderWhereInput
-  product: ProductWhereInput
+  operation: OperationWhereInput
+  material: MaterialWhereInput
 }
 
 input FileOrderByInput {
@@ -371,20 +318,20 @@ input FileOrderByInput {
 input FileUpdateInput {
   name: String
   url: String
-  application: ApplicationRelateToOneForUpdateInput
-  workOrder: WorkOrderRelateToOneForUpdateInput
-  product: ProductRelateToOneForUpdateInput
+  operation: OperationRelateToOneForUpdateInput
+  material: MaterialRelateToOneForUpdateInput
+  extraFields: JSON
 }
 
-input ApplicationRelateToOneForUpdateInput {
-  create: ApplicationCreateInput
-  connect: ApplicationWhereUniqueInput
+input OperationRelateToOneForUpdateInput {
+  create: OperationCreateInput
+  connect: OperationWhereUniqueInput
   disconnect: Boolean
 }
 
-input ProductRelateToOneForUpdateInput {
-  create: ProductCreateInput
-  connect: ProductWhereUniqueInput
+input MaterialRelateToOneForUpdateInput {
+  create: MaterialCreateInput
+  connect: MaterialWhereUniqueInput
   disconnect: Boolean
 }
 
@@ -396,19 +343,19 @@ input FileUpdateArgs {
 input FileCreateInput {
   name: String
   url: String
-  application: ApplicationRelateToOneForCreateInput
-  workOrder: WorkOrderRelateToOneForCreateInput
-  product: ProductRelateToOneForCreateInput
+  operation: OperationRelateToOneForCreateInput
+  material: MaterialRelateToOneForCreateInput
+  extraFields: JSON
 }
 
-input ApplicationRelateToOneForCreateInput {
-  create: ApplicationCreateInput
-  connect: ApplicationWhereUniqueInput
+input OperationRelateToOneForCreateInput {
+  create: OperationCreateInput
+  connect: OperationWhereUniqueInput
 }
 
-input ProductRelateToOneForCreateInput {
-  create: ProductCreateInput
-  connect: ProductWhereUniqueInput
+input MaterialRelateToOneForCreateInput {
+  create: MaterialCreateInput
+  connect: MaterialWhereUniqueInput
 }
 
 type Document {
@@ -420,11 +367,13 @@ type Document {
   customer: User
   reduction: Float
   isDeleted: Boolean
-  number: String
-  invoiced: Boolean
+  fromDocument: Document
+  toDocument: Document
   products(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   productsCount(where: DocumentProductWhereInput! = {}): Int
-  paymentPlan: PaymentPlan
+  payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
+  paymentsCount(where: PaymentWhereInput! = {}): Int
+  extraFields: JSON
 }
 
 scalar DateTime @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc3339#section-5.6")
@@ -444,10 +393,10 @@ input DocumentWhereInput {
   customer: UserWhereInput
   reduction: FloatNullableFilter
   isDeleted: BooleanFilter
-  number: StringFilter
-  invoiced: BooleanFilter
+  fromDocument: DocumentWhereInput
+  toDocument: DocumentWhereInput
   products: DocumentProductManyRelationFilter
-  paymentPlan: PaymentPlanWhereInput
+  payments: PaymentManyRelationFilter
 }
 
 input DateTimeNullableFilter {
@@ -478,14 +427,18 @@ input DocumentProductManyRelationFilter {
   none: DocumentProductWhereInput
 }
 
+input PaymentManyRelationFilter {
+  every: PaymentWhereInput
+  some: PaymentWhereInput
+  none: PaymentWhereInput
+}
+
 input DocumentOrderByInput {
   id: OrderDirection
   createdAt: OrderDirection
   documentType: OrderDirection
   reduction: OrderDirection
   isDeleted: OrderDirection
-  number: OrderDirection
-  invoiced: OrderDirection
 }
 
 input DocumentUpdateInput {
@@ -495,10 +448,17 @@ input DocumentUpdateInput {
   customer: UserRelateToOneForUpdateInput
   reduction: Float
   isDeleted: Boolean
-  number: String
-  invoiced: Boolean
+  fromDocument: DocumentRelateToOneForUpdateInput
+  toDocument: DocumentRelateToOneForUpdateInput
   products: DocumentProductRelateToManyForUpdateInput
-  paymentPlan: PaymentPlanRelateToOneForUpdateInput
+  payments: PaymentRelateToManyForUpdateInput
+  extraFields: JSON
+}
+
+input DocumentRelateToOneForUpdateInput {
+  create: DocumentCreateInput
+  connect: DocumentWhereUniqueInput
+  disconnect: Boolean
 }
 
 input DocumentProductRelateToManyForUpdateInput {
@@ -508,10 +468,11 @@ input DocumentProductRelateToManyForUpdateInput {
   connect: [DocumentProductWhereUniqueInput!]
 }
 
-input PaymentPlanRelateToOneForUpdateInput {
-  create: PaymentPlanCreateInput
-  connect: PaymentPlanWhereUniqueInput
-  disconnect: Boolean
+input PaymentRelateToManyForUpdateInput {
+  disconnect: [PaymentWhereUniqueInput!]
+  set: [PaymentWhereUniqueInput!]
+  create: [PaymentCreateInput!]
+  connect: [PaymentWhereUniqueInput!]
 }
 
 input DocumentUpdateArgs {
@@ -526,10 +487,16 @@ input DocumentCreateInput {
   customer: UserRelateToOneForCreateInput
   reduction: Float
   isDeleted: Boolean
-  number: String
-  invoiced: Boolean
+  fromDocument: DocumentRelateToOneForCreateInput
+  toDocument: DocumentRelateToOneForCreateInput
   products: DocumentProductRelateToManyForCreateInput
-  paymentPlan: PaymentPlanRelateToOneForCreateInput
+  payments: PaymentRelateToManyForCreateInput
+  extraFields: JSON
+}
+
+input DocumentRelateToOneForCreateInput {
+  create: DocumentCreateInput
+  connect: DocumentWhereUniqueInput
 }
 
 input DocumentProductRelateToManyForCreateInput {
@@ -537,9 +504,9 @@ input DocumentProductRelateToManyForCreateInput {
   connect: [DocumentProductWhereUniqueInput!]
 }
 
-input PaymentPlanRelateToOneForCreateInput {
-  create: PaymentPlanCreateInput
-  connect: PaymentPlanWhereUniqueInput
+input PaymentRelateToManyForCreateInput {
+  create: [PaymentCreateInput!]
+  connect: [PaymentWhereUniqueInput!]
 }
 
 type DocumentProduct {
@@ -547,10 +514,11 @@ type DocumentProduct {
   amount: Float
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
-  product: Product
+  product: Material
   price: Float
   total: Float
   document: Document
+  extraFields: JSON
 }
 
 input DocumentProductWhereUniqueInput {
@@ -564,7 +532,7 @@ input DocumentProductWhereInput {
   id: IDFilter
   amount: FloatFilter
   stockMovements: StockMovementManyRelationFilter
-  product: ProductWhereInput
+  product: MaterialWhereInput
   price: FloatFilter
   document: DocumentWhereInput
 }
@@ -589,15 +557,10 @@ input DocumentProductOrderByInput {
 input DocumentProductUpdateInput {
   amount: Float
   stockMovements: StockMovementRelateToManyForUpdateInput
-  product: ProductRelateToOneForUpdateInput
+  product: MaterialRelateToOneForUpdateInput
   price: Float
   document: DocumentRelateToOneForUpdateInput
-}
-
-input DocumentRelateToOneForUpdateInput {
-  create: DocumentCreateInput
-  connect: DocumentWhereUniqueInput
-  disconnect: Boolean
+  extraFields: JSON
 }
 
 input DocumentProductUpdateArgs {
@@ -608,186 +571,16 @@ input DocumentProductUpdateArgs {
 input DocumentProductCreateInput {
   amount: Float
   stockMovements: StockMovementRelateToManyForCreateInput
-  product: ProductRelateToOneForCreateInput
+  product: MaterialRelateToOneForCreateInput
   price: Float
   document: DocumentRelateToOneForCreateInput
+  extraFields: JSON
 }
 
-input DocumentRelateToOneForCreateInput {
-  create: DocumentCreateInput
-  connect: DocumentWhereUniqueInput
-}
-
-type WorkOrder {
+type Operation {
   id: ID!
-  creator: User
-  createdAt: DateTime
-  images(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
-  imagesCount(where: FileWhereInput! = {}): Int
-  notes(where: NoteWhereInput! = {}, orderBy: [NoteOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NoteWhereUniqueInput): [Note!]
-  notesCount(where: NoteWhereInput! = {}): Int
-  status: String
-  reduction: Float
-  paymentPlan: PaymentPlan
-  qcDone: Boolean
-  qcUser: User
-  checkDate: DateTime
-  checkDone: Boolean
-  notifications(where: NotificationWhereInput! = {}, orderBy: [NotificationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationWhereUniqueInput): [Notification!]
-  notificationsCount(where: NotificationWhereInput! = {}): Int
-  startedAt: String
-  finishedAt: String
-  car: Car
-  customer: User
-  value: Float
-  total: Float
-  applications(where: ApplicationWhereInput! = {}, orderBy: [ApplicationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationWhereUniqueInput): [Application!]
-  applicationsCount(where: ApplicationWhereInput! = {}): Int
-}
-
-input WorkOrderWhereUniqueInput {
-  id: ID
-}
-
-input WorkOrderWhereInput {
-  AND: [WorkOrderWhereInput!]
-  OR: [WorkOrderWhereInput!]
-  NOT: [WorkOrderWhereInput!]
-  id: IDFilter
-  creator: UserWhereInput
-  createdAt: DateTimeNullableFilter
-  images: FileManyRelationFilter
-  notes: NoteManyRelationFilter
-  status: StringNullableFilter
-  reduction: FloatNullableFilter
-  paymentPlan: PaymentPlanWhereInput
-  qcDone: BooleanFilter
-  qcUser: UserWhereInput
-  checkDate: DateTimeNullableFilter
-  checkDone: BooleanFilter
-  notifications: NotificationManyRelationFilter
-  car: CarWhereInput
-  customer: UserWhereInput
-  applications: ApplicationManyRelationFilter
-}
-
-input FileManyRelationFilter {
-  every: FileWhereInput
-  some: FileWhereInput
-  none: FileWhereInput
-}
-
-input StringNullableFilter {
-  equals: String
-  in: [String!]
-  notIn: [String!]
-  lt: String
-  lte: String
-  gt: String
-  gte: String
-  contains: String
-  startsWith: String
-  endsWith: String
-  not: StringNullableFilter
-}
-
-input NotificationManyRelationFilter {
-  every: NotificationWhereInput
-  some: NotificationWhereInput
-  none: NotificationWhereInput
-}
-
-input WorkOrderOrderByInput {
-  id: OrderDirection
-  createdAt: OrderDirection
-  status: OrderDirection
-  reduction: OrderDirection
-  qcDone: OrderDirection
-  checkDate: OrderDirection
-  checkDone: OrderDirection
-}
-
-input WorkOrderUpdateInput {
-  creator: UserRelateToOneForUpdateInput
-  createdAt: DateTime
-  images: FileRelateToManyForUpdateInput
-  notes: NoteRelateToManyForUpdateInput
-  status: String
-  reduction: Float
-  paymentPlan: PaymentPlanRelateToOneForUpdateInput
-  qcDone: Boolean
-  qcUser: UserRelateToOneForUpdateInput
-  checkDate: DateTime
-  checkDone: Boolean
-  notifications: NotificationRelateToManyForUpdateInput
-  car: CarRelateToOneForUpdateInput
-  customer: UserRelateToOneForUpdateInput
-  applications: ApplicationRelateToManyForUpdateInput
-}
-
-input FileRelateToManyForUpdateInput {
-  disconnect: [FileWhereUniqueInput!]
-  set: [FileWhereUniqueInput!]
-  create: [FileCreateInput!]
-  connect: [FileWhereUniqueInput!]
-}
-
-input NotificationRelateToManyForUpdateInput {
-  disconnect: [NotificationWhereUniqueInput!]
-  set: [NotificationWhereUniqueInput!]
-  create: [NotificationCreateInput!]
-  connect: [NotificationWhereUniqueInput!]
-}
-
-input CarRelateToOneForUpdateInput {
-  create: CarCreateInput
-  connect: CarWhereUniqueInput
-  disconnect: Boolean
-}
-
-input WorkOrderUpdateArgs {
-  where: WorkOrderWhereUniqueInput!
-  data: WorkOrderUpdateInput!
-}
-
-input WorkOrderCreateInput {
-  creator: UserRelateToOneForCreateInput
-  createdAt: DateTime
-  images: FileRelateToManyForCreateInput
-  notes: NoteRelateToManyForCreateInput
-  status: String
-  reduction: Float
-  paymentPlan: PaymentPlanRelateToOneForCreateInput
-  qcDone: Boolean
-  qcUser: UserRelateToOneForCreateInput
-  checkDate: DateTime
-  checkDone: Boolean
-  notifications: NotificationRelateToManyForCreateInput
-  car: CarRelateToOneForCreateInput
-  customer: UserRelateToOneForCreateInput
-  applications: ApplicationRelateToManyForCreateInput
-}
-
-input FileRelateToManyForCreateInput {
-  create: [FileCreateInput!]
-  connect: [FileWhereUniqueInput!]
-}
-
-input NotificationRelateToManyForCreateInput {
-  create: [NotificationCreateInput!]
-  connect: [NotificationWhereUniqueInput!]
-}
-
-input CarRelateToOneForCreateInput {
-  create: CarCreateInput
-  connect: CarWhereUniqueInput
-}
-
-type Application {
-  id: ID!
-  workOrder: WorkOrder
-  images(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
-  imagesCount(where: FileWhereInput! = {}): Int
+  files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
+  filesCount(where: FileWhereInput! = {}): Int
   startedAt: DateTime
   finishedAt: DateTime
   name: String
@@ -796,26 +589,21 @@ type Application {
   price: Float
   amount: Float
   wastage: Float
-  location: ApplicationLocation
-  product: Product
-  applicant: User
+  material: Material
   creator: User
-  type: ApplicationType
-  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
-  stockMovementsCount(where: StockMovementWhereInput! = {}): Int
+  extraFields: JSON
 }
 
-input ApplicationWhereUniqueInput {
+input OperationWhereUniqueInput {
   id: ID
 }
 
-input ApplicationWhereInput {
-  AND: [ApplicationWhereInput!]
-  OR: [ApplicationWhereInput!]
-  NOT: [ApplicationWhereInput!]
+input OperationWhereInput {
+  AND: [OperationWhereInput!]
+  OR: [OperationWhereInput!]
+  NOT: [OperationWhereInput!]
   id: IDFilter
-  workOrder: WorkOrderWhereInput
-  images: FileManyRelationFilter
+  files: FileManyRelationFilter
   startedAt: DateTimeNullableFilter
   finishedAt: DateTimeNullableFilter
   name: StringFilter
@@ -823,15 +611,17 @@ input ApplicationWhereInput {
   value: FloatFilter
   amount: FloatFilter
   wastage: FloatNullableFilter
-  location: ApplicationLocationWhereInput
-  product: ProductWhereInput
-  applicant: UserWhereInput
+  material: MaterialWhereInput
   creator: UserWhereInput
-  type: ApplicationTypeWhereInput
-  stockMovements: StockMovementManyRelationFilter
 }
 
-input ApplicationOrderByInput {
+input FileManyRelationFilter {
+  every: FileWhereInput
+  some: FileWhereInput
+  none: FileWhereInput
+}
+
+input OperationOrderByInput {
   id: OrderDirection
   startedAt: OrderDirection
   finishedAt: OrderDirection
@@ -842,9 +632,8 @@ input ApplicationOrderByInput {
   wastage: OrderDirection
 }
 
-input ApplicationUpdateInput {
-  workOrder: WorkOrderRelateToOneForUpdateInput
-  images: FileRelateToManyForUpdateInput
+input OperationUpdateInput {
+  files: FileRelateToManyForUpdateInput
   startedAt: DateTime
   finishedAt: DateTime
   name: String
@@ -852,34 +641,25 @@ input ApplicationUpdateInput {
   value: Float
   amount: Float
   wastage: Float
-  location: ApplicationLocationRelateToOneForUpdateInput
-  product: ProductRelateToOneForUpdateInput
-  applicant: UserRelateToOneForUpdateInput
+  material: MaterialRelateToOneForUpdateInput
   creator: UserRelateToOneForUpdateInput
-  type: ApplicationTypeRelateToOneForUpdateInput
-  stockMovements: StockMovementRelateToManyForUpdateInput
+  extraFields: JSON
 }
 
-input ApplicationLocationRelateToOneForUpdateInput {
-  create: ApplicationLocationCreateInput
-  connect: ApplicationLocationWhereUniqueInput
-  disconnect: Boolean
+input FileRelateToManyForUpdateInput {
+  disconnect: [FileWhereUniqueInput!]
+  set: [FileWhereUniqueInput!]
+  create: [FileCreateInput!]
+  connect: [FileWhereUniqueInput!]
 }
 
-input ApplicationTypeRelateToOneForUpdateInput {
-  create: ApplicationTypeCreateInput
-  connect: ApplicationTypeWhereUniqueInput
-  disconnect: Boolean
+input OperationUpdateArgs {
+  where: OperationWhereUniqueInput!
+  data: OperationUpdateInput!
 }
 
-input ApplicationUpdateArgs {
-  where: ApplicationWhereUniqueInput!
-  data: ApplicationUpdateInput!
-}
-
-input ApplicationCreateInput {
-  workOrder: WorkOrderRelateToOneForCreateInput
-  images: FileRelateToManyForCreateInput
+input OperationCreateInput {
+  files: FileRelateToManyForCreateInput
   startedAt: DateTime
   finishedAt: DateTime
   name: String
@@ -887,178 +667,71 @@ input ApplicationCreateInput {
   value: Float
   amount: Float
   wastage: Float
-  location: ApplicationLocationRelateToOneForCreateInput
-  product: ProductRelateToOneForCreateInput
-  applicant: UserRelateToOneForCreateInput
+  material: MaterialRelateToOneForCreateInput
   creator: UserRelateToOneForCreateInput
-  type: ApplicationTypeRelateToOneForCreateInput
-  stockMovements: StockMovementRelateToManyForCreateInput
+  extraFields: JSON
 }
 
-input ApplicationLocationRelateToOneForCreateInput {
-  create: ApplicationLocationCreateInput
-  connect: ApplicationLocationWhereUniqueInput
+input FileRelateToManyForCreateInput {
+  create: [FileCreateInput!]
+  connect: [FileWhereUniqueInput!]
 }
 
-input ApplicationTypeRelateToOneForCreateInput {
-  create: ApplicationTypeCreateInput
-  connect: ApplicationTypeWhereUniqueInput
-}
-
-type ApplicationType {
-  id: ID!
-  name: String
-  applications(where: ApplicationWhereInput! = {}, orderBy: [ApplicationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationWhereUniqueInput): [Application!]
-  applicationsCount(where: ApplicationWhereInput! = {}): Int
-  products(where: ProductWhereInput! = {}, orderBy: [ProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductWhereUniqueInput): [Product!]
-  productsCount(where: ProductWhereInput! = {}): Int
-  locations(where: ApplicationLocationWhereInput! = {}, orderBy: [ApplicationLocationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationLocationWhereUniqueInput): [ApplicationLocation!]
-  locationsCount(where: ApplicationLocationWhereInput! = {}): Int
-}
-
-input ApplicationTypeWhereUniqueInput {
-  id: ID
-}
-
-input ApplicationTypeWhereInput {
-  AND: [ApplicationTypeWhereInput!]
-  OR: [ApplicationTypeWhereInput!]
-  NOT: [ApplicationTypeWhereInput!]
-  id: IDFilter
-  name: StringFilter
-  applications: ApplicationManyRelationFilter
-  products: ProductManyRelationFilter
-  locations: ApplicationLocationManyRelationFilter
-}
-
-input ProductManyRelationFilter {
-  every: ProductWhereInput
-  some: ProductWhereInput
-  none: ProductWhereInput
-}
-
-input ApplicationLocationManyRelationFilter {
-  every: ApplicationLocationWhereInput
-  some: ApplicationLocationWhereInput
-  none: ApplicationLocationWhereInput
-}
-
-input ApplicationTypeOrderByInput {
-  id: OrderDirection
-  name: OrderDirection
-}
-
-input ApplicationTypeUpdateInput {
-  name: String
-  applications: ApplicationRelateToManyForUpdateInput
-  products: ProductRelateToManyForUpdateInput
-  locations: ApplicationLocationRelateToManyForUpdateInput
-}
-
-input ProductRelateToManyForUpdateInput {
-  disconnect: [ProductWhereUniqueInput!]
-  set: [ProductWhereUniqueInput!]
-  create: [ProductCreateInput!]
-  connect: [ProductWhereUniqueInput!]
-}
-
-input ApplicationLocationRelateToManyForUpdateInput {
-  disconnect: [ApplicationLocationWhereUniqueInput!]
-  set: [ApplicationLocationWhereUniqueInput!]
-  create: [ApplicationLocationCreateInput!]
-  connect: [ApplicationLocationWhereUniqueInput!]
-}
-
-input ApplicationTypeUpdateArgs {
-  where: ApplicationTypeWhereUniqueInput!
-  data: ApplicationTypeUpdateInput!
-}
-
-input ApplicationTypeCreateInput {
-  name: String
-  applications: ApplicationRelateToManyForCreateInput
-  products: ProductRelateToManyForCreateInput
-  locations: ApplicationLocationRelateToManyForCreateInput
-}
-
-input ProductRelateToManyForCreateInput {
-  create: [ProductCreateInput!]
-  connect: [ProductWhereUniqueInput!]
-}
-
-input ApplicationLocationRelateToManyForCreateInput {
-  create: [ApplicationLocationCreateInput!]
-  connect: [ApplicationLocationWhereUniqueInput!]
-}
-
-type Product {
+type Material {
   id: ID!
   name: String
   description: String
   price: Float
   currentStock: Int
   status: String
-  images(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
-  imagesCount(where: FileWhereInput! = {}): Int
+  files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
+  filesCount(where: FileWhereInput! = {}): Int
   code: String
   ean: String
-  productBrand: ProductBrand
+  brand: Brand
+  suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
+  suppliersCount(where: SupplierWhereInput! = {}): Int
   pricedBy: String
-  applications(where: ApplicationWhereInput! = {}, orderBy: [ApplicationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationWhereUniqueInput): [Application!]
-  applicationsCount(where: ApplicationWhereInput! = {}): Int
-  applicationType: ApplicationType
+  operations(where: OperationWhereInput! = {}, orderBy: [OperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OperationWhereUniqueInput): [Operation!]
+  operationsCount(where: OperationWhereInput! = {}): Int
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
-  warrantyType: String
-  warrantyTimeScale: String
-  warrantyTime: Float
-  color: String
-  width: Float
-  length: Float
-  height: Float
-  depth: Float
-  weight: Float
-  thickness: Float
   extraFields: JSON
 }
 
-input ProductWhereUniqueInput {
+input MaterialWhereUniqueInput {
   id: ID
 }
 
-input ProductWhereInput {
-  AND: [ProductWhereInput!]
-  OR: [ProductWhereInput!]
-  NOT: [ProductWhereInput!]
+input MaterialWhereInput {
+  AND: [MaterialWhereInput!]
+  OR: [MaterialWhereInput!]
+  NOT: [MaterialWhereInput!]
   id: IDFilter
   name: StringFilter
   description: StringFilter
   price: FloatFilter
   status: StringFilter
-  images: FileManyRelationFilter
+  files: FileManyRelationFilter
   code: StringFilter
   ean: StringFilter
-  productBrand: ProductBrandWhereInput
+  brand: BrandWhereInput
+  suppliers: SupplierManyRelationFilter
   pricedBy: StringFilter
-  applications: ApplicationManyRelationFilter
-  applicationType: ApplicationTypeWhereInput
+  operations: OperationManyRelationFilter
   stockMovements: StockMovementManyRelationFilter
   documentProducts: DocumentProductManyRelationFilter
-  warrantyType: StringFilter
-  warrantyTimeScale: StringFilter
-  warrantyTime: FloatNullableFilter
-  color: StringFilter
-  width: FloatNullableFilter
-  length: FloatNullableFilter
-  height: FloatNullableFilter
-  depth: FloatNullableFilter
-  weight: FloatNullableFilter
-  thickness: FloatNullableFilter
 }
 
-input ProductOrderByInput {
+input SupplierManyRelationFilter {
+  every: SupplierWhereInput
+  some: SupplierWhereInput
+  none: SupplierWhereInput
+}
+
+input MaterialOrderByInput {
   id: OrderDirection
   name: OrderDirection
   description: OrderDirection
@@ -1067,86 +740,68 @@ input ProductOrderByInput {
   code: OrderDirection
   ean: OrderDirection
   pricedBy: OrderDirection
-  warrantyType: OrderDirection
-  warrantyTimeScale: OrderDirection
-  warrantyTime: OrderDirection
-  color: OrderDirection
-  width: OrderDirection
-  length: OrderDirection
-  height: OrderDirection
-  depth: OrderDirection
-  weight: OrderDirection
-  thickness: OrderDirection
 }
 
-input ProductUpdateInput {
+input MaterialUpdateInput {
   name: String
   description: String
   price: Float
   status: String
-  images: FileRelateToManyForUpdateInput
+  files: FileRelateToManyForUpdateInput
   code: String
   ean: String
-  productBrand: ProductBrandRelateToOneForUpdateInput
+  brand: BrandRelateToOneForUpdateInput
+  suppliers: SupplierRelateToManyForUpdateInput
   pricedBy: String
-  applications: ApplicationRelateToManyForUpdateInput
-  applicationType: ApplicationTypeRelateToOneForUpdateInput
+  operations: OperationRelateToManyForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
-  warrantyType: String
-  warrantyTimeScale: String
-  warrantyTime: Float
-  color: String
-  width: Float
-  length: Float
-  height: Float
-  depth: Float
-  weight: Float
-  thickness: Float
   extraFields: JSON
 }
 
-input ProductBrandRelateToOneForUpdateInput {
-  create: ProductBrandCreateInput
-  connect: ProductBrandWhereUniqueInput
+input BrandRelateToOneForUpdateInput {
+  create: BrandCreateInput
+  connect: BrandWhereUniqueInput
   disconnect: Boolean
 }
 
-input ProductUpdateArgs {
-  where: ProductWhereUniqueInput!
-  data: ProductUpdateInput!
+input SupplierRelateToManyForUpdateInput {
+  disconnect: [SupplierWhereUniqueInput!]
+  set: [SupplierWhereUniqueInput!]
+  create: [SupplierCreateInput!]
+  connect: [SupplierWhereUniqueInput!]
 }
 
-input ProductCreateInput {
+input MaterialUpdateArgs {
+  where: MaterialWhereUniqueInput!
+  data: MaterialUpdateInput!
+}
+
+input MaterialCreateInput {
   name: String
   description: String
   price: Float
   status: String
-  images: FileRelateToManyForCreateInput
+  files: FileRelateToManyForCreateInput
   code: String
   ean: String
-  productBrand: ProductBrandRelateToOneForCreateInput
+  brand: BrandRelateToOneForCreateInput
+  suppliers: SupplierRelateToManyForCreateInput
   pricedBy: String
-  applications: ApplicationRelateToManyForCreateInput
-  applicationType: ApplicationTypeRelateToOneForCreateInput
+  operations: OperationRelateToManyForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput
-  warrantyType: String
-  warrantyTimeScale: String
-  warrantyTime: Float
-  color: String
-  width: Float
-  length: Float
-  height: Float
-  depth: Float
-  weight: Float
-  thickness: Float
   extraFields: JSON
 }
 
-input ProductBrandRelateToOneForCreateInput {
-  create: ProductBrandCreateInput
-  connect: ProductBrandWhereUniqueInput
+input BrandRelateToOneForCreateInput {
+  create: BrandCreateInput
+  connect: BrandWhereUniqueInput
+}
+
+input SupplierRelateToManyForCreateInput {
+  create: [SupplierCreateInput!]
+  connect: [SupplierWhereUniqueInput!]
 }
 
 type Storage {
@@ -1154,6 +809,7 @@ type Storage {
   name: String
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
+  extraFields: JSON
 }
 
 input StorageWhereUniqueInput {
@@ -1177,6 +833,7 @@ input StorageOrderByInput {
 input StorageUpdateInput {
   name: String
   stockMovements: StockMovementRelateToManyForUpdateInput
+  extraFields: JSON
 }
 
 input StorageUpdateArgs {
@@ -1187,11 +844,12 @@ input StorageUpdateArgs {
 input StorageCreateInput {
   name: String
   stockMovements: StockMovementRelateToManyForCreateInput
+  extraFields: JSON
 }
 
 type StockMovement {
   id: ID!
-  product: Product
+  material: Material
   storage: Storage
   amount: Float
   movementType: String
@@ -1199,8 +857,8 @@ type StockMovement {
   note: String
   customer: User
   date: DateTime
-  application: Application
   createdAt: DateTime
+  extraFields: JSON
 }
 
 input StockMovementWhereUniqueInput {
@@ -1212,7 +870,7 @@ input StockMovementWhereInput {
   OR: [StockMovementWhereInput!]
   NOT: [StockMovementWhereInput!]
   id: IDFilter
-  product: ProductWhereInput
+  material: MaterialWhereInput
   storage: StorageWhereInput
   amount: FloatFilter
   movementType: StringFilter
@@ -1220,7 +878,6 @@ input StockMovementWhereInput {
   note: StringFilter
   customer: UserWhereInput
   date: DateTimeNullableFilter
-  application: ApplicationWhereInput
   createdAt: DateTimeNullableFilter
 }
 
@@ -1234,7 +891,7 @@ input StockMovementOrderByInput {
 }
 
 input StockMovementUpdateInput {
-  product: ProductRelateToOneForUpdateInput
+  material: MaterialRelateToOneForUpdateInput
   storage: StorageRelateToOneForUpdateInput
   amount: Float
   movementType: String
@@ -1242,8 +899,8 @@ input StockMovementUpdateInput {
   note: String
   customer: UserRelateToOneForUpdateInput
   date: DateTime
-  application: ApplicationRelateToOneForUpdateInput
   createdAt: DateTime
+  extraFields: JSON
 }
 
 input StorageRelateToOneForUpdateInput {
@@ -1264,7 +921,7 @@ input StockMovementUpdateArgs {
 }
 
 input StockMovementCreateInput {
-  product: ProductRelateToOneForCreateInput
+  material: MaterialRelateToOneForCreateInput
   storage: StorageRelateToOneForCreateInput
   amount: Float
   movementType: String
@@ -1272,8 +929,8 @@ input StockMovementCreateInput {
   note: String
   customer: UserRelateToOneForCreateInput
   date: DateTime
-  application: ApplicationRelateToOneForCreateInput
   createdAt: DateTime
+  extraFields: JSON
 }
 
 input StorageRelateToOneForCreateInput {
@@ -1286,403 +943,119 @@ input DocumentProductRelateToOneForCreateInput {
   connect: DocumentProductWhereUniqueInput
 }
 
-type ProductBrand {
+type Supplier {
   id: ID!
   name: String
-  products(where: ProductWhereInput! = {}, orderBy: [ProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductWhereUniqueInput): [Product!]
-  productsCount(where: ProductWhereInput! = {}): Int
+  materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
+  materialsCount(where: MaterialWhereInput! = {}): Int
+  extraFields: JSON
 }
 
-input ProductBrandWhereUniqueInput {
+input SupplierWhereUniqueInput {
   id: ID
 }
 
-input ProductBrandWhereInput {
-  AND: [ProductBrandWhereInput!]
-  OR: [ProductBrandWhereInput!]
-  NOT: [ProductBrandWhereInput!]
+input SupplierWhereInput {
+  AND: [SupplierWhereInput!]
+  OR: [SupplierWhereInput!]
+  NOT: [SupplierWhereInput!]
   id: IDFilter
   name: StringFilter
-  products: ProductManyRelationFilter
+  materials: MaterialManyRelationFilter
 }
 
-input ProductBrandOrderByInput {
+input MaterialManyRelationFilter {
+  every: MaterialWhereInput
+  some: MaterialWhereInput
+  none: MaterialWhereInput
+}
+
+input SupplierOrderByInput {
   id: OrderDirection
   name: OrderDirection
 }
 
-input ProductBrandUpdateInput {
+input SupplierUpdateInput {
   name: String
-  products: ProductRelateToManyForUpdateInput
+  materials: MaterialRelateToManyForUpdateInput
+  extraFields: JSON
 }
 
-input ProductBrandUpdateArgs {
-  where: ProductBrandWhereUniqueInput!
-  data: ProductBrandUpdateInput!
+input MaterialRelateToManyForUpdateInput {
+  disconnect: [MaterialWhereUniqueInput!]
+  set: [MaterialWhereUniqueInput!]
+  create: [MaterialCreateInput!]
+  connect: [MaterialWhereUniqueInput!]
 }
 
-input ProductBrandCreateInput {
+input SupplierUpdateArgs {
+  where: SupplierWhereUniqueInput!
+  data: SupplierUpdateInput!
+}
+
+input SupplierCreateInput {
   name: String
-  products: ProductRelateToManyForCreateInput
+  materials: MaterialRelateToManyForCreateInput
+  extraFields: JSON
 }
 
-type Car {
+input MaterialRelateToManyForCreateInput {
+  create: [MaterialCreateInput!]
+  connect: [MaterialWhereUniqueInput!]
+}
+
+type Brand {
   id: ID!
-  vin: String
-  carModel: CarModel
-  licensePlate: String
-  workOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
-  workOrdersCount(where: WorkOrderWhereInput! = {}): Int
+  name: String
+  materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
+  materialsCount(where: MaterialWhereInput! = {}): Int
+  extraFields: JSON
 }
 
-input CarWhereUniqueInput {
+input BrandWhereUniqueInput {
   id: ID
 }
 
-input CarWhereInput {
-  AND: [CarWhereInput!]
-  OR: [CarWhereInput!]
-  NOT: [CarWhereInput!]
-  id: IDFilter
-  vin: StringFilter
-  carModel: CarModelWhereInput
-  licensePlate: StringFilter
-  workOrders: WorkOrderManyRelationFilter
-}
-
-input CarOrderByInput {
-  id: OrderDirection
-  vin: OrderDirection
-  licensePlate: OrderDirection
-}
-
-input CarUpdateInput {
-  vin: String
-  carModel: CarModelRelateToOneForUpdateInput
-  licensePlate: String
-  workOrders: WorkOrderRelateToManyForUpdateInput
-}
-
-input CarModelRelateToOneForUpdateInput {
-  create: CarModelCreateInput
-  connect: CarModelWhereUniqueInput
-  disconnect: Boolean
-}
-
-input CarUpdateArgs {
-  where: CarWhereUniqueInput!
-  data: CarUpdateInput!
-}
-
-input CarCreateInput {
-  vin: String
-  carModel: CarModelRelateToOneForCreateInput
-  licensePlate: String
-  workOrders: WorkOrderRelateToManyForCreateInput
-}
-
-input CarModelRelateToOneForCreateInput {
-  create: CarModelCreateInput
-  connect: CarModelWhereUniqueInput
-}
-
-type CarModel {
-  id: ID!
-  name: String
-  cars(where: CarWhereInput! = {}, orderBy: [CarOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CarWhereUniqueInput): [Car!]
-  carsCount(where: CarWhereInput! = {}): Int
-  carBrand: CarBrand
-}
-
-input CarModelWhereUniqueInput {
-  id: ID
-}
-
-input CarModelWhereInput {
-  AND: [CarModelWhereInput!]
-  OR: [CarModelWhereInput!]
-  NOT: [CarModelWhereInput!]
+input BrandWhereInput {
+  AND: [BrandWhereInput!]
+  OR: [BrandWhereInput!]
+  NOT: [BrandWhereInput!]
   id: IDFilter
   name: StringFilter
-  cars: CarManyRelationFilter
-  carBrand: CarBrandWhereInput
+  materials: MaterialManyRelationFilter
 }
 
-input CarManyRelationFilter {
-  every: CarWhereInput
-  some: CarWhereInput
-  none: CarWhereInput
-}
-
-input CarModelOrderByInput {
+input BrandOrderByInput {
   id: OrderDirection
   name: OrderDirection
 }
 
-input CarModelUpdateInput {
+input BrandUpdateInput {
   name: String
-  cars: CarRelateToManyForUpdateInput
-  carBrand: CarBrandRelateToOneForUpdateInput
+  materials: MaterialRelateToManyForUpdateInput
+  extraFields: JSON
 }
 
-input CarRelateToManyForUpdateInput {
-  disconnect: [CarWhereUniqueInput!]
-  set: [CarWhereUniqueInput!]
-  create: [CarCreateInput!]
-  connect: [CarWhereUniqueInput!]
+input BrandUpdateArgs {
+  where: BrandWhereUniqueInput!
+  data: BrandUpdateInput!
 }
 
-input CarBrandRelateToOneForUpdateInput {
-  create: CarBrandCreateInput
-  connect: CarBrandWhereUniqueInput
-  disconnect: Boolean
-}
-
-input CarModelUpdateArgs {
-  where: CarModelWhereUniqueInput!
-  data: CarModelUpdateInput!
-}
-
-input CarModelCreateInput {
+input BrandCreateInput {
   name: String
-  cars: CarRelateToManyForCreateInput
-  carBrand: CarBrandRelateToOneForCreateInput
-}
-
-input CarRelateToManyForCreateInput {
-  create: [CarCreateInput!]
-  connect: [CarWhereUniqueInput!]
-}
-
-input CarBrandRelateToOneForCreateInput {
-  create: CarBrandCreateInput
-  connect: CarBrandWhereUniqueInput
-}
-
-type CarBrand {
-  id: ID!
-  name: String
-  carModels(where: CarModelWhereInput! = {}, orderBy: [CarModelOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CarModelWhereUniqueInput): [CarModel!]
-  carModelsCount(where: CarModelWhereInput! = {}): Int
-}
-
-input CarBrandWhereUniqueInput {
-  id: ID
-}
-
-input CarBrandWhereInput {
-  AND: [CarBrandWhereInput!]
-  OR: [CarBrandWhereInput!]
-  NOT: [CarBrandWhereInput!]
-  id: IDFilter
-  name: StringFilter
-  carModels: CarModelManyRelationFilter
-}
-
-input CarModelManyRelationFilter {
-  every: CarModelWhereInput
-  some: CarModelWhereInput
-  none: CarModelWhereInput
-}
-
-input CarBrandOrderByInput {
-  id: OrderDirection
-  name: OrderDirection
-}
-
-input CarBrandUpdateInput {
-  name: String
-  carModels: CarModelRelateToManyForUpdateInput
-}
-
-input CarModelRelateToManyForUpdateInput {
-  disconnect: [CarModelWhereUniqueInput!]
-  set: [CarModelWhereUniqueInput!]
-  create: [CarModelCreateInput!]
-  connect: [CarModelWhereUniqueInput!]
-}
-
-input CarBrandUpdateArgs {
-  where: CarBrandWhereUniqueInput!
-  data: CarBrandUpdateInput!
-}
-
-input CarBrandCreateInput {
-  name: String
-  carModels: CarModelRelateToManyForCreateInput
-}
-
-input CarModelRelateToManyForCreateInput {
-  create: [CarModelCreateInput!]
-  connect: [CarModelWhereUniqueInput!]
-}
-
-type ApplicationLocation {
-  id: ID!
-  name: String
-  applicationTypes(where: ApplicationTypeWhereInput! = {}, orderBy: [ApplicationTypeOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationTypeWhereUniqueInput): [ApplicationType!]
-  applicationTypesCount(where: ApplicationTypeWhereInput! = {}): Int
-  applications(where: ApplicationWhereInput! = {}, orderBy: [ApplicationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationWhereUniqueInput): [Application!]
-  applicationsCount(where: ApplicationWhereInput! = {}): Int
-}
-
-input ApplicationLocationWhereUniqueInput {
-  id: ID
-}
-
-input ApplicationLocationWhereInput {
-  AND: [ApplicationLocationWhereInput!]
-  OR: [ApplicationLocationWhereInput!]
-  NOT: [ApplicationLocationWhereInput!]
-  id: IDFilter
-  name: StringFilter
-  applicationTypes: ApplicationTypeManyRelationFilter
-  applications: ApplicationManyRelationFilter
-}
-
-input ApplicationTypeManyRelationFilter {
-  every: ApplicationTypeWhereInput
-  some: ApplicationTypeWhereInput
-  none: ApplicationTypeWhereInput
-}
-
-input ApplicationLocationOrderByInput {
-  id: OrderDirection
-  name: OrderDirection
-}
-
-input ApplicationLocationUpdateInput {
-  name: String
-  applicationTypes: ApplicationTypeRelateToManyForUpdateInput
-  applications: ApplicationRelateToManyForUpdateInput
-}
-
-input ApplicationTypeRelateToManyForUpdateInput {
-  disconnect: [ApplicationTypeWhereUniqueInput!]
-  set: [ApplicationTypeWhereUniqueInput!]
-  create: [ApplicationTypeCreateInput!]
-  connect: [ApplicationTypeWhereUniqueInput!]
-}
-
-input ApplicationLocationUpdateArgs {
-  where: ApplicationLocationWhereUniqueInput!
-  data: ApplicationLocationUpdateInput!
-}
-
-input ApplicationLocationCreateInput {
-  name: String
-  applicationTypes: ApplicationTypeRelateToManyForCreateInput
-  applications: ApplicationRelateToManyForCreateInput
-}
-
-input ApplicationTypeRelateToManyForCreateInput {
-  create: [ApplicationTypeCreateInput!]
-  connect: [ApplicationTypeWhereUniqueInput!]
-}
-
-type PaymentPlan {
-  id: ID!
-  name: String
-  workOrder: WorkOrder
-  payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
-  paymentsCount(where: PaymentWhereInput! = {}): Int
-  document: Document
-  periods: Float
-  periodDuration: Float
-  periodPayment: Float
-  periodDurationScale: String
-  total: Float
-  paid: Float
-  toPay: Float
-  nextPaymentDate: String
-  completed: Boolean
-  notifications(where: NotificationWhereInput! = {}, orderBy: [NotificationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationWhereUniqueInput): [Notification!]
-  notificationsCount(where: NotificationWhereInput! = {}): Int
-}
-
-input PaymentPlanWhereUniqueInput {
-  id: ID
-}
-
-input PaymentPlanWhereInput {
-  AND: [PaymentPlanWhereInput!]
-  OR: [PaymentPlanWhereInput!]
-  NOT: [PaymentPlanWhereInput!]
-  id: IDFilter
-  name: StringFilter
-  workOrder: WorkOrderWhereInput
-  payments: PaymentManyRelationFilter
-  document: DocumentWhereInput
-  periods: FloatFilter
-  periodDuration: FloatFilter
-  periodPayment: FloatFilter
-  periodDurationScale: StringFilter
-  notifications: NotificationManyRelationFilter
-}
-
-input PaymentManyRelationFilter {
-  every: PaymentWhereInput
-  some: PaymentWhereInput
-  none: PaymentWhereInput
-}
-
-input PaymentPlanOrderByInput {
-  id: OrderDirection
-  name: OrderDirection
-  periods: OrderDirection
-  periodDuration: OrderDirection
-  periodPayment: OrderDirection
-  periodDurationScale: OrderDirection
-}
-
-input PaymentPlanUpdateInput {
-  name: String
-  workOrder: WorkOrderRelateToOneForUpdateInput
-  payments: PaymentRelateToManyForUpdateInput
-  document: DocumentRelateToOneForUpdateInput
-  periods: Float
-  periodDuration: Float
-  periodPayment: Float
-  periodDurationScale: String
-  notifications: NotificationRelateToManyForUpdateInput
-}
-
-input PaymentRelateToManyForUpdateInput {
-  disconnect: [PaymentWhereUniqueInput!]
-  set: [PaymentWhereUniqueInput!]
-  create: [PaymentCreateInput!]
-  connect: [PaymentWhereUniqueInput!]
-}
-
-input PaymentPlanUpdateArgs {
-  where: PaymentPlanWhereUniqueInput!
-  data: PaymentPlanUpdateInput!
-}
-
-input PaymentPlanCreateInput {
-  name: String
-  workOrder: WorkOrderRelateToOneForCreateInput
-  payments: PaymentRelateToManyForCreateInput
-  document: DocumentRelateToOneForCreateInput
-  periods: Float
-  periodDuration: Float
-  periodPayment: Float
-  periodDurationScale: String
-  notifications: NotificationRelateToManyForCreateInput
-}
-
-input PaymentRelateToManyForCreateInput {
-  create: [PaymentCreateInput!]
-  connect: [PaymentWhereUniqueInput!]
+  materials: MaterialRelateToManyForCreateInput
+  extraFields: JSON
 }
 
 type Payment {
   id: ID!
   amount: Float
-  paymentPlan: PaymentPlan
+  document: Document
+  out: Boolean
   reference: String
   type: String
-  date: DateTime
+  timestamp: DateTime
+  extraFields: JSON
 }
 
 input PaymentWhereUniqueInput {
@@ -1695,10 +1068,10 @@ input PaymentWhereInput {
   NOT: [PaymentWhereInput!]
   id: IDFilter
   amount: FloatFilter
-  paymentPlan: PaymentPlanWhereInput
+  document: DocumentWhereInput
   reference: StringFilter
   type: StringFilter
-  date: DateTimeNullableFilter
+  timestamp: DateTimeNullableFilter
 }
 
 input PaymentOrderByInput {
@@ -1706,15 +1079,16 @@ input PaymentOrderByInput {
   amount: OrderDirection
   reference: OrderDirection
   type: OrderDirection
-  date: OrderDirection
+  timestamp: OrderDirection
 }
 
 input PaymentUpdateInput {
   amount: Float
-  paymentPlan: PaymentPlanRelateToOneForUpdateInput
+  document: DocumentRelateToOneForUpdateInput
   reference: String
   type: String
-  date: DateTime
+  timestamp: DateTime
+  extraFields: JSON
 }
 
 input PaymentUpdateArgs {
@@ -1724,18 +1098,17 @@ input PaymentUpdateArgs {
 
 input PaymentCreateInput {
   amount: Float
-  paymentPlan: PaymentPlanRelateToOneForCreateInput
+  document: DocumentRelateToOneForCreateInput
   reference: String
   type: String
-  date: DateTime
+  timestamp: DateTime
+  extraFields: JSON
 }
 
 type Notification {
   id: ID!
   date: DateTime
   message: String
-  paymentPlan: PaymentPlan
-  workOrder: WorkOrder
   link: String
   handled: Boolean
   notifyRoles: [NotificationNotifyRoleType!]
@@ -1759,8 +1132,6 @@ input NotificationWhereInput {
   id: IDFilter
   date: DateTimeNullableFilter
   message: StringFilter
-  paymentPlan: PaymentPlanWhereInput
-  workOrder: WorkOrderWhereInput
   link: StringFilter
   handled: BooleanFilter
 }
@@ -1776,8 +1147,6 @@ input NotificationOrderByInput {
 input NotificationUpdateInput {
   date: DateTime
   message: String
-  paymentPlan: PaymentPlanRelateToOneForUpdateInput
-  workOrder: WorkOrderRelateToOneForUpdateInput
   link: String
   handled: Boolean
   notifyRoles: [NotificationNotifyRoleType!]
@@ -1791,8 +1160,6 @@ input NotificationUpdateArgs {
 input NotificationCreateInput {
   date: DateTime
   message: String
-  paymentPlan: PaymentPlanRelateToOneForCreateInput
-  workOrder: WorkOrderRelateToOneForCreateInput
   link: String
   handled: Boolean
   notifyRoles: [NotificationNotifyRoleType!]
@@ -1874,6 +1241,44 @@ input SoftwareVersionCreateInput {
   date: DateTime
 }
 
+type Config {
+  id: ID!
+  defaultCurrency: String
+  extraFieldsProduct: JSON
+}
+
+input ConfigWhereUniqueInput {
+  id: ID
+}
+
+input ConfigWhereInput {
+  AND: [ConfigWhereInput!]
+  OR: [ConfigWhereInput!]
+  NOT: [ConfigWhereInput!]
+  id: IDFilter
+  defaultCurrency: StringFilter
+}
+
+input ConfigOrderByInput {
+  id: OrderDirection
+  defaultCurrency: OrderDirection
+}
+
+input ConfigUpdateInput {
+  defaultCurrency: String
+  extraFieldsProduct: JSON
+}
+
+input ConfigUpdateArgs {
+  where: ConfigWhereUniqueInput! = {id: 1}
+  data: ConfigUpdateInput!
+}
+
+input ConfigCreateInput {
+  defaultCurrency: String
+  extraFieldsProduct: JSON
+}
+
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
@@ -1910,30 +1315,18 @@ type Mutation {
   updateDocumentProducts(data: [DocumentProductUpdateArgs!]!): [DocumentProduct]
   deleteDocumentProduct(where: DocumentProductWhereUniqueInput!): DocumentProduct
   deleteDocumentProducts(where: [DocumentProductWhereUniqueInput!]!): [DocumentProduct]
-  createWorkOrder(data: WorkOrderCreateInput!): WorkOrder
-  createWorkOrders(data: [WorkOrderCreateInput!]!): [WorkOrder]
-  updateWorkOrder(where: WorkOrderWhereUniqueInput!, data: WorkOrderUpdateInput!): WorkOrder
-  updateWorkOrders(data: [WorkOrderUpdateArgs!]!): [WorkOrder]
-  deleteWorkOrder(where: WorkOrderWhereUniqueInput!): WorkOrder
-  deleteWorkOrders(where: [WorkOrderWhereUniqueInput!]!): [WorkOrder]
-  createApplication(data: ApplicationCreateInput!): Application
-  createApplications(data: [ApplicationCreateInput!]!): [Application]
-  updateApplication(where: ApplicationWhereUniqueInput!, data: ApplicationUpdateInput!): Application
-  updateApplications(data: [ApplicationUpdateArgs!]!): [Application]
-  deleteApplication(where: ApplicationWhereUniqueInput!): Application
-  deleteApplications(where: [ApplicationWhereUniqueInput!]!): [Application]
-  createApplicationType(data: ApplicationTypeCreateInput!): ApplicationType
-  createApplicationTypes(data: [ApplicationTypeCreateInput!]!): [ApplicationType]
-  updateApplicationType(where: ApplicationTypeWhereUniqueInput!, data: ApplicationTypeUpdateInput!): ApplicationType
-  updateApplicationTypes(data: [ApplicationTypeUpdateArgs!]!): [ApplicationType]
-  deleteApplicationType(where: ApplicationTypeWhereUniqueInput!): ApplicationType
-  deleteApplicationTypes(where: [ApplicationTypeWhereUniqueInput!]!): [ApplicationType]
-  createProduct(data: ProductCreateInput!): Product
-  createProducts(data: [ProductCreateInput!]!): [Product]
-  updateProduct(where: ProductWhereUniqueInput!, data: ProductUpdateInput!): Product
-  updateProducts(data: [ProductUpdateArgs!]!): [Product]
-  deleteProduct(where: ProductWhereUniqueInput!): Product
-  deleteProducts(where: [ProductWhereUniqueInput!]!): [Product]
+  createOperation(data: OperationCreateInput!): Operation
+  createOperations(data: [OperationCreateInput!]!): [Operation]
+  updateOperation(where: OperationWhereUniqueInput!, data: OperationUpdateInput!): Operation
+  updateOperations(data: [OperationUpdateArgs!]!): [Operation]
+  deleteOperation(where: OperationWhereUniqueInput!): Operation
+  deleteOperations(where: [OperationWhereUniqueInput!]!): [Operation]
+  createMaterial(data: MaterialCreateInput!): Material
+  createMaterials(data: [MaterialCreateInput!]!): [Material]
+  updateMaterial(where: MaterialWhereUniqueInput!, data: MaterialUpdateInput!): Material
+  updateMaterials(data: [MaterialUpdateArgs!]!): [Material]
+  deleteMaterial(where: MaterialWhereUniqueInput!): Material
+  deleteMaterials(where: [MaterialWhereUniqueInput!]!): [Material]
   createStorage(data: StorageCreateInput!): Storage
   createStorages(data: [StorageCreateInput!]!): [Storage]
   updateStorage(where: StorageWhereUniqueInput!, data: StorageUpdateInput!): Storage
@@ -1946,42 +1339,18 @@ type Mutation {
   updateStockMovements(data: [StockMovementUpdateArgs!]!): [StockMovement]
   deleteStockMovement(where: StockMovementWhereUniqueInput!): StockMovement
   deleteStockMovements(where: [StockMovementWhereUniqueInput!]!): [StockMovement]
-  createProductBrand(data: ProductBrandCreateInput!): ProductBrand
-  createProductBrands(data: [ProductBrandCreateInput!]!): [ProductBrand]
-  updateProductBrand(where: ProductBrandWhereUniqueInput!, data: ProductBrandUpdateInput!): ProductBrand
-  updateProductBrands(data: [ProductBrandUpdateArgs!]!): [ProductBrand]
-  deleteProductBrand(where: ProductBrandWhereUniqueInput!): ProductBrand
-  deleteProductBrands(where: [ProductBrandWhereUniqueInput!]!): [ProductBrand]
-  createCar(data: CarCreateInput!): Car
-  createCars(data: [CarCreateInput!]!): [Car]
-  updateCar(where: CarWhereUniqueInput!, data: CarUpdateInput!): Car
-  updateCars(data: [CarUpdateArgs!]!): [Car]
-  deleteCar(where: CarWhereUniqueInput!): Car
-  deleteCars(where: [CarWhereUniqueInput!]!): [Car]
-  createCarModel(data: CarModelCreateInput!): CarModel
-  createCarModels(data: [CarModelCreateInput!]!): [CarModel]
-  updateCarModel(where: CarModelWhereUniqueInput!, data: CarModelUpdateInput!): CarModel
-  updateCarModels(data: [CarModelUpdateArgs!]!): [CarModel]
-  deleteCarModel(where: CarModelWhereUniqueInput!): CarModel
-  deleteCarModels(where: [CarModelWhereUniqueInput!]!): [CarModel]
-  createCarBrand(data: CarBrandCreateInput!): CarBrand
-  createCarBrands(data: [CarBrandCreateInput!]!): [CarBrand]
-  updateCarBrand(where: CarBrandWhereUniqueInput!, data: CarBrandUpdateInput!): CarBrand
-  updateCarBrands(data: [CarBrandUpdateArgs!]!): [CarBrand]
-  deleteCarBrand(where: CarBrandWhereUniqueInput!): CarBrand
-  deleteCarBrands(where: [CarBrandWhereUniqueInput!]!): [CarBrand]
-  createApplicationLocation(data: ApplicationLocationCreateInput!): ApplicationLocation
-  createApplicationLocations(data: [ApplicationLocationCreateInput!]!): [ApplicationLocation]
-  updateApplicationLocation(where: ApplicationLocationWhereUniqueInput!, data: ApplicationLocationUpdateInput!): ApplicationLocation
-  updateApplicationLocations(data: [ApplicationLocationUpdateArgs!]!): [ApplicationLocation]
-  deleteApplicationLocation(where: ApplicationLocationWhereUniqueInput!): ApplicationLocation
-  deleteApplicationLocations(where: [ApplicationLocationWhereUniqueInput!]!): [ApplicationLocation]
-  createPaymentPlan(data: PaymentPlanCreateInput!): PaymentPlan
-  createPaymentPlans(data: [PaymentPlanCreateInput!]!): [PaymentPlan]
-  updatePaymentPlan(where: PaymentPlanWhereUniqueInput!, data: PaymentPlanUpdateInput!): PaymentPlan
-  updatePaymentPlans(data: [PaymentPlanUpdateArgs!]!): [PaymentPlan]
-  deletePaymentPlan(where: PaymentPlanWhereUniqueInput!): PaymentPlan
-  deletePaymentPlans(where: [PaymentPlanWhereUniqueInput!]!): [PaymentPlan]
+  createSupplier(data: SupplierCreateInput!): Supplier
+  createSuppliers(data: [SupplierCreateInput!]!): [Supplier]
+  updateSupplier(where: SupplierWhereUniqueInput!, data: SupplierUpdateInput!): Supplier
+  updateSuppliers(data: [SupplierUpdateArgs!]!): [Supplier]
+  deleteSupplier(where: SupplierWhereUniqueInput!): Supplier
+  deleteSuppliers(where: [SupplierWhereUniqueInput!]!): [Supplier]
+  createBrand(data: BrandCreateInput!): Brand
+  createBrands(data: [BrandCreateInput!]!): [Brand]
+  updateBrand(where: BrandWhereUniqueInput!, data: BrandUpdateInput!): Brand
+  updateBrands(data: [BrandUpdateArgs!]!): [Brand]
+  deleteBrand(where: BrandWhereUniqueInput!): Brand
+  deleteBrands(where: [BrandWhereUniqueInput!]!): [Brand]
   createPayment(data: PaymentCreateInput!): Payment
   createPayments(data: [PaymentCreateInput!]!): [Payment]
   updatePayment(where: PaymentWhereUniqueInput!, data: PaymentUpdateInput!): Payment
@@ -2000,6 +1369,12 @@ type Mutation {
   updateSoftwareVersions(data: [SoftwareVersionUpdateArgs!]!): [SoftwareVersion]
   deleteSoftwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}): SoftwareVersion
   deleteSoftwareVersions(where: [SoftwareVersionWhereUniqueInput!]!): [SoftwareVersion]
+  createConfig(data: ConfigCreateInput!): Config
+  createConfigs(data: [ConfigCreateInput!]!): [Config]
+  updateConfig(where: ConfigWhereUniqueInput! = {id: 1}, data: ConfigUpdateInput!): Config
+  updateConfigs(data: [ConfigUpdateArgs!]!): [Config]
+  deleteConfig(where: ConfigWhereUniqueInput! = {id: 1}): Config
+  deleteConfigs(where: [ConfigWhereUniqueInput!]!): [Config]
   endSession: Boolean!
   authenticateUserWithPassword(username: String!, password: String!): UserAuthenticationWithPasswordResult
   createInitialUser(data: CreateInitialUserInput!): UserAuthenticationWithPasswordSuccess!
@@ -2017,74 +1392,59 @@ type UserAuthenticationWithPasswordFailure {
 }
 
 input CreateInitialUserInput {
+  name: String
   username: String
   email: String
-  firstname: String
   role: String
   password: String
 }
 
 type Query {
-  users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
   user(where: UserWhereUniqueInput!): User
+  users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
   usersCount(where: UserWhereInput! = {}): Int
-  notes(where: NoteWhereInput! = {}, orderBy: [NoteOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NoteWhereUniqueInput): [Note!]
   note(where: NoteWhereUniqueInput!): Note
+  notes(where: NoteWhereInput! = {}, orderBy: [NoteOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NoteWhereUniqueInput): [Note!]
   notesCount(where: NoteWhereInput! = {}): Int
-  files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
   file(where: FileWhereUniqueInput!): File
+  files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
   filesCount(where: FileWhereInput! = {}): Int
-  documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
   document(where: DocumentWhereUniqueInput!): Document
+  documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
   documentsCount(where: DocumentWhereInput! = {}): Int
-  documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProduct(where: DocumentProductWhereUniqueInput!): DocumentProduct
+  documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
-  workOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
-  workOrder(where: WorkOrderWhereUniqueInput!): WorkOrder
-  workOrdersCount(where: WorkOrderWhereInput! = {}): Int
-  applications(where: ApplicationWhereInput! = {}, orderBy: [ApplicationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationWhereUniqueInput): [Application!]
-  application(where: ApplicationWhereUniqueInput!): Application
-  applicationsCount(where: ApplicationWhereInput! = {}): Int
-  applicationTypes(where: ApplicationTypeWhereInput! = {}, orderBy: [ApplicationTypeOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationTypeWhereUniqueInput): [ApplicationType!]
-  applicationType(where: ApplicationTypeWhereUniqueInput!): ApplicationType
-  applicationTypesCount(where: ApplicationTypeWhereInput! = {}): Int
-  products(where: ProductWhereInput! = {}, orderBy: [ProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductWhereUniqueInput): [Product!]
-  product(where: ProductWhereUniqueInput!): Product
-  productsCount(where: ProductWhereInput! = {}): Int
-  storages(where: StorageWhereInput! = {}, orderBy: [StorageOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StorageWhereUniqueInput): [Storage!]
+  operation(where: OperationWhereUniqueInput!): Operation
+  operations(where: OperationWhereInput! = {}, orderBy: [OperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OperationWhereUniqueInput): [Operation!]
+  operationsCount(where: OperationWhereInput! = {}): Int
+  material(where: MaterialWhereUniqueInput!): Material
+  materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
+  materialsCount(where: MaterialWhereInput! = {}): Int
   storage(where: StorageWhereUniqueInput!): Storage
+  storages(where: StorageWhereInput! = {}, orderBy: [StorageOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StorageWhereUniqueInput): [Storage!]
   storagesCount(where: StorageWhereInput! = {}): Int
-  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovement(where: StockMovementWhereUniqueInput!): StockMovement
+  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
-  productBrands(where: ProductBrandWhereInput! = {}, orderBy: [ProductBrandOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductBrandWhereUniqueInput): [ProductBrand!]
-  productBrand(where: ProductBrandWhereUniqueInput!): ProductBrand
-  productBrandsCount(where: ProductBrandWhereInput! = {}): Int
-  cars(where: CarWhereInput! = {}, orderBy: [CarOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CarWhereUniqueInput): [Car!]
-  car(where: CarWhereUniqueInput!): Car
-  carsCount(where: CarWhereInput! = {}): Int
-  carModels(where: CarModelWhereInput! = {}, orderBy: [CarModelOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CarModelWhereUniqueInput): [CarModel!]
-  carModel(where: CarModelWhereUniqueInput!): CarModel
-  carModelsCount(where: CarModelWhereInput! = {}): Int
-  carBrands(where: CarBrandWhereInput! = {}, orderBy: [CarBrandOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CarBrandWhereUniqueInput): [CarBrand!]
-  carBrand(where: CarBrandWhereUniqueInput!): CarBrand
-  carBrandsCount(where: CarBrandWhereInput! = {}): Int
-  applicationLocations(where: ApplicationLocationWhereInput! = {}, orderBy: [ApplicationLocationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ApplicationLocationWhereUniqueInput): [ApplicationLocation!]
-  applicationLocation(where: ApplicationLocationWhereUniqueInput!): ApplicationLocation
-  applicationLocationsCount(where: ApplicationLocationWhereInput! = {}): Int
-  paymentPlans(where: PaymentPlanWhereInput! = {}, orderBy: [PaymentPlanOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentPlanWhereUniqueInput): [PaymentPlan!]
-  paymentPlan(where: PaymentPlanWhereUniqueInput!): PaymentPlan
-  paymentPlansCount(where: PaymentPlanWhereInput! = {}): Int
-  payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
+  supplier(where: SupplierWhereUniqueInput!): Supplier
+  suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
+  suppliersCount(where: SupplierWhereInput! = {}): Int
+  brand(where: BrandWhereUniqueInput!): Brand
+  brands(where: BrandWhereInput! = {}, orderBy: [BrandOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: BrandWhereUniqueInput): [Brand!]
+  brandsCount(where: BrandWhereInput! = {}): Int
   payment(where: PaymentWhereUniqueInput!): Payment
+  payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
-  notifications(where: NotificationWhereInput! = {}, orderBy: [NotificationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationWhereUniqueInput): [Notification!]
   notification(where: NotificationWhereUniqueInput!): Notification
+  notifications(where: NotificationWhereInput! = {}, orderBy: [NotificationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationWhereUniqueInput): [Notification!]
   notificationsCount(where: NotificationWhereInput! = {}): Int
-  softwareVersions(where: SoftwareVersionWhereInput! = {id: {equals: 1}}, orderBy: [SoftwareVersionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SoftwareVersionWhereUniqueInput): [SoftwareVersion!]
   softwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}): SoftwareVersion
+  softwareVersions(where: SoftwareVersionWhereInput! = {id: {equals: 1}}, orderBy: [SoftwareVersionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SoftwareVersionWhereUniqueInput): [SoftwareVersion!]
   softwareVersionsCount(where: SoftwareVersionWhereInput! = {id: {equals: 1}}): Int
+  config(where: ConfigWhereUniqueInput! = {id: 1}): Config
+  configs(where: ConfigWhereInput! = {id: {equals: 1}}, orderBy: [ConfigOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ConfigWhereUniqueInput): [Config!]
+  configsCount(where: ConfigWhereInput! = {id: {equals: 1}}): Int
   keystone: KeystoneMeta!
   authenticatedItem: AuthenticatedItem
 }
@@ -2116,6 +1476,7 @@ type KeystoneAdminUIListMeta {
   labelField: String!
   fields: [KeystoneAdminUIFieldMeta!]!
   groups: [KeystoneAdminUIFieldGroupMeta!]!
+  graphql: KeystoneAdminUIGraphQL!
   initialSort: KeystoneAdminUISort
   isHidden: Boolean!
   isSingleton: Boolean!
@@ -2186,6 +1547,33 @@ type KeystoneAdminUIFieldGroupMeta {
   label: String!
   description: String
   fields: [KeystoneAdminUIFieldMeta!]!
+}
+
+type KeystoneAdminUIGraphQL {
+  names: KeystoneAdminUIGraphQLNames!
+}
+
+type KeystoneAdminUIGraphQLNames {
+  outputTypeName: String!
+  whereInputName: String!
+  whereUniqueInputName: String!
+  createInputName: String!
+  createMutationName: String!
+  createManyMutationName: String!
+  relateToOneForCreateInputName: String!
+  relateToManyForCreateInputName: String!
+  itemQueryName: String!
+  listOrderName: String!
+  listQueryCountName: String!
+  listQueryName: String!
+  updateInputName: String!
+  updateMutationName: String!
+  updateManyInputName: String!
+  updateManyMutationName: String!
+  relateToOneForUpdateInputName: String!
+  relateToManyForUpdateInputName: String!
+  deleteMutationName: String!
+  deleteManyMutationName: String!
 }
 
 type KeystoneAdminUISort {

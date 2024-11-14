@@ -1,20 +1,7 @@
-import {
-  text,
-  relationship,
-  password,
-  timestamp,
-  select,
-  float,
-  multiselect,
-  virtual,
-  checkbox,
-  integer,
-  json,
-} from "@keystone-6/core/fields";
+import { text, relationship, password, timestamp, select, float, multiselect, virtual, checkbox, integer, json } from "@keystone-6/core/fields";
 import { denyAll } from "@keystone-6/core/access";
 import type { Lists } from ".keystone/types";
 import { graphql, list } from "@keystone-6/core";
-import { calculateDate } from "./utils";
 
 export type Session = {
   itemId: string;
@@ -37,8 +24,7 @@ function isAdmin({ session }: { session?: Session }) {
 function isManager({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (session.data.role == "admin" || session.data.role == "manager")
-    return true;
+  if (session.data.role == "admin" || session.data.role == "manager") return true;
 
   return !session.data.isBlocked;
 }
@@ -46,12 +32,7 @@ function isManager({ session }: { session?: Session }) {
 function isEmployee({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (
-    session.data.role == "employee" ||
-    session.data.role == "admin" ||
-    session.data.role == "manager"
-  )
-    return true;
+  if (session.data.role == "employee" || session.data.role == "admin" || session.data.role == "manager") return true;
 
   return !session.data.isBlocked;
 }
@@ -59,13 +40,7 @@ function isEmployee({ session }: { session?: Session }) {
 function isUser({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (
-    session.data.role == "employee" ||
-    session.data.role == "admin" ||
-    session.data.role == "manager" ||
-    session.data.role == "customer"
-  )
-    return true;
+  if (session.data.role == "employee" || session.data.role == "admin" || session.data.role == "manager" || session.data.role == "customer") return true;
 
   return !session.data.isBlocked;
 }
@@ -73,44 +48,24 @@ function isUser({ session }: { session?: Session }) {
 export const lists: Lists = {
   User: list({
     ui: {
-      labelField: "firstname",
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "create") {
-          const existingUsers = await context.query.User.findMany({
-            query: "id",
-            where: {
-              OR: [
-                { role: { equals: "employee" } },
-                { role: { equals: "admin" } },
-                { role: { equals: "manager" } },
-              ],
-            },
-          });
-          if (existingUsers.length > 14) {
-            throw new Error("User limit reached");
-          }
-        }
-      },
+      labelField: "name",
     },
     access: {
       operation: {
-        create: isManager,
         query: isUser,
+        create: isManager,
         update: isManager,
         delete: isAdmin,
       },
     },
     fields: {
+      name: text({ validation: { isRequired: true } }),
       username: text({ validation: { isRequired: true }, isIndexed: "unique" }),
       email: text({
         isIndexed: "unique",
       }),
       isBlocked: checkbox({ defaultValue: false }),
-      phone: text({ validation: { isRequired: false } }),
-      firstname: text({ validation: { isRequired: true } }),
-      lastname: text({ validation: { isRequired: false } }),
+      phone: text(),
       role: select({
         type: "string",
         options: ["admin", "customer", "employee", "manager"],
@@ -131,7 +86,7 @@ export const lists: Lists = {
           update: isAdmin,
         },
       }),
-      ssid: text({ validation: { isRequired: false } }),
+      ssid: text(),
       password: password({
         validation: {
           isRequired: true,
@@ -140,20 +95,7 @@ export const lists: Lists = {
           },
         },
       }),
-      qcWorkOrders: relationship({
-        ref: "WorkOrder.qcUser",
-        many: true,
-      }),
-      workOrders: relationship({ ref: "WorkOrder.creator", many: true }),
-      clientOrders: relationship({ ref: "WorkOrder.customer", many: true }),
-      applicationsToApply: relationship({
-        ref: "Application.applicant",
-        many: true,
-      }),
-      applications: relationship({
-        ref: "Application.creator",
-        many: true,
-      }),
+      operations: relationship({ ref: "Operation.creator", many: true }),
       notes: relationship({ ref: "Note.creator", many: true }),
       documents: relationship({ ref: "Document.creator", many: true }),
       customerDocuments: relationship({ ref: "Document.customer", many: true }),
@@ -161,6 +103,7 @@ export const lists: Lists = {
         ref: "StockMovement.customer",
         many: true,
       }),
+      extraFields: json(),
     },
   }),
   Note: list({
@@ -177,14 +120,11 @@ export const lists: Lists = {
     },
     fields: {
       note: text({ validation: { isRequired: true } }),
-      workOrder: relationship({
-        ref: "WorkOrder.notes",
-        many: false,
-      }),
       creator: relationship({
         ref: "User.notes",
         many: false,
       }),
+      extraFields: json(),
     },
   }),
   File: list({
@@ -202,18 +142,15 @@ export const lists: Lists = {
     fields: {
       name: text({ validation: { isRequired: true } }),
       url: text(),
-      application: relationship({
-        ref: "Application.images",
+      operation: relationship({
+        ref: "Operation.files",
         many: false,
       }),
-      workOrder: relationship({
-        ref: "WorkOrder.images",
+      material: relationship({
+        ref: "Material.files",
         many: false,
       }),
-      product: relationship({
-        ref: "Product.images",
-        many: false,
-      }),
+      extraFields: json(),
     },
   }),
   Document: list({
@@ -262,13 +199,13 @@ export const lists: Lists = {
           type: graphql.Float,
           async resolve(item, args, context) {
             try {
-              const products = await context.query.DocumentProduct.findMany({
+              const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "amount product { price }",
+                query: "amount material { value }",
               });
               let total = 0;
-              products.forEach((product) => {
-                total += product.amount * product.product.price;
+              materials.forEach((docProd) => {
+                total += docProd.amount * docProd.mat.value;
               });
               return total - (total * (item.reduction ?? 0)) / 100;
             } catch (e) {
@@ -279,30 +216,43 @@ export const lists: Lists = {
       }),
       documentType: select({
         type: "string",
-        options: ["satış", "fatura", "irsaliye", "sözleşme", "diğer"],
+        options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu"],
         defaultValue: "satış",
         validation: { isRequired: true },
       }),
       creator: relationship({
         ref: "User.documents",
         many: false,
+        access: {
+          update: denyAll,
+        },
       }),
       customer: relationship({
         ref: "User.customerDocuments",
         many: false,
+        access: {
+          update: denyAll,
+        },
       }),
       reduction: float({ defaultValue: 0 }),
       isDeleted: checkbox({ defaultValue: false }),
-      number: text({}),
-      invoiced: checkbox({ defaultValue: false }),
+      fromDocument: relationship({
+        ref: "Document.toDocument",
+        many: false,
+      }),
+      toDocument: relationship({
+        ref: "Document.fromDocument",
+        many: false,
+      }),
       products: relationship({
         ref: "DocumentProduct.document",
         many: true,
       }),
-      paymentPlan: relationship({
-        ref: "PaymentPlan.document",
-        many: false,
+      payments: relationship({
+        ref: "Payment.document",
+        many: true,
       }),
+      extraFields: json(),
     },
   }),
   DocumentProduct: list({
@@ -350,13 +300,13 @@ export const lists: Lists = {
       },
     },
     fields: {
-      amount: float({ validation: { isRequired: true, min: 0 } }),
+      amount: float({ validation: { isRequired: true, min: 1 } }),
       stockMovements: relationship({
         ref: "StockMovement.documentProduct",
         many: true,
       }),
       product: relationship({
-        ref: "Product.documentProducts",
+        ref: "Material.documentProducts",
         many: false,
       }),
       price: float({ validation: { isRequired: true, min: 0 } }),
@@ -383,206 +333,10 @@ export const lists: Lists = {
         ref: "Document.products",
         many: false,
       }),
+      extraFields: json(),
     },
   }),
-  WorkOrder: list({
-    ui: {
-      labelField: "createdAt",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager,
-      },
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const applications = await context.query.Application.findMany({
-            where: { workOrder: { id: { equals: item.id } } },
-            query: "id",
-          });
-          applications.forEach(async (app) => {
-            await context.query.Application.deleteOne({
-              where: { id: app.id },
-            });
-          });
-          try {
-            let paymentPlan;
-            paymentPlan = await context.query.PaymentPlan.findMany({
-              where: { workOrder: { id: { equals: item.id } } },
-              query: "id",
-            }).then((plans) => plans.at(0));
-            if (paymentPlan) {
-              await context.query.PaymentPlan.deleteOne({
-                where: { id: paymentPlan.id },
-              });
-            }
-          } catch (e) {}
-        }
-      },
-    },
-    fields: {
-      creator: relationship({
-        ref: "User.workOrders",
-        many: false,
-      }),
-      createdAt: timestamp({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-        access: {
-          create: denyAll,
-          update: denyAll,
-        },
-      }),
-      images: relationship({
-        ref: "File.workOrder",
-        many: true,
-      }),
-      notes: relationship({
-        ref: "Note.workOrder",
-        many: true,
-      }),
-      status: select({
-        type: "string",
-        options: ["aktif", "pasif", "tamamlandı", "iptal", "teklif"],
-        defaultValue: "pasif",
-        access: {
-          update: isManager,
-        },
-      }),
-      reduction: float({}),
-      paymentPlan: relationship({
-        ref: "PaymentPlan.workOrder",
-        many: false,
-      }),
-      qcDone: checkbox({ defaultValue: false }),
-      qcUser: relationship({
-        ref: "User.qcWorkOrders",
-        many: false,
-      }),
-      checkDate: timestamp({
-        validation: { isRequired: false },
-      }),
-      checkDone: checkbox({ defaultValue: false }),
-      notifications: relationship({
-        ref: "Notification.workOrder",
-        many: true,
-      }),
-      startedAt: virtual({
-        field: graphql.field({
-          type: graphql.String,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "startedAt",
-              });
-              let earliestStart = applications.at(0)!.startedAt;
-              applications.forEach((app) => {
-                if (app.startedAt < earliestStart) {
-                  earliestStart = app.startedAt;
-                }
-              });
-
-              if (!earliestStart) {
-                return null;
-              }
-
-              return new Date(earliestStart)
-                .toLocaleString("tr-TR")
-                .slice(0, -3);
-            } catch (e) {
-              return null;
-            }
-          },
-        }),
-      }),
-      finishedAt: virtual({
-        field: graphql.field({
-          type: graphql.String,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "finishedAt",
-              });
-              if (applications.every((app) => app.finishedAt)) {
-                let latestFinish = applications.at(0)!.finishedAt;
-                applications.forEach((app) => {
-                  if (app.finishedAt > latestFinish) {
-                    latestFinish = app.finishedAt;
-                  }
-                });
-                return new Date(latestFinish)
-                  .toLocaleString("tr-TR")
-                  .slice(0, -3);
-              } else {
-                return null;
-              }
-            } catch (e) {
-              return null;
-            }
-          },
-        }),
-      }),
-      car: relationship({
-        ref: "Car.workOrders",
-        many: false,
-      }),
-      customer: relationship({
-        ref: "User.clientOrders",
-        many: false,
-      }),
-      value: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "value",
-              });
-              let total = 0;
-              applications.forEach((app) => {
-                total += app.value;
-              });
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      total: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const applications = await context.query.Application.findMany({
-                where: { workOrder: { id: { equals: item.id } } },
-                query: "price",
-              });
-              let total = 0;
-              applications.forEach((app) => {
-                total += app.price;
-              });
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      applications: relationship({
-        ref: "Application.workOrder",
-        many: true,
-      }),
-    },
-  }),
-  Application: list({
+  Operation: list({
     ui: {
       labelField: "name",
     },
@@ -590,28 +344,19 @@ export const lists: Lists = {
       beforeOperation: async ({ operation, item, inputData, context }) => {
         if (operation === "update") {
           if (inputData.startedAt) {
-            if (item.startedAt) {
-              throw new Error("Application already started");
-            }
-            if (!inputData.applicant) {
-              throw new Error("Applicant is required");
+            if (item.finishedAt) {
+              throw new Error("Application already finished");
             }
           }
           if (inputData.finishedAt) {
             if (!item.startedAt) {
               throw new Error("Application not started");
             }
-            if (!inputData.applicant) {
-              throw new Error("Applicant is required");
-            }
             if (item.finishedAt) {
               throw new Error("Application already finished");
             }
             if (inputData.finishedAt < item.startedAt) {
               throw new Error("Finish date cannot be before start date");
-            }
-            if (inputData.applicant.connect?.id != item.applicantId) {
-              throw new Error("Applicant cannot be changed");
             }
           }
           if (inputData.wastage && inputData.wastage > (item.wastage ?? 0)) {
@@ -641,11 +386,7 @@ export const lists: Lists = {
                 application: { connect: { id: item.id } },
               },
             });
-          } else if (
-            inputData.wastage &&
-            item.wastage &&
-            inputData.wastage < item.wastage
-          ) {
+          } else if (inputData.wastage && item.wastage && inputData.wastage < item.wastage) {
             const generalStorage = await context.query.Storage.findMany({
               where: { name: { equals: "Genel" } },
               query: "id",
@@ -712,18 +453,14 @@ export const lists: Lists = {
       },
     },
     fields: {
-      workOrder: relationship({
-        ref: "WorkOrder.applications",
-        many: false,
-      }),
-      images: relationship({
-        ref: "File.application",
+      files: relationship({
+        ref: "File.operation",
         many: true,
       }),
       startedAt: timestamp(),
       finishedAt: timestamp(),
       name: text({ validation: { isRequired: true } }),
-      description: text({}),
+      description: text(),
       value: float({ validation: { isRequired: true, min: 0 } }),
       price: virtual({
         field: graphql.field({
@@ -746,78 +483,35 @@ export const lists: Lists = {
       }),
       amount: float({ validation: { isRequired: true, min: 0 } }),
       wastage: float({
-        validation: { isRequired: false, min: 0 },
+        validation: { min: 0 },
         defaultValue: 0,
       }),
-      location: relationship({
-        ref: "ApplicationLocation.applications",
-        many: false,
-      }),
-      product: relationship({
-        ref: "Product.applications",
-        many: false,
-      }),
-      applicant: relationship({
-        ref: "User.applicationsToApply",
+      material: relationship({
+        ref: "Material.operations",
         many: false,
       }),
       creator: relationship({
-        ref: "User.applications",
+        ref: "User.operations",
         many: false,
       }),
-      type: relationship({
-        ref: "ApplicationType.applications",
-        many: false,
-      }),
-      stockMovements: relationship({
-        ref: "StockMovement.application",
-        many: true,
-      }),
+      extraFields: json(),
     },
   }),
-  ApplicationType: list({
+  Material: list({
     ui: {
       labelField: "name",
     },
     access: {
       operation: {
         create: isManager,
-        query: isEmployee,
-        update: isManager,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      applications: relationship({
-        ref: "Application.type",
-        many: true,
-      }),
-      products: relationship({
-        ref: "Product.applicationType",
-        many: true,
-      }),
-      locations: relationship({
-        ref: "ApplicationLocation.applicationTypes",
-        many: true,
-      }),
-    },
-  }),
-  Product: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isManager,
-        query: isEmployee,
+        query: isUser,
         update: isManager,
         delete: isManager,
       },
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      description: text({}),
+      description: text(),
       price: float({ validation: { isRequired: true, min: 0 } }),
       currentStock: virtual({
         field: graphql.field({
@@ -856,73 +550,39 @@ export const lists: Lists = {
         defaultValue: "aktif",
         validation: { isRequired: true },
       }),
-      images: relationship({
-        ref: "File.product",
+      files: relationship({
+        ref: "File.material",
         many: true,
       }),
-      code: text({}),
-      ean: text({}),
-      productBrand: relationship({
-        ref: "ProductBrand.products",
+      code: text(),
+      ean: text(),
+      brand: relationship({
+        ref: "Brand.materials",
         many: false,
+      }),
+      suppliers: relationship({
+        ref: "Supplier.materials",
+        many: true,
       }),
       pricedBy: select({
         type: "string",
-        options: ["amount", "length"],
+        options: ["amount", "length(mm)", "weight(g)", "area(m²)"],
         defaultValue: "amount",
         validation: { isRequired: true },
       }),
-      applications: relationship({
-        ref: "Application.product",
+      operations: relationship({
+        ref: "Operation.material",
         many: true,
       }),
-      applicationType: relationship({
-        ref: "ApplicationType.products",
-        many: false,
-      }),
       stockMovements: relationship({
-        ref: "StockMovement.product",
+        ref: "StockMovement.material",
         many: true,
       }),
       documentProducts: relationship({
         ref: "DocumentProduct.product",
         many: true,
       }),
-      warrantyType: select({
-        type: "string",
-        options: ["ömür", "garanti", "ömur_boyu", "yok"],
-        defaultValue: "yok",
-        validation: { isRequired: true },
-      }),
-      warrantyTimeScale: select({
-        type: "string",
-        options: ["gün", "ay", "yıl"],
-        defaultValue: "yıl",
-        validation: { isRequired: true },
-      }),
-      warrantyTime: float({ validation: { isRequired: false, min: 0 } }),
-      color: text({}),
-      width: float({}),
-      length: float({}),
-      height: float({}),
-      depth: float({}),
-      weight: float({}),
-      thickness: float({}),
-      extraFields: json({
-        defaultValue: {
-          colorWarranty: false,
-          customPricing: {
-            sideWindow: "",
-            windshield: "",
-            sunroof: "",
-            glassTop: "",
-            hood: "",
-            hoodFender: "",
-            hoodFenderBumper: "",
-            complete: "",
-          },
-        },
-      }),
+      extraFields: json(),
     },
   }),
   Storage: list({
@@ -943,6 +603,7 @@ export const lists: Lists = {
         ref: "StockMovement.storage",
         many: true,
       }),
+      extraFields: json(),
     },
   }),
   StockMovement: list({
@@ -958,8 +619,8 @@ export const lists: Lists = {
       },
     },
     fields: {
-      product: relationship({
-        ref: "Product.stockMovements",
+      material: relationship({
+        ref: "Material.stockMovements",
         many: false,
       }),
       storage: relationship({
@@ -977,7 +638,7 @@ export const lists: Lists = {
         ref: "DocumentProduct.stockMovements",
         many: false,
       }),
-      note: text({}),
+      note: text(),
       customer: relationship({
         ref: "User.customerMovements",
         many: false,
@@ -985,10 +646,6 @@ export const lists: Lists = {
       date: timestamp({
         defaultValue: { kind: "now" },
         isOrderable: true,
-      }),
-      application: relationship({
-        ref: "Application.stockMovements",
-        many: false,
       }),
       createdAt: timestamp({
         defaultValue: { kind: "now" },
@@ -998,421 +655,48 @@ export const lists: Lists = {
           update: denyAll,
         },
       }),
+      extraFields: json(),
     },
   }),
-  ProductBrand: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      products: relationship({ ref: "Product.productBrand", many: true }),
-    },
-  }),
-  Car: list({
-    ui: {
-      labelField: "licensePlate",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      vin: text(),
-      carModel: relationship({
-        ref: "CarModel.cars",
-        many: false,
-      }),
-      licensePlate: text(),
-      workOrders: relationship({ ref: "WorkOrder.car", many: true }),
-    },
-  }),
-  CarModel: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      name: text({
-        validation: { isRequired: true },
-        isFilterable: true,
-        isIndexed: true,
-      }),
-      cars: relationship({ ref: "Car.carModel", many: true }),
-      carBrand: relationship({ ref: "CarBrand.carModels", many: false }),
-    },
-  }),
-  CarBrand: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isAdmin,
-      },
-    },
-    fields: {
-      name: text({
-        validation: { isRequired: true },
-        isFilterable: true,
-        isIndexed: true,
-      }),
-      carModels: relationship({ ref: "CarModel.carBrand", many: true }),
-    },
-  }),
-  ApplicationLocation: list({
+  Supplier: list({
     ui: {
       labelField: "name",
     },
     access: {
       operation: {
         create: isManager,
-        query: isEmployee,
+        query: isUser,
         update: isManager,
         delete: isAdmin,
       },
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      applicationTypes: relationship({
-        ref: "ApplicationType.locations",
-        many: true,
-      }),
-      applications: relationship({
-        ref: "Application.location",
-        many: true,
-      }),
+      materials: relationship({ ref: "Material.suppliers", many: true }),
+      extraFields: json(),
     },
   }),
-  PaymentPlan: list({
+  Brand: list({
     ui: {
       labelField: "name",
     },
     access: {
       operation: {
         create: isEmployee,
-        query: isEmployee,
-        update: isManager,
+        query: isUser,
+        update: isEmployee,
         delete: isAdmin,
-      },
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const payments = await context.query.Payment.findMany({
-            where: { paymentPlan: { id: { equals: item.id } } },
-            query: "id",
-          });
-          payments.forEach(async (payment) => {
-            await context.query.Payment.deleteOne({
-              where: { id: payment.id },
-            });
-          });
-        }
-      },
-      afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          for (let i = 1; i < item.periods; i++) {
-            await context.query.Notification.createOne({
-              data: {
-                paymentPlan: { connect: { id: item.id } },
-                date: new Date(
-                  new Date().getTime() +
-                    i * item.periodDuration * 24 * 60 * 60 * 1000
-                ),
-                message: "Ödeme tarihi",
-                notifyRoles: ["admin"],
-              },
-            });
-          }
-        } else if (operation === "update") {
-          const exitingNotifications =
-            await context.query.Notification.findMany({
-              where: { paymentPlan: { id: { equals: item.id } } },
-              query: "id date",
-            });
-
-          exitingNotifications.forEach(async (notification) => {
-            await context.query.Notification.deleteOne({
-              where: { id: notification.id },
-            });
-          });
-
-          for (let i = 1; i < item.periods; i++) {
-            await context.query.Notification.createOne({
-              data: {
-                paymentPlan: { connect: { id: item.id } },
-                date: new Date(
-                  new Date().getTime() +
-                    i * item.periodDuration * 24 * 60 * 60 * 1000
-                ),
-                message: "Ödeme tarihi",
-                notifyRoles: ["admin"],
-              },
-            });
-          }
-        }
       },
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      workOrder: relationship({
-        ref: "WorkOrder.paymentPlan",
-        many: false,
-      }),
-      payments: relationship({
-        ref: "Payment.paymentPlan",
-        many: true,
-      }),
-      document: relationship({
-        ref: "Document.paymentPlan",
-        many: false,
-      }),
-      periods: float({
-        validation: { isRequired: true, min: 0 },
-        defaultValue: 1,
-      }),
-      periodDuration: float({
-        validation: { isRequired: true, min: 0 },
-        defaultValue: 1,
-      }),
-      periodPayment: float({
-        validation: { isRequired: true, min: 0 },
-        defaultValue: 1,
-      }),
-      periodDurationScale: select({
-        type: "string",
-        options: ["gün", "hafta", "ay"],
-        defaultValue: "ay",
-        validation: { isRequired: true },
-      }),
-      total: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              let workOrder;
-              if (item.workOrderId) {
-                workOrder = await context.query.WorkOrder.findOne({
-                  where: { id: item.workOrderId },
-                  query: "total",
-                });
-              }
-              let document;
-              document = await context.query.Document.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "total",
-              }).then((docs) => docs.at(0));
-
-              let total = 0;
-
-              if (workOrder) {
-                total = workOrder.total;
-              } else if (document) {
-                total = document.total;
-              }
-
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      paid: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const payments = await context.query.Payment.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "amount",
-              });
-              let total = 0;
-              payments.forEach((payment) => {
-                total += payment.amount;
-              });
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      toPay: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const total = async () => {
-                try {
-                  let workOrder;
-                  if (item.workOrderId) {
-                    workOrder = await context.query.WorkOrder.findOne({
-                      where: { id: item.workOrderId },
-                      query: "total",
-                    });
-                  }
-                  let document;
-                  document = await context.query.Document.findMany({
-                    where: { paymentPlan: { id: { equals: item.id } } },
-                    query: "total",
-                  }).then((docs) => docs.at(0));
-
-                  let total = 0;
-
-                  if (workOrder) {
-                    total = workOrder.total;
-                  } else if (document) {
-                    total = document.total;
-                  }
-
-                  return total;
-                } catch (e) {
-                  return 0;
-                }
-              };
-
-              const paid = async () => {
-                try {
-                  const payments = await context.query.Payment.findMany({
-                    where: { paymentPlan: { id: { equals: item.id } } },
-                    query: "amount",
-                  });
-                  let total = 0;
-                  payments.forEach((payment) => {
-                    total += payment.amount;
-                  });
-                  return total;
-                } catch (e) {
-                  return 0;
-                }
-              };
-
-              return (await total()) - (await paid());
-            } catch (e) {
-              return 123456;
-            }
-          },
-        }),
-      }),
-      nextPaymentDate: virtual({
-        field: graphql.field({
-          type: graphql.String,
-          async resolve(item, args, context) {
-            try {
-              const payments = await context.query.Payment.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "amount date",
-                orderBy: { date: "asc" },
-              });
-
-              if (payments.length == 0) {
-                return "-";
-              }
-
-              const firstPayment = payments.at(0);
-              const firstPaymentDate = firstPayment!.date;
-
-              let dates = [];
-
-              for (let i = 1; i < item.periods; i++) {
-                dates.push(
-                  calculateDate({
-                    number: i * item.periodDuration,
-                    unit: item.periodDurationScale,
-                    startDate: new Date(firstPaymentDate),
-                  })
-                );
-              }
-
-              const now = new Date();
-              const nextPaymentDate =
-                dates.find((date) => date.getTime() > now.getTime()) || "-";
-
-              if (nextPaymentDate === "-") {
-                return "-";
-              }
-
-              return new Date(nextPaymentDate)
-                .toLocaleString("tr-TR")
-                .split(" ")[0];
-            } catch (e) {
-              return "-";
-            }
-          },
-        }),
-      }),
-      completed: virtual({
-        field: graphql.field({
-          type: graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const workOrder = await context.query.WorkOrder.findOne({
-                where: { id: item.workOrderId },
-                query: "total",
-              });
-              let document;
-              document = await context.query.Document.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "total",
-              }).then((docs) => docs.at(0));
-
-              let total = 0;
-
-              if (workOrder) {
-                total = workOrder.total;
-              } else if (document) {
-                total = document.total;
-              }
-
-              const payments = await context.query.Payment.findMany({
-                where: { paymentPlan: { id: { equals: item.id } } },
-                query: "amount",
-              });
-              let paid = 0;
-              payments.forEach((payment) => {
-                paid += payment.amount;
-              });
-
-              return total <= paid;
-            } catch (e) {
-              return false;
-            }
-          },
-        }),
-      }),
-      notifications: relationship({
-        ref: "Notification.paymentPlan",
-        many: true,
-      }),
+      materials: relationship({ ref: "Material.brand", many: true }),
+      extraFields: json(),
     },
   }),
   Payment: list({
     ui: {
-      labelField: "date",
+      labelField: "timestamp",
     },
     access: {
       operation: {
@@ -1424,28 +708,51 @@ export const lists: Lists = {
     },
     fields: {
       amount: float({ validation: { isRequired: true, min: 0 } }),
-      paymentPlan: relationship({
-        ref: "PaymentPlan.payments",
+      document: relationship({
+        ref: "Document.payments",
         many: false,
       }),
-      reference: text({}),
+      out: virtual({
+        field: graphql.field({
+          type: graphql.Boolean,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "type",
+              });
+              switch (document.type) {
+                case "satış":
+                  return false;
+                case "irsaliye":
+                  return false;
+                case "fatura":
+                  return false;
+                case "borç dekontu":
+                  return false;
+                case "alacak dekontu":
+                  return true;
+                default:
+                  return false;
+              }
+            } catch (e) {
+              return false;
+            }
+          },
+        }),
+      }),
+      reference: text(),
       type: select({
         type: "string",
-        options: [
-          "nakit",
-          "kredi kartı",
-          "havale",
-          "çek",
-          "senet",
-          "banka kartı",
-        ],
+        options: ["nakit", "kredi kartı", "havale", "çek", "senet", "banka kartı", "kredi"],
         defaultValue: "nakit",
         validation: { isRequired: true },
       }),
-      date: timestamp({
+      timestamp: timestamp({
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
+      extraFields: json(),
     },
   }),
   Notification: list({
@@ -1455,7 +762,7 @@ export const lists: Lists = {
     access: {
       operation: {
         create: isAdmin,
-        query: isEmployee,
+        query: isUser,
         update: isAdmin,
         delete: isAdmin,
       },
@@ -1466,15 +773,7 @@ export const lists: Lists = {
         isOrderable: true,
       }),
       message: text({ validation: { isRequired: true } }),
-      paymentPlan: relationship({
-        ref: "PaymentPlan.notifications",
-        many: false,
-      }),
-      workOrder: relationship({
-        ref: "WorkOrder.notifications",
-        many: false,
-      }),
-      link: text({}),
+      link: text(),
       handled: checkbox({ defaultValue: false }),
       notifyRoles: multiselect({
         type: "enum",
@@ -1494,15 +793,33 @@ export const lists: Lists = {
     },
     fields: {
       version: integer({ validation: { isRequired: true } }),
-      iosLink: text({}),
-      androidLink: text({}),
-      webLink: text({}),
-      windowsLink: text({}),
-      macLink: text({}),
+      iosLink: text(),
+      androidLink: text(),
+      webLink: text(),
+      windowsLink: text(),
+      macLink: text(),
       date: timestamp({
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
+    },
+  }),
+  Config: list({
+    isSingleton: true,
+    access: {
+      operation: {
+        create: () => false,
+        query: isUser,
+        update: isAdmin,
+        delete: () => false,
+      },
+    },
+    ui: {
+      labelField: "name",
+    },
+    fields: {
+      defaultCurrency: text({ defaultValue: "TRY" }),
+      extraFieldsProduct: json(),
     },
   }),
 };
