@@ -79,7 +79,7 @@ export default withAuth(
             res.status(404).json({ message: "File not found" });
           }
         });
-        cron.schedule("0 */1 * * * *", async () => {
+        cron.schedule("0 0 */1 * * *", async () => {
           try {
             const backupDir = path.join(__dirname, "backup");
             if (!fs.existsSync(backupDir)) {
