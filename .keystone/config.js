@@ -55,31 +55,23 @@ var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
 function isAdmin({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "admin")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "admin") return true;
   return !session2.data.isBlocked;
 }
 function isManager({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "admin" || session2.data.role == "manager")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "admin" || session2.data.role == "manager") return true;
   return !session2.data.isBlocked;
 }
 function isEmployee({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager") return true;
   return !session2.data.isBlocked;
 }
 function isUser({ session: session2 }) {
-  if (!session2)
-    return false;
-  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager" || session2.data.role == "customer")
-    return true;
+  if (!session2) return false;
+  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager" || session2.data.role == "customer") return true;
   return !session2.data.isBlocked;
 }
 var lists = {
