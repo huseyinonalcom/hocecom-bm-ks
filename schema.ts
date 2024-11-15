@@ -101,88 +101,6 @@ export const lists: Lists = {
               throw new Error("Finish date cannot be before start date");
             }
           }
-          if (inputData.wastage && inputData.wastage > (item.wastage ?? 0)) {
-            const generalStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Genel" } },
-              query: "id",
-            });
-            const wastageStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Fire" } },
-              query: "id",
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: wastageStorage.at(0)!.id } },
-                amount: inputData.wastage - (item.wastage ?? 0),
-                movementType: "giriş",
-                application: { connect: { id: item.id } },
-              },
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: generalStorage.at(0)!.id } },
-                amount: inputData.wastage - (item.wastage ?? 0),
-                movementType: "çıkış",
-                application: { connect: { id: item.id } },
-              },
-            });
-          } else if (inputData.wastage && item.wastage && inputData.wastage < item.wastage) {
-            const generalStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Genel" } },
-              query: "id",
-            });
-            const wastageStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Fire" } },
-              query: "id",
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: wastageStorage.at(0)!.id } },
-                amount: item.wastage - inputData.wastage,
-                movementType: "çıkış",
-                application: { connect: { id: item.id } },
-              },
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: generalStorage.at(0)!.id } },
-                amount: item.wastage - inputData.wastage,
-                movementType: "giriş",
-                application: { connect: { id: item.id } },
-              },
-            });
-          }
-        } else if (operation === "delete") {
-          const movements = await context.query.StockMovement.findMany({
-            where: { application: { id: { equals: item.id } } },
-            query: "id",
-          });
-          movements.forEach(async (movement) => {
-            await context.query.StockMovement.deleteOne({
-              where: { id: movement.id },
-            });
-          });
-        }
-      },
-      afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          const generalStorage = await context.query.Storage.findMany({
-            where: { name: { equals: "Genel" } },
-            query: "id",
-          });
-          await context.query.StockMovement.createOne({
-            data: {
-              product: { connect: { id: item.productId } },
-              storage: { connect: { id: generalStorage.at(0)!.id } },
-              amount: item.amount,
-              movementType: "çıkış",
-              application: { connect: { id: item.id } },
-            },
-          });
         }
       },
     },
@@ -290,6 +208,28 @@ export const lists: Lists = {
       value: float({ validation: { isRequired: true, min: 0 } }),
       duration: integer(),
       description: text(),
+      extraFields: json(),
+    },
+  }),
+  Address: list({
+    ui: {
+      labelField: "street",
+    },
+    access: {
+      operation: {
+        create: isUser,
+        query: isUser,
+        update: isEmployee,
+        delete: denyAll,
+      },
+    },
+    fields: {
+      street: text({ validation: { isRequired: true } }),
+      door: text({ validation: { isRequired: true } }),
+      zip: text({ validation: { isRequired: true } }),
+      city: text({ validation: { isRequired: true } }),
+      province: text({ validation: { isRequired: true } }),
+      country: text({ validation: { isRequired: true } }),
       extraFields: json(),
     },
   }),
@@ -416,8 +356,11 @@ export const lists: Lists = {
         ref: "StockMovement.customer",
         many: true,
       }),
+      customerCompany: text(),
+      customerTaxNumber: text(),
+      customerTaxCenter: text(),
       payments: relationship({ ref: "Payment.creator", many: true }),
-      address: text(),
+      addresses: relationship({ ref: "Address", many: true }),
       workOrders: relationship({ ref: "WorkOrder.creator", many: true }),
       extraFields: json(),
     },
@@ -485,11 +428,6 @@ export const lists: Lists = {
               where: { id: dp.id },
             });
           });
-          if (item.paymentPlanId) {
-            await context.query.PaymentPlan.deleteOne({
-              where: { id: item.paymentPlanId },
-            });
-          }
         }
       },
     },
@@ -610,7 +548,7 @@ export const lists: Lists = {
           });
           await context.query.StockMovement.createOne({
             data: {
-              product: { connect: { id: item.productId } },
+              material: { connect: { id: item.productId } },
               storage: { connect: { id: generalStorage.at(0)!.id } },
               amount: item.amount,
               movementType: "çıkış",
@@ -728,7 +666,7 @@ export const lists: Lists = {
               });
               const movements = await context.query.StockMovement.findMany({
                 where: {
-                  product: { id: { equals: item.id } },
+                  material: { id: { equals: item.id } },
                   storage: { id: { equals: generalStorage.at(0)!.id } },
                 },
                 query: "amount movementType",

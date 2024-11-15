@@ -420,6 +420,69 @@ input MaterialRelateToOneForCreateInput {
   connect: MaterialWhereUniqueInput
 }
 
+type Address {
+  id: ID!
+  street: String
+  door: String
+  zip: String
+  city: String
+  province: String
+  country: String
+  extraFields: JSON
+}
+
+input AddressWhereUniqueInput {
+  id: ID
+}
+
+input AddressWhereInput {
+  AND: [AddressWhereInput!]
+  OR: [AddressWhereInput!]
+  NOT: [AddressWhereInput!]
+  id: IDFilter
+  street: StringFilter
+  door: StringFilter
+  zip: StringFilter
+  city: StringFilter
+  province: StringFilter
+  country: StringFilter
+}
+
+input AddressOrderByInput {
+  id: OrderDirection
+  street: OrderDirection
+  door: OrderDirection
+  zip: OrderDirection
+  city: OrderDirection
+  province: OrderDirection
+  country: OrderDirection
+}
+
+input AddressUpdateInput {
+  street: String
+  door: String
+  zip: String
+  city: String
+  province: String
+  country: String
+  extraFields: JSON
+}
+
+input AddressUpdateArgs {
+  where: AddressWhereUniqueInput!
+  data: AddressUpdateInput!
+}
+
+input AddressCreateInput {
+  street: String
+  door: String
+  zip: String
+  city: String
+  province: String
+  country: String
+  extraFields: JSON
+}
+
 type Payment {
   id: ID!
   value: Float
@@ -524,9 +587,13 @@ type User {
   customerDocumentsCount(where: DocumentWhereInput! = {}): Int
   customerMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   customerMovementsCount(where: StockMovementWhereInput! = {}): Int
+  customerCompany: String
+  customerTaxNumber: String
+  customerTaxCenter: String
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
-  address: String
+  addresses(where: AddressWhereInput! = {}, orderBy: [AddressOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AddressWhereUniqueInput): [Address!]
+  addressesCount(where: AddressWhereInput! = {}): Int
   workOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
   workOrdersCount(where: WorkOrderWhereInput! = {}): Int
   extraFields: JSON
@@ -564,8 +631,11 @@ input UserWhereInput {
   documents: DocumentManyRelationFilter
   customerDocuments: DocumentManyRelationFilter
   customerMovements: StockMovementManyRelationFilter
+  customerCompany: StringFilter
+  customerTaxNumber: StringFilter
+  customerTaxCenter: StringFilter
   payments: PaymentManyRelationFilter
-  address: StringFilter
+  addresses: AddressManyRelationFilter
   workOrders: WorkOrderManyRelationFilter
 }
 
@@ -599,6 +669,12 @@ input PaymentManyRelationFilter {
   none: PaymentWhereInput
 }
 
+input AddressManyRelationFilter {
+  every: AddressWhereInput
+  some: AddressWhereInput
+  none: AddressWhereInput
+}
+
 input WorkOrderManyRelationFilter {
   every: WorkOrderWhereInput
   some: WorkOrderWhereInput
@@ -614,7 +690,9 @@ input UserOrderByInput {
   phone: OrderDirection
   role: OrderDirection
   ssid: OrderDirection
-  address: OrderDirection
+  customerCompany: OrderDirection
+  customerTaxNumber: OrderDirection
+  customerTaxCenter: OrderDirection
 }
 
 input UserUpdateInput {
@@ -632,8 +710,11 @@ input UserUpdateInput {
   documents: DocumentRelateToManyForUpdateInput
   customerDocuments: DocumentRelateToManyForUpdateInput
   customerMovements: StockMovementRelateToManyForUpdateInput
+  customerCompany: String
+  customerTaxNumber: String
+  customerTaxCenter: String
   payments: PaymentRelateToManyForUpdateInput
-  address: String
+  addresses: AddressRelateToManyForUpdateInput
   workOrders: WorkOrderRelateToManyForUpdateInput
   extraFields: JSON
 }
@@ -673,6 +754,13 @@ input PaymentRelateToManyForUpdateInput {
   connect: [PaymentWhereUniqueInput!]
 }
 
+input AddressRelateToManyForUpdateInput {
+  disconnect: [AddressWhereUniqueInput!]
+  set: [AddressWhereUniqueInput!]
+  create: [AddressCreateInput!]
+  connect: [AddressWhereUniqueInput!]
+}
+
 input WorkOrderRelateToManyForUpdateInput {
   disconnect: [WorkOrderWhereUniqueInput!]
   set: [WorkOrderWhereUniqueInput!]
@@ -700,8 +788,11 @@ input UserCreateInput {
   documents: DocumentRelateToManyForCreateInput
   customerDocuments: DocumentRelateToManyForCreateInput
   customerMovements: StockMovementRelateToManyForCreateInput
+  customerCompany: String
+  customerTaxNumber: String
+  customerTaxCenter: String
   payments: PaymentRelateToManyForCreateInput
-  address: String
+  addresses: AddressRelateToManyForCreateInput
   workOrders: WorkOrderRelateToManyForCreateInput
   extraFields: JSON
 }
@@ -729,6 +820,11 @@ input StockMovementRelateToManyForCreateInput {
 input PaymentRelateToManyForCreateInput {
   create: [PaymentCreateInput!]
   connect: [PaymentWhereUniqueInput!]
+}
+
+input AddressRelateToManyForCreateInput {
+  create: [AddressCreateInput!]
+  connect: [AddressWhereUniqueInput!]
 }
 
 input WorkOrderRelateToManyForCreateInput {
@@ -1631,6 +1727,12 @@ type Mutation {
   updateOperations(data: [OperationUpdateArgs!]!): [Operation]
   deleteOperation(where: OperationWhereUniqueInput!): Operation
   deleteOperations(where: [OperationWhereUniqueInput!]!): [Operation]
+  createAddress(data: AddressCreateInput!): Address
+  createAddresses(data: [AddressCreateInput!]!): [Address]
+  updateAddress(where: AddressWhereUniqueInput!, data: AddressUpdateInput!): Address
+  updateAddresses(data: [AddressUpdateArgs!]!): [Address]
+  deleteAddress(where: AddressWhereUniqueInput!): Address
+  deleteAddresses(where: [AddressWhereUniqueInput!]!): [Address]
   createPayment(data: PaymentCreateInput!): Payment
   createPayments(data: [PaymentCreateInput!]!): [Payment]
   updatePayment(where: PaymentWhereUniqueInput!, data: PaymentUpdateInput!): Payment
@@ -1755,6 +1857,9 @@ type Query {
   operation(where: OperationWhereUniqueInput!): Operation
   operations(where: OperationWhereInput! = {}, orderBy: [OperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OperationWhereUniqueInput): [Operation!]
   operationsCount(where: OperationWhereInput! = {}): Int
+  address(where: AddressWhereUniqueInput!): Address
+  addresses(where: AddressWhereInput! = {}, orderBy: [AddressOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AddressWhereUniqueInput): [Address!]
+  addressesCount(where: AddressWhereInput! = {}): Int
   payment(where: PaymentWhereUniqueInput!): Payment
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int

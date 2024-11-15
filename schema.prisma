@@ -66,6 +66,18 @@ model Operation {
   @@index([userId])
 }
 
+model Address {
+  id                  String  @id @default(cuid())
+  street              String  @default("")
+  door                String  @default("")
+  zip                 String  @default("")
+  city                String  @default("")
+  province            String  @default("")
+  country             String  @default("")
+  extraFields         String?
+  from_User_addresses User[]  @relation("User_addresses")
+}
+
 model Payment {
   id          String    @id @default(cuid())
   value       Float
@@ -99,8 +111,11 @@ model User {
   documents         Document[]      @relation("Document_creator")
   customerDocuments Document[]      @relation("Document_customer")
   customerMovements StockMovement[] @relation("StockMovement_customer")
+  customerCompany   String          @default("")
+  customerTaxNumber String          @default("")
+  customerTaxCenter String          @default("")
   payments          Payment[]       @relation("Payment_creator")
-  address           String          @default("")
+  addresses         Address[]       @relation("User_addresses")
   workOrders        WorkOrder[]     @relation("WorkOrder_creator")
   extraFields       String?
 

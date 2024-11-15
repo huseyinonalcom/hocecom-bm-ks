@@ -130,88 +130,6 @@ var lists = {
               throw new Error("Finish date cannot be before start date");
             }
           }
-          if (inputData.wastage && inputData.wastage > (item.wastage ?? 0)) {
-            const generalStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Genel" } },
-              query: "id"
-            });
-            const wastageStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Fire" } },
-              query: "id"
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: wastageStorage.at(0).id } },
-                amount: inputData.wastage - (item.wastage ?? 0),
-                movementType: "giri\u015F",
-                application: { connect: { id: item.id } }
-              }
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: generalStorage.at(0).id } },
-                amount: inputData.wastage - (item.wastage ?? 0),
-                movementType: "\xE7\u0131k\u0131\u015F",
-                application: { connect: { id: item.id } }
-              }
-            });
-          } else if (inputData.wastage && item.wastage && inputData.wastage < item.wastage) {
-            const generalStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Genel" } },
-              query: "id"
-            });
-            const wastageStorage = await context.query.Storage.findMany({
-              where: { name: { equals: "Fire" } },
-              query: "id"
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: wastageStorage.at(0).id } },
-                amount: item.wastage - inputData.wastage,
-                movementType: "\xE7\u0131k\u0131\u015F",
-                application: { connect: { id: item.id } }
-              }
-            });
-            await context.query.StockMovement.createOne({
-              data: {
-                product: { connect: { id: item.productId } },
-                storage: { connect: { id: generalStorage.at(0).id } },
-                amount: item.wastage - inputData.wastage,
-                movementType: "giri\u015F",
-                application: { connect: { id: item.id } }
-              }
-            });
-          }
-        } else if (operation === "delete") {
-          const movements = await context.query.StockMovement.findMany({
-            where: { application: { id: { equals: item.id } } },
-            query: "id"
-          });
-          movements.forEach(async (movement) => {
-            await context.query.StockMovement.deleteOne({
-              where: { id: movement.id }
-            });
-          });
-        }
-      },
-      afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          const generalStorage = await context.query.Storage.findMany({
-            where: { name: { equals: "Genel" } },
-            query: "id"
-          });
-          await context.query.StockMovement.createOne({
-            data: {
-              product: { connect: { id: item.productId } },
-              storage: { connect: { id: generalStorage.at(0).id } },
-              amount: item.amount,
-              movementType: "\xE7\u0131k\u0131\u015F",
-              application: { connect: { id: item.id } }
-            }
-          });
         }
       }
     },
@@ -317,6 +235,28 @@ var lists = {
       value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       duration: (0, import_fields.integer)(),
       description: (0, import_fields.text)(),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Address: (0, import_core.list)({
+    ui: {
+      labelField: "street"
+    },
+    access: {
+      operation: {
+        create: isUser,
+        query: isUser,
+        update: isEmployee,
+        delete: import_access.denyAll
+      }
+    },
+    fields: {
+      street: (0, import_fields.text)({ validation: { isRequired: true } }),
+      door: (0, import_fields.text)({ validation: { isRequired: true } }),
+      zip: (0, import_fields.text)({ validation: { isRequired: true } }),
+      city: (0, import_fields.text)({ validation: { isRequired: true } }),
+      province: (0, import_fields.text)({ validation: { isRequired: true } }),
+      country: (0, import_fields.text)({ validation: { isRequired: true } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -443,8 +383,11 @@ var lists = {
         ref: "StockMovement.customer",
         many: true
       }),
+      customerCompany: (0, import_fields.text)(),
+      customerTaxNumber: (0, import_fields.text)(),
+      customerTaxCenter: (0, import_fields.text)(),
       payments: (0, import_fields.relationship)({ ref: "Payment.creator", many: true }),
-      address: (0, import_fields.text)(),
+      addresses: (0, import_fields.relationship)({ ref: "Address", many: true }),
       workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.creator", many: true }),
       extraFields: (0, import_fields.json)()
     }
@@ -512,11 +455,6 @@ var lists = {
               where: { id: dp.id }
             });
           });
-          if (item.paymentPlanId) {
-            await context.query.PaymentPlan.deleteOne({
-              where: { id: item.paymentPlanId }
-            });
-          }
         }
       }
     },
@@ -637,7 +575,7 @@ var lists = {
           });
           await context.query.StockMovement.createOne({
             data: {
-              product: { connect: { id: item.productId } },
+              material: { connect: { id: item.productId } },
               storage: { connect: { id: generalStorage.at(0).id } },
               amount: item.amount,
               movementType: "\xE7\u0131k\u0131\u015F",
@@ -754,7 +692,7 @@ var lists = {
               });
               const movements = await context.query.StockMovement.findMany({
                 where: {
-                  product: { id: { equals: item.id } },
+                  material: { id: { equals: item.id } },
                   storage: { id: { equals: generalStorage.at(0).id } }
                 },
                 query: "amount movementType"
@@ -1013,7 +951,7 @@ var keystone_default = withAuth(
     server: {
       port: 3344,
       cors: {
-        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173", "https://web.huseyinonalbeta.com"],
+        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173", "https://serce.mdi-muhasebe.com"],
         credentials: true
       },
       extendExpressApp: (app, context) => {
