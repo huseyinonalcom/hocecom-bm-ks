@@ -836,6 +836,7 @@ type Document {
   productsCount(where: DocumentProductWhereInput! = {}): Int
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
+  number: String
   totalPaid: Float
   extraFields: JSON
 }
@@ -859,6 +860,7 @@ input DocumentWhereInput {
   toDocument: DocumentWhereInput
   products: DocumentProductManyRelationFilter
   payments: PaymentManyRelationFilter
+  number: StringFilter
 }
 
 input DocumentProductManyRelationFilter {
@@ -873,6 +875,7 @@ input DocumentOrderByInput {
   type: OrderDirection
   reduction: OrderDirection
   isDeleted: OrderDirection
+  number: OrderDirection
 }
 
 input DocumentUpdateInput {
@@ -886,6 +889,7 @@ input DocumentUpdateInput {
   toDocument: DocumentRelateToOneForUpdateInput
   products: DocumentProductRelateToManyForUpdateInput
   payments: PaymentRelateToManyForUpdateInput
+  number: String
   extraFields: JSON
 }
 
@@ -912,6 +916,7 @@ input DocumentCreateInput {
   toDocument: DocumentRelateToOneForCreateInput
   products: DocumentProductRelateToManyForCreateInput
   payments: PaymentRelateToManyForCreateInput
+  number: String
   extraFields: JSON
 }
 

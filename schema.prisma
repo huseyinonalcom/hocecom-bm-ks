@@ -142,6 +142,7 @@ model Document {
   toDocument     Document?         @relation("Document_fromDocument")
   products       DocumentProduct[] @relation("DocumentProduct_document")
   payments       Payment[]         @relation("Payment_document")
+  number         String            @default("")
   extraFields    String?
 
   @@index([creatorId])

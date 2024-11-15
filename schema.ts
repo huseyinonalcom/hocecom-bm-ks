@@ -560,6 +560,7 @@ export const lists: Lists = {
         ref: "Payment.document",
         many: true,
       }),
+      number: text({ validation: { isRequired: true } }),
       totalPaid: virtual({
         field: graphql.field({
           type: graphql.Float,

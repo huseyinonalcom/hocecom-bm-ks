@@ -595,6 +595,7 @@ var lists = {
         ref: "Payment.document",
         many: true
       }),
+      number: (0, import_fields.text)({ validation: { isRequired: true } }),
       totalPaid: (0, import_fields.virtual)({
         field: import_core.graphql.field({
           type: import_core.graphql.Float,
@@ -1014,7 +1015,7 @@ var keystone_default = withAuth(
     server: {
       port: 3344,
       cors: {
-        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173"],
+        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173", "https://web.huseyinonalbeta.com"],
         credentials: true
       },
       extendExpressApp: (app, context) => {
