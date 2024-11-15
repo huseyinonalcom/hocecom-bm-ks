@@ -588,6 +588,7 @@ export const lists: Lists = {
         ref: "Material.documentProducts",
         many: false,
       }),
+      tax: float({ validation: { isRequired: true, min: 0 } }),
       price: float({ validation: { isRequired: true, min: 0 } }),
       reduction: float({ defaultValue: 0 }),
       total: virtual({
@@ -603,6 +604,24 @@ export const lists: Lists = {
 
               total -= (total * (document.reduction ?? 0)) / 100;
               return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      totalTax: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "tax",
+              });
+              let total = item.price * item.amount - (item.price * item.amount * (item.reduction ?? 0)) / 100;
+
+              return total * document.tax;
             } catch (e) {
               return 0;
             }

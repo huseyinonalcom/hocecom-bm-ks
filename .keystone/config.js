@@ -615,6 +615,7 @@ var lists = {
         ref: "Material.documentProducts",
         many: false
       }),
+      tax: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       reduction: (0, import_fields.float)({ defaultValue: 0 }),
       total: (0, import_fields.virtual)({
@@ -629,6 +630,23 @@ var lists = {
               let total = item.price * item.amount - item.price * item.amount * (item.reduction ?? 0) / 100;
               total -= total * (document.reduction ?? 0) / 100;
               return total;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      totalTax: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "tax"
+              });
+              let total = item.price * item.amount - item.price * item.amount * (item.reduction ?? 0) / 100;
+              return total * document.tax;
             } catch (e) {
               return 0;
             }
