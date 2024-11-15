@@ -490,6 +490,14 @@ export const lists: Lists = {
         ref: "Document.toDocument",
         many: false,
       }),
+      delAddress: relationship({
+        ref: "Address",
+        many: false,
+      }),
+      docAddress: relationship({
+        ref: "Address",
+        many: false,
+      }),
       toDocument: relationship({
         ref: "Document.fromDocument",
         many: false,

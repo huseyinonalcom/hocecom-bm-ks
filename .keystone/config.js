@@ -517,6 +517,14 @@ var lists = {
         ref: "Document.toDocument",
         many: false
       }),
+      delAddress: (0, import_fields.relationship)({
+        ref: "Address",
+        many: false
+      }),
+      docAddress: (0, import_fields.relationship)({
+        ref: "Address",
+        many: false
+      }),
       toDocument: (0, import_fields.relationship)({
         ref: "Document.fromDocument",
         many: false

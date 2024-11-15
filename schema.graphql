@@ -931,6 +931,8 @@ type Document {
   reduction: Float
   isDeleted: Boolean
   fromDocument: Document
+  delAddress: Address
+  docAddress: Address
   toDocument: Document
   products(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   productsCount(where: DocumentProductWhereInput! = {}): Int
@@ -957,6 +959,8 @@ input DocumentWhereInput {
   reduction: FloatNullableFilter
   isDeleted: BooleanFilter
   fromDocument: DocumentWhereInput
+  delAddress: AddressWhereInput
+  docAddress: AddressWhereInput
   toDocument: DocumentWhereInput
   products: DocumentProductManyRelationFilter
   payments: PaymentManyRelationFilter
@@ -986,11 +990,19 @@ input DocumentUpdateInput {
   reduction: Float
   isDeleted: Boolean
   fromDocument: DocumentRelateToOneForUpdateInput
+  delAddress: AddressRelateToOneForUpdateInput
+  docAddress: AddressRelateToOneForUpdateInput
   toDocument: DocumentRelateToOneForUpdateInput
   products: DocumentProductRelateToManyForUpdateInput
   payments: PaymentRelateToManyForUpdateInput
   number: String
   extraFields: JSON
+}
+
+input AddressRelateToOneForUpdateInput {
+  create: AddressCreateInput
+  connect: AddressWhereUniqueInput
+  disconnect: Boolean
 }
 
 input DocumentProductRelateToManyForUpdateInput {
@@ -1013,11 +1025,18 @@ input DocumentCreateInput {
   reduction: Float
   isDeleted: Boolean
   fromDocument: DocumentRelateToOneForCreateInput
+  delAddress: AddressRelateToOneForCreateInput
+  docAddress: AddressRelateToOneForCreateInput
   toDocument: DocumentRelateToOneForCreateInput
   products: DocumentProductRelateToManyForCreateInput
   payments: PaymentRelateToManyForCreateInput
   number: String
   extraFields: JSON
+}
+
+input AddressRelateToOneForCreateInput {
+  create: AddressCreateInput
+  connect: AddressWhereUniqueInput
 }
 
 input DocumentProductRelateToManyForCreateInput {
