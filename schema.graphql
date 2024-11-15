@@ -1050,9 +1050,11 @@ type DocumentProduct {
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   product: Material
+  tax: Float
   price: Float
   reduction: Float
   total: Float
+  totalTax: Float
   document: Document
   extraFields: JSON
 }
@@ -1069,6 +1071,7 @@ input DocumentProductWhereInput {
   amount: FloatFilter
   stockMovements: StockMovementManyRelationFilter
   product: MaterialWhereInput
+  tax: FloatFilter
   price: FloatFilter
   reduction: FloatNullableFilter
   document: DocumentWhereInput
@@ -1077,6 +1080,7 @@ input DocumentProductWhereInput {
 input DocumentProductOrderByInput {
   id: OrderDirection
   amount: OrderDirection
+  tax: OrderDirection
   price: OrderDirection
   reduction: OrderDirection
 }
@@ -1085,6 +1089,7 @@ input DocumentProductUpdateInput {
   amount: Float
   stockMovements: StockMovementRelateToManyForUpdateInput
   product: MaterialRelateToOneForUpdateInput
+  tax: Float
   price: Float
   reduction: Float
   document: DocumentRelateToOneForUpdateInput
@@ -1100,6 +1105,7 @@ input DocumentProductCreateInput {
   amount: Float
   stockMovements: StockMovementRelateToManyForCreateInput
   product: MaterialRelateToOneForCreateInput
+  tax: Float
   price: Float
   reduction: Float
   document: DocumentRelateToOneForCreateInput

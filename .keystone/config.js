@@ -716,14 +716,9 @@ var lists = {
           type: import_core.graphql.Int,
           async resolve(item, args, context) {
             try {
-              const generalStorage = await context.query.Storage.findMany({
-                where: { name: { equals: "Genel" } },
-                query: "id"
-              });
               const movements = await context.query.StockMovement.findMany({
                 where: {
-                  material: { id: { equals: item.id } },
-                  storage: { id: { equals: generalStorage.at(0).id } }
+                  material: { id: { equals: item.id } }
                 },
                 query: "amount movementType"
               });
