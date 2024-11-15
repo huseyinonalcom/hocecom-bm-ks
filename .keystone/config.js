@@ -941,6 +941,31 @@ var lists = {
   })
 };
 
+// utils/sendmail.ts
+var sendMail = async ({ transport, attachment }) => {
+  try {
+    let mailOptionsClient = {
+      from: `"backupsercemdimuhsaebe@huseyinonal.com" <backupsercemdimuhsaebe@huseyinonal.com>`,
+      to: ["sercebackupmdimuhasebe@hotmail.com", "backupsercemdimuhsaebe@huseyinonal.com"],
+      attachments: attachment,
+      subject: "Serce MDI Muhasebe veri taban\u0131 yede\u011Fi",
+      text: `Serce MDI Muhasebe veri taban\u0131 yede\u011Fi ${(/* @__PURE__ */ new Date()).toLocaleString("tr-TR")}`
+    };
+    transport.sendMail(mailOptionsClient, (error, info) => {
+      if (error) {
+        console.error(error);
+        return false;
+      } else {
+        console.log("Email sent: " + info.response);
+        return true;
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+};
+
 // keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
@@ -955,6 +980,17 @@ var keystone_default = withAuth(
         credentials: true
       },
       extendExpressApp: (app, context) => {
+        var cron = require("node-cron");
+        var nodemailer = require("nodemailer");
+        var transport = nodemailer.createTransport({
+          host: "mx.huseyinonal.com",
+          port: 587,
+          secure: false,
+          auth: {
+            user: "backupsercemdimuhsaebe@huseyinonal.com",
+            pass: "8CS+bP9833"
+          }
+        });
         const path = require("path");
         const fs = require("fs");
         const multer = require("multer");
@@ -999,7 +1035,46 @@ var keystone_default = withAuth(
             res.status(404).json({ message: "File not found" });
           }
         });
-        console.log("file upload ready");
+        cron.schedule("0 */1 * * * *", async () => {
+          try {
+            const backupDir = path.join(__dirname, "backup");
+            if (!fs.existsSync(backupDir)) {
+              fs.mkdirSync(backupDir);
+            }
+            const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:.]/g, "");
+            const backupFilePath = path.join(backupDir, `data-${timestamp2}.db`);
+            fs.copyFileSync("data.db", backupFilePath);
+            const backupFiles = fs.readdirSync(backupDir);
+            if (backupFiles.length > 120) {
+              backupFiles.sort((a, b) => fs.statSync(path.join(backupDir, a)).mtime.getTime() - fs.statSync(path.join(backupDir, b)).mtime.getTime());
+              const backupFilesToDelete = backupFiles.slice(120);
+              const fourteenDaysAgo = /* @__PURE__ */ new Date();
+              fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+              backupFilesToDelete.forEach((file) => {
+                const filePath = path.join(backupDir, file);
+                const fileStats = fs.statSync(filePath);
+                if (fileStats.mtime < fourteenDaysAgo) {
+                  fs.unlinkSync(filePath);
+                }
+              });
+            }
+            try {
+              sendMail({
+                transport,
+                attachment: [
+                  {
+                    filename: "data.db",
+                    path: backupFilePath
+                  }
+                ]
+              });
+            } catch (error) {
+              console.error("Error sending email", error);
+            }
+          } catch (error) {
+            console.error("Error running back-up job", error);
+          }
+        });
       }
     },
     lists,

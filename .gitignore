@@ -6,3 +6,4 @@ data.db
 .env
 .keystone/config.js.map
 /.keystone/uploads
+/.keystone/backup
