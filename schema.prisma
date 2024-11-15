@@ -196,6 +196,7 @@ model Material {
   brandId            String?             @map("brand")
   suppliers          Supplier[]          @relation("Material_suppliers")
   pricedBy           String              @default("amount")
+  type               String              @default("product")
   operations         Operation[]         @relation("Operation_material")
   stockMovements     StockMovement[]     @relation("StockMovement_material")
   documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")

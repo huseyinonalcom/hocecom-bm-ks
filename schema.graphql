@@ -1064,6 +1064,7 @@ type Material {
   suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
   suppliersCount(where: SupplierWhereInput! = {}): Int
   pricedBy: String
+  type: String
   operations(where: OperationWhereInput! = {}, orderBy: [OperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OperationWhereUniqueInput): [Operation!]
   operationsCount(where: OperationWhereInput! = {}): Int
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
@@ -1095,6 +1096,7 @@ input MaterialWhereInput {
   brand: BrandWhereInput
   suppliers: SupplierManyRelationFilter
   pricedBy: StringFilter
+  type: StringFilter
   operations: OperationManyRelationFilter
   stockMovements: StockMovementManyRelationFilter
   documentProducts: DocumentProductManyRelationFilter
@@ -1121,6 +1123,7 @@ input MaterialOrderByInput {
   code: OrderDirection
   ean: OrderDirection
   pricedBy: OrderDirection
+  type: OrderDirection
 }
 
 input MaterialUpdateInput {
@@ -1137,6 +1140,7 @@ input MaterialUpdateInput {
   brand: BrandRelateToOneForUpdateInput
   suppliers: SupplierRelateToManyForUpdateInput
   pricedBy: String
+  type: String
   operations: OperationRelateToManyForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
@@ -1182,6 +1186,7 @@ input MaterialCreateInput {
   brand: BrandRelateToOneForCreateInput
   suppliers: SupplierRelateToManyForCreateInput
   pricedBy: String
+  type: String
   operations: OperationRelateToManyForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput

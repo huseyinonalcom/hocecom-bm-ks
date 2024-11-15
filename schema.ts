@@ -778,6 +778,12 @@ export const lists: Lists = {
         defaultValue: "amount",
         validation: { isRequired: true },
       }),
+      type: select({
+        type: "string",
+        options: ["raw", "product"],
+        defaultValue: "product",
+        validation: { isRequired: true },
+      }),
       operations: relationship({
         ref: "Operation.material",
         many: true,

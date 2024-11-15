@@ -812,6 +812,12 @@ var lists = {
         defaultValue: "amount",
         validation: { isRequired: true }
       }),
+      type: (0, import_fields.select)({
+        type: "string",
+        options: ["raw", "product"],
+        defaultValue: "product",
+        validation: { isRequired: true }
+      }),
       operations: (0, import_fields.relationship)({
         ref: "Operation.material",
         many: true
