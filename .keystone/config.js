@@ -257,6 +257,10 @@ var lists = {
       city: (0, import_fields.text)({ validation: { isRequired: true } }),
       province: (0, import_fields.text)({ validation: { isRequired: true } }),
       country: (0, import_fields.text)({ validation: { isRequired: true } }),
+      customer: (0, import_fields.relationship)({
+        ref: "User.customerAddresses",
+        many: false
+      }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -387,7 +391,7 @@ var lists = {
       customerTaxNumber: (0, import_fields.text)(),
       customerTaxCenter: (0, import_fields.text)(),
       payments: (0, import_fields.relationship)({ ref: "Payment.creator", many: true }),
-      addresses: (0, import_fields.relationship)({ ref: "Address", many: true }),
+      customerAddresses: (0, import_fields.relationship)({ ref: "Address.customer", many: true }),
       workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.creator", many: true }),
       extraFields: (0, import_fields.json)()
     }

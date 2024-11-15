@@ -428,6 +428,7 @@ type Address {
   city: String
   province: String
   country: String
+  customer: User
   extraFields: JSON
 }
 
@@ -446,6 +447,7 @@ input AddressWhereInput {
   city: StringFilter
   province: StringFilter
   country: StringFilter
+  customer: UserWhereInput
 }
 
 input AddressOrderByInput {
@@ -465,6 +467,7 @@ input AddressUpdateInput {
   city: String
   province: String
   country: String
+  customer: UserRelateToOneForUpdateInput
   extraFields: JSON
 }
 
@@ -480,6 +483,7 @@ input AddressCreateInput {
   city: String
   province: String
   country: String
+  customer: UserRelateToOneForCreateInput
   extraFields: JSON
 }
 
@@ -592,8 +596,8 @@ type User {
   customerTaxCenter: String
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
-  addresses(where: AddressWhereInput! = {}, orderBy: [AddressOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AddressWhereUniqueInput): [Address!]
-  addressesCount(where: AddressWhereInput! = {}): Int
+  customerAddresses(where: AddressWhereInput! = {}, orderBy: [AddressOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AddressWhereUniqueInput): [Address!]
+  customerAddressesCount(where: AddressWhereInput! = {}): Int
   workOrders(where: WorkOrderWhereInput! = {}, orderBy: [WorkOrderOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderWhereUniqueInput): [WorkOrder!]
   workOrdersCount(where: WorkOrderWhereInput! = {}): Int
   extraFields: JSON
@@ -635,7 +639,7 @@ input UserWhereInput {
   customerTaxNumber: StringFilter
   customerTaxCenter: StringFilter
   payments: PaymentManyRelationFilter
-  addresses: AddressManyRelationFilter
+  customerAddresses: AddressManyRelationFilter
   workOrders: WorkOrderManyRelationFilter
 }
 
@@ -714,7 +718,7 @@ input UserUpdateInput {
   customerTaxNumber: String
   customerTaxCenter: String
   payments: PaymentRelateToManyForUpdateInput
-  addresses: AddressRelateToManyForUpdateInput
+  customerAddresses: AddressRelateToManyForUpdateInput
   workOrders: WorkOrderRelateToManyForUpdateInput
   extraFields: JSON
 }
@@ -792,7 +796,7 @@ input UserCreateInput {
   customerTaxNumber: String
   customerTaxCenter: String
   payments: PaymentRelateToManyForCreateInput
-  addresses: AddressRelateToManyForCreateInput
+  customerAddresses: AddressRelateToManyForCreateInput
   workOrders: WorkOrderRelateToManyForCreateInput
   extraFields: JSON
 }

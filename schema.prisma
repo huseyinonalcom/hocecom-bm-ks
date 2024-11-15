@@ -67,15 +67,18 @@ model Operation {
 }
 
 model Address {
-  id                  String  @id @default(cuid())
-  street              String  @default("")
-  door                String  @default("")
-  zip                 String  @default("")
-  city                String  @default("")
-  province            String  @default("")
-  country             String  @default("")
-  extraFields         String?
-  from_User_addresses User[]  @relation("User_addresses")
+  id          String  @id @default(cuid())
+  street      String  @default("")
+  door        String  @default("")
+  zip         String  @default("")
+  city        String  @default("")
+  province    String  @default("")
+  country     String  @default("")
+  customer    User?   @relation("Address_customer", fields: [customerId], references: [id])
+  customerId  String? @map("customer")
+  extraFields String?
+
+  @@index([customerId])
 }
 
 model Payment {
@@ -115,7 +118,7 @@ model User {
   customerTaxNumber String          @default("")
   customerTaxCenter String          @default("")
   payments          Payment[]       @relation("Payment_creator")
-  addresses         Address[]       @relation("User_addresses")
+  customerAddresses Address[]       @relation("Address_customer")
   workOrders        WorkOrder[]     @relation("WorkOrder_creator")
   extraFields       String?
 
