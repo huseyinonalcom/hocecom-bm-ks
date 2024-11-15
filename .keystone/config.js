@@ -976,7 +976,13 @@ var keystone_default = withAuth(
     server: {
       port: 3344,
       cors: {
-        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173", "https://serce.mdi-muhasebe.com"],
+        origin: [
+          "http://localhost:8081",
+          "http://localhost:3000",
+          "http://localhost:5173",
+          "https://serce.mdi-muhasebe.com",
+          "https://serceapi.mdi-muhasebe.com"
+        ],
         credentials: true
       },
       extendExpressApp: (app, context) => {
@@ -1035,7 +1041,7 @@ var keystone_default = withAuth(
             res.status(404).json({ message: "File not found" });
           }
         });
-        cron.schedule("0 */1 * * * *", async () => {
+        cron.schedule("0 0 */1 * * *", async () => {
           try {
             const backupDir = path.join(__dirname, "backup");
             if (!fs.existsSync(backupDir)) {
