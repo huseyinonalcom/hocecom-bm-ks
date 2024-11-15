@@ -24,7 +24,7 @@ export default withAuth(
           secure: false,
           auth: {
             user: "backupsercemdimuhsaebe@huseyinonal.com",
-            pass: "8CS+bP9833",
+            pass: process.env.MAIL_PASS,
           },
         });
         const path = require("path");
