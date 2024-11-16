@@ -606,6 +606,7 @@ export const lists: Lists = {
         ref: "Material.documentProducts",
         many: false,
       }),
+      name: text({ validation: { isRequired: true } }),
       tax: float({ validation: { isRequired: true, min: 0 } }),
       price: float({ validation: { isRequired: true, min: 0 } }),
       reduction: float({ defaultValue: 0 }),
