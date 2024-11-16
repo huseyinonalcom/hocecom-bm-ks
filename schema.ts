@@ -572,21 +572,21 @@ export const lists: Lists = {
         }
       },
       afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          const generalStorage = await context.query.Storage.findMany({
-            where: { name: { equals: "Genel" } },
-            query: "id",
-          });
-          await context.query.StockMovement.createOne({
-            data: {
-              material: { connect: { id: item.productId } },
-              storage: { connect: { id: generalStorage.at(0)!.id } },
-              amount: item.amount,
-              movementType: "çıkış",
-              documentProduct: { connect: { id: item.id } },
-            },
-          });
-        }
+        // if (operation === "create") {
+        //   const generalStorage = await context.query.Storage.findMany({
+        //     where: { name: { equals: "Genel" } },
+        //     query: "id",
+        //   });
+        //   await context.query.StockMovement.createOne({
+        //     data: {
+        //       material: { connect: { id: item.productId } },
+        //       storage: { connect: { id: generalStorage.at(0)!.id } },
+        //       amount: item.amount,
+        //       movementType: "çıkış",
+        //       documentProduct: { connect: { id: item.id } },
+        //     },
+        //   });
+        // }
       },
     },
     access: {
