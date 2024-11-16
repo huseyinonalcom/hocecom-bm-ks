@@ -440,8 +440,8 @@ export const lists: Lists = {
             query: "id",
           }).then((docs) => docs.at(0));
           if (lastDocument) {
-            const lastNumber = lastDocument.number.split("-")[1];
-            const lastYear = lastDocument.number.split("-")[0];
+            const lastNumber = lastDocument.number.toFixed(0).split("-")[1];
+            const lastYear = lastDocument.number.toFixed(0).split("-")[0];
             if (lastYear == new Date().getFullYear()) {
               resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
             } else {
