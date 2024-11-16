@@ -276,6 +276,8 @@ export const lists: Lists = {
                   return false;
                 case "alacak dekontu":
                   return true;
+                case "satın alma":
+                  return true;
                 default:
                   return false;
               }
