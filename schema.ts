@@ -437,9 +437,8 @@ export const lists: Lists = {
         if (operation === "create") {
           const docs = await context.query.Document.findMany({
             orderBy: { number: "desc" },
-            query: "id",
+            query: "id number",
           });
-          console.log(docs);
           const lastDocument = docs.at(0);
           if (lastDocument) {
             const lastNumber = lastDocument.number.split("-")[1];
