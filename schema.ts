@@ -422,7 +422,7 @@ export const lists: Lists = {
       },
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
+      beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
         if (operation === "delete") {
           const products = await context.query.DocumentProduct.findMany({
             where: { document: { id: { equals: item.id } } },
@@ -443,12 +443,12 @@ export const lists: Lists = {
             const lastNumber = lastDocument.number.split("-")[1];
             const lastYear = lastDocument.number.split("-")[0];
             if (lastYear == new Date().getFullYear()) {
-              item.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+              resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
             } else {
-              item.number = `${new Date().getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+              resolvedData.number = `${new Date().getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
             }
           } else {
-            item.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(8, "0")}`;
+            resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(8, "0")}`;
           }
         }
       },
