@@ -439,6 +439,7 @@ export const lists: Lists = {
             orderBy: { number: "desc" },
             query: "id",
           }).then((docs) => docs.at(0));
+          console.log(lastDocument);
           if (lastDocument) {
             const lastNumber = lastDocument.number.toFixed(0).split("-")[1];
             const lastYear = lastDocument.number.toFixed(0).split("-")[0];
