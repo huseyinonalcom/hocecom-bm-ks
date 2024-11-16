@@ -449,7 +449,7 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
+      beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
         if (operation === "delete") {
           const products = await context.query.DocumentProduct.findMany({
             where: { document: { id: { equals: item.id } } },
@@ -460,6 +460,24 @@ var lists = {
               where: { id: dp.id }
             });
           });
+        }
+        if (operation === "create") {
+          const docs = await context.query.Document.findMany({
+            orderBy: { number: "desc" },
+            query: "id number"
+          });
+          const lastDocument = docs.at(0);
+          if (lastDocument) {
+            const lastNumber = lastDocument.number.split("-")[1];
+            const lastYear = lastDocument.number.split("-")[0];
+            if (lastYear == (/* @__PURE__ */ new Date()).getFullYear()) {
+              resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+            } else {
+              resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+            }
+          } else {
+            resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(8, "0")}`;
+          }
         }
       }
     },
@@ -479,11 +497,11 @@ var lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "amount material { value }"
+                query: "total"
               });
               let total = 0;
               materials.forEach((docProd) => {
-                total += docProd.amount * docProd.mat.value;
+                total += docProd.total;
               });
               return total - total * (item.reduction ?? 0) / 100;
             } catch (e) {
@@ -494,7 +512,7 @@ var lists = {
       }),
       type: (0, import_fields.select)({
         type: "string",
-        options: ["teklif", "sat\u0131\u015F", "irsaliye", "fatura", "bor\xE7 dekontu", "alacak dekontu"],
+        options: ["teklif", "sat\u0131\u015F", "irsaliye", "fatura", "bor\xE7 dekontu", "alacak dekontu", "sat\u0131n alma"],
         defaultValue: "sat\u0131\u015F",
         validation: { isRequired: true }
       }),
@@ -504,6 +522,10 @@ var lists = {
         access: {
           update: import_access.denyAll
         }
+      }),
+      supplier: (0, import_fields.relationship)({
+        ref: "Supplier.documents",
+        many: false
       }),
       customer: (0, import_fields.relationship)({
         ref: "User.customerDocuments",
@@ -581,21 +603,6 @@ var lists = {
         }
       },
       afterOperation: async ({ operation, item, context }) => {
-        if (operation === "create") {
-          const generalStorage = await context.query.Storage.findMany({
-            where: { name: { equals: "Genel" } },
-            query: "id"
-          });
-          await context.query.StockMovement.createOne({
-            data: {
-              material: { connect: { id: item.productId } },
-              storage: { connect: { id: generalStorage.at(0).id } },
-              amount: item.amount,
-              movementType: "\xE7\u0131k\u0131\u015F",
-              documentProduct: { connect: { id: item.id } }
-            }
-          });
-        }
       }
     },
     access: {
@@ -616,6 +623,7 @@ var lists = {
         ref: "Material.documentProducts",
         many: false
       }),
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
       tax: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       reduction: (0, import_fields.float)({ defaultValue: 0 }),
@@ -877,7 +885,8 @@ var lists = {
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       materials: (0, import_fields.relationship)({ ref: "Material.suppliers", many: true }),
-      extraFields: (0, import_fields.json)()
+      extraFields: (0, import_fields.json)(),
+      documents: (0, import_fields.relationship)({ ref: "Document.supplier", many: true })
     }
   }),
   Brand: (0, import_core.list)({

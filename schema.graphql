@@ -932,6 +932,7 @@ type Document {
   total: Float
   type: String
   creator: User
+  supplier: Supplier
   customer: User
   reduction: Float
   isDeleted: Boolean
@@ -960,6 +961,7 @@ input DocumentWhereInput {
   createdAt: DateTimeNullableFilter
   type: StringFilter
   creator: UserWhereInput
+  supplier: SupplierWhereInput
   customer: UserWhereInput
   reduction: FloatNullableFilter
   isDeleted: BooleanFilter
@@ -991,6 +993,7 @@ input DocumentUpdateInput {
   createdAt: DateTime
   type: String
   creator: UserRelateToOneForUpdateInput
+  supplier: SupplierRelateToOneForUpdateInput
   customer: UserRelateToOneForUpdateInput
   reduction: Float
   isDeleted: Boolean
@@ -1002,6 +1005,12 @@ input DocumentUpdateInput {
   payments: PaymentRelateToManyForUpdateInput
   number: String
   extraFields: JSON
+}
+
+input SupplierRelateToOneForUpdateInput {
+  create: SupplierCreateInput
+  connect: SupplierWhereUniqueInput
+  disconnect: Boolean
 }
 
 input AddressRelateToOneForUpdateInput {
@@ -1026,6 +1035,7 @@ input DocumentCreateInput {
   createdAt: DateTime
   type: String
   creator: UserRelateToOneForCreateInput
+  supplier: SupplierRelateToOneForCreateInput
   customer: UserRelateToOneForCreateInput
   reduction: Float
   isDeleted: Boolean
@@ -1037,6 +1047,11 @@ input DocumentCreateInput {
   payments: PaymentRelateToManyForCreateInput
   number: String
   extraFields: JSON
+}
+
+input SupplierRelateToOneForCreateInput {
+  create: SupplierCreateInput
+  connect: SupplierWhereUniqueInput
 }
 
 input AddressRelateToOneForCreateInput {
@@ -1055,6 +1070,7 @@ type DocumentProduct {
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   product: Material
+  name: String
   tax: Float
   price: Float
   reduction: Float
@@ -1076,6 +1092,7 @@ input DocumentProductWhereInput {
   amount: FloatFilter
   stockMovements: StockMovementManyRelationFilter
   product: MaterialWhereInput
+  name: StringFilter
   tax: FloatFilter
   price: FloatFilter
   reduction: FloatNullableFilter
@@ -1085,6 +1102,7 @@ input DocumentProductWhereInput {
 input DocumentProductOrderByInput {
   id: OrderDirection
   amount: OrderDirection
+  name: OrderDirection
   tax: OrderDirection
   price: OrderDirection
   reduction: OrderDirection
@@ -1094,6 +1112,7 @@ input DocumentProductUpdateInput {
   amount: Float
   stockMovements: StockMovementRelateToManyForUpdateInput
   product: MaterialRelateToOneForUpdateInput
+  name: String
   tax: Float
   price: Float
   reduction: Float
@@ -1110,6 +1129,7 @@ input DocumentProductCreateInput {
   amount: Float
   stockMovements: StockMovementRelateToManyForCreateInput
   product: MaterialRelateToOneForCreateInput
+  name: String
   tax: Float
   price: Float
   reduction: Float
@@ -1483,6 +1503,8 @@ type Supplier {
   materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
   materialsCount(where: MaterialWhereInput! = {}): Int
   extraFields: JSON
+  documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
+  documentsCount(where: DocumentWhereInput! = {}): Int
 }
 
 input SupplierWhereUniqueInput {
@@ -1496,6 +1518,7 @@ input SupplierWhereInput {
   id: IDFilter
   name: StringFilter
   materials: MaterialManyRelationFilter
+  documents: DocumentManyRelationFilter
 }
 
 input SupplierOrderByInput {
@@ -1507,6 +1530,7 @@ input SupplierUpdateInput {
   name: String
   materials: MaterialRelateToManyForUpdateInput
   extraFields: JSON
+  documents: DocumentRelateToManyForUpdateInput
 }
 
 input SupplierUpdateArgs {
@@ -1518,6 +1542,7 @@ input SupplierCreateInput {
   name: String
   materials: MaterialRelateToManyForCreateInput
   extraFields: JSON
+  documents: DocumentRelateToManyForCreateInput
 }
 
 type Brand {

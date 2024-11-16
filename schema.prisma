@@ -154,6 +154,8 @@ model Document {
   type           String            @default("satış")
   creator        User?             @relation("Document_creator", fields: [creatorId], references: [id])
   creatorId      String?           @map("creator")
+  supplier       Supplier?         @relation("Document_supplier", fields: [supplierId], references: [id])
+  supplierId     String?           @map("supplier")
   customer       User?             @relation("Document_customer", fields: [customerId], references: [id])
   customerId     String?           @map("customer")
   reduction      Float?            @default(0)
@@ -171,6 +173,7 @@ model Document {
   extraFields    String?
 
   @@index([creatorId])
+  @@index([supplierId])
   @@index([customerId])
   @@index([delAddressId])
   @@index([docAddressId])
@@ -182,6 +185,7 @@ model DocumentProduct {
   stockMovements StockMovement[] @relation("StockMovement_documentProduct")
   product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
   productId      String?         @map("product")
+  name           String          @default("")
   tax            Float
   price          Float
   reduction      Float?          @default(0)
@@ -268,6 +272,7 @@ model Supplier {
   name        String     @default("")
   materials   Material[] @relation("Material_suppliers")
   extraFields String?
+  documents   Document[] @relation("Document_supplier")
 }
 
 model Brand {

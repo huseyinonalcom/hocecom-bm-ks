@@ -485,7 +485,7 @@ export const lists: Lists = {
       }),
       type: select({
         type: "string",
-        options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu"],
+        options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu", "satın alma"],
         defaultValue: "satış",
         validation: { isRequired: true },
       }),
@@ -495,6 +495,10 @@ export const lists: Lists = {
         access: {
           update: denyAll,
         },
+      }),
+      supplier: relationship({
+        ref: "Supplier.documents",
+        many: false,
       }),
       customer: relationship({
         ref: "User.customerDocuments",
@@ -872,6 +876,7 @@ export const lists: Lists = {
       name: text({ validation: { isRequired: true } }),
       materials: relationship({ ref: "Material.suppliers", many: true }),
       extraFields: json(),
+      documents: relationship({ ref: "Document.supplier", many: true }),
     },
   }),
   Brand: list({
