@@ -439,6 +439,7 @@ export const lists: Lists = {
         if (operation === "create") {
           const docs = await context.query.Document.findMany({
             orderBy: { number: "desc" },
+            where: { type: { equals: resolvedData.type } },
             query: "id number",
           });
           const lastDocument = docs.at(0);
