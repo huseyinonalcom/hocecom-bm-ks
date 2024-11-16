@@ -220,7 +220,7 @@ export const lists: Lists = {
         create: isUser,
         query: isUser,
         update: isEmployee,
-        delete: denyAll,
+        delete: isAdmin,
       },
     },
     fields: {
@@ -247,7 +247,7 @@ export const lists: Lists = {
         create: isEmployee,
         query: isEmployee,
         update: isManager,
-        delete: denyAll,
+        delete: isAdmin,
       },
     },
     fields: {
