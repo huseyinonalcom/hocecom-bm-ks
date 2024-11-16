@@ -434,6 +434,23 @@ export const lists: Lists = {
             });
           });
         }
+        if (operation === "create") {
+          const lastDocument = await context.query.Document.findMany({
+            orderBy: { number: "desc" },
+            query: "id",
+          }).then((docs) => docs.at(0));
+          if (lastDocument) {
+            const lastNumber = lastDocument.number.split("-")[1];
+            const lastYear = lastDocument.number.split("-")[0];
+            if (lastYear == new Date().getFullYear()) {
+              item.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+            } else {
+              item.number = `${new Date().getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+            }
+          } else {
+            item.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(8, "0")}`;
+          }
+        }
       },
     },
     fields: {
