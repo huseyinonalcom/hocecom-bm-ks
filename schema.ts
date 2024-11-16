@@ -754,6 +754,7 @@ export const lists: Lists = {
       }),
       code: text(),
       ean: text(),
+      tax: float({ validation: { isRequired: true, min: 0 } }),
       brand: relationship({
         ref: "Brand.materials",
         many: false,
