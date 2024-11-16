@@ -489,7 +489,6 @@ export const lists: Lists = {
       type: select({
         type: "string",
         options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu", "satın alma"],
-        defaultValue: "satış",
         validation: { isRequired: true },
       }),
       creator: relationship({
