@@ -255,6 +255,7 @@ var lists = {
       door: (0, import_fields.text)({ validation: { isRequired: true } }),
       zip: (0, import_fields.text)({ validation: { isRequired: true } }),
       city: (0, import_fields.text)({ validation: { isRequired: true } }),
+      floor: (0, import_fields.text)({ validation: { isRequired: true } }),
       province: (0, import_fields.text)({ validation: { isRequired: true } }),
       country: (0, import_fields.text)({ validation: { isRequired: true } }),
       customer: (0, import_fields.relationship)({

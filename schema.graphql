@@ -426,6 +426,7 @@ type Address {
   door: String
   zip: String
   city: String
+  floor: String
   province: String
   country: String
   customer: User
@@ -445,6 +446,7 @@ input AddressWhereInput {
   door: StringFilter
   zip: StringFilter
   city: StringFilter
+  floor: StringFilter
   province: StringFilter
   country: StringFilter
   customer: UserWhereInput
@@ -456,6 +458,7 @@ input AddressOrderByInput {
   door: OrderDirection
   zip: OrderDirection
   city: OrderDirection
+  floor: OrderDirection
   province: OrderDirection
   country: OrderDirection
 }
@@ -465,6 +468,7 @@ input AddressUpdateInput {
   door: String
   zip: String
   city: String
+  floor: String
   province: String
   country: String
   customer: UserRelateToOneForUpdateInput
@@ -481,6 +485,7 @@ input AddressCreateInput {
   door: String
   zip: String
   city: String
+  floor: String
   province: String
   country: String
   customer: UserRelateToOneForCreateInput

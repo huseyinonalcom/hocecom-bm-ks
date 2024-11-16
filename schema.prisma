@@ -72,6 +72,7 @@ model Address {
   door                     String     @default("")
   zip                      String     @default("")
   city                     String     @default("")
+  floor                    String     @default("")
   province                 String     @default("")
   country                  String     @default("")
   customer                 User?      @relation("Address_customer", fields: [customerId], references: [id])
