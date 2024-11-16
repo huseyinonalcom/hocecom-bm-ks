@@ -228,6 +228,7 @@ export const lists: Lists = {
       door: text({ validation: { isRequired: true } }),
       zip: text({ validation: { isRequired: true } }),
       city: text({ validation: { isRequired: true } }),
+      floor: text({ validation: { isRequired: true } }),
       province: text({ validation: { isRequired: true } }),
       country: text({ validation: { isRequired: true } }),
       customer: relationship({
