@@ -319,8 +319,8 @@ var lists = {
       reference: (0, import_fields.text)(),
       type: (0, import_fields.select)({
         type: "string",
-        options: ["nakit", "kredi kart\u0131", "havale", "\xE7ek", "senet", "banka kart\u0131", "kredi"],
-        defaultValue: "nakit",
+        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory"],
+        defaultValue: "cash",
         validation: { isRequired: true }
       }),
       timestamp: (0, import_fields.timestamp)({

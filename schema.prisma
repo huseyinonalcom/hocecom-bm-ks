@@ -92,7 +92,7 @@ model Payment {
   creator     User?     @relation("Payment_creator", fields: [creatorId], references: [id])
   creatorId   String?   @map("creator")
   reference   String    @default("")
-  type        String    @default("nakit")
+  type        String    @default("cash")
   timestamp   DateTime? @default(now())
   extraFields String?
 

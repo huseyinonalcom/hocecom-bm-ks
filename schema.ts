@@ -292,8 +292,8 @@ export const lists: Lists = {
       reference: text(),
       type: select({
         type: "string",
-        options: ["nakit", "kredi kartı", "havale", "çek", "senet", "banka kartı", "kredi"],
-        defaultValue: "nakit",
+        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory"],
+        defaultValue: "cash",
         validation: { isRequired: true },
       }),
       timestamp: timestamp({
