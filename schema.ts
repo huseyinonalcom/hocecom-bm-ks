@@ -703,13 +703,13 @@ export const lists: Lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "total",
+                query: "total tax",
               });
               let total = 0;
               materials.forEach((docProd) => {
-                total += docProd.total;
+                total += docProd.total * (1 + docProd.tax / 100);
               });
-              return total - (total * (item.reduction ?? 0)) / 100 + total * item.tax;
+              return total - (total * (item.reduction ?? 0)) / 100;
             } catch (e) {
               return 0;
             }
