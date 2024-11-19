@@ -3,6 +3,23 @@ import { denyAll } from "@keystone-6/core/access";
 import type { Lists } from ".keystone/types";
 import { graphql, list } from "@keystone-6/core";
 
+export type Role =
+  | "superadmin"
+  | "global_admin"
+  | "admin_accountant"
+  | "admin_accountant_manager"
+  | "owner"
+  | "company_admin"
+  | "admin_accountant_employee"
+  | "general_manager"
+  | "manager"
+  | "accountant"
+  | "admin_accountant_intern"
+  | "employee"
+  | "intern"
+  | "worker"
+  | "customer";
+
 export type Session = {
   itemId: string;
   data: {
@@ -10,22 +27,7 @@ export type Session = {
     username: string;
     company?: string;
     accountancy?: string;
-    role:
-      | "superadmin"
-      | "global_admin"
-      | "admin_accountant"
-      | "admin_accountant_manager"
-      | "owner"
-      | "company_admin"
-      | "admin_accountant_employee"
-      | "general_manager"
-      | "manager"
-      | "accountant"
-      | "admin_accountant_intern"
-      | "employee"
-      | "intern"
-      | "worker"
-      | "customer";
+    role: Role;
     permissions: any;
   };
 };
@@ -46,15 +48,15 @@ const isGlobalAdmin = ({ session }: { session?: Session }) => {
   return !session.data.isBlocked;
 };
 
-const isAdminAccountant = ({ session, accountancy, company }: { session?: Session; accountancy: string; company: string }) => {
-  if (!session || !accountancy) return false;
+const isAdminAccountant = ({ session }: { session?: Session }) => {
+  if (!session) return false;
 
   if (isGlobalAdmin({ session }) || session.data.role == "admin_accountant") return true;
 
   return !session.data.isBlocked;
 };
 
-const isAdminAccountantManager = ({ session , accountancy, company }: { session?: Session; accountancy: string; company: string }) => {
+const isAdminAccountantManager = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
   if (isAdminAccountant({ session }) || session.data.role == "admin_accountant_manager") return true;
@@ -62,10 +64,10 @@ const isAdminAccountantManager = ({ session , accountancy, company }: { session?
   return !session.data.isBlocked;
 };
 
-const isOwner = ({ session, company }: { session?: Session; company?: string }) => {
+const isOwner = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isAdminAccountantManager({ session }) || (session.data.role == "owner" && company == session.data.company)) return true;
+  if (isAdminAccountantManager({ session }) || session.data.role == "owner") return true;
 
   return !session.data.isBlocked;
 };
@@ -73,7 +75,7 @@ const isOwner = ({ session, company }: { session?: Session; company?: string }) 
 function isCompanyAdmin({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (session.data.role == "company_admin") return true;
+  if (isOwner({ session }) || session.data.role == "company_admin") return true;
 
   return !session.data.isBlocked;
 }
@@ -86,10 +88,26 @@ const isAdminAccountantEmployee = ({ session }: { session?: Session }) => {
   return !session.data.isBlocked;
 };
 
+function isGeneralManager({ session }: { session?: Session }) {
+  if (!session) return false;
+
+  if (isCompanyAdmin({ session }) || session.data.role == "general_manager") return true;
+
+  return !session.data.isBlocked;
+}
+
 function isManager({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (session.data.role == "admanagermin" || session.data.role == "manager") return true;
+  if (isGeneralManager({ session }) || session.data.role == "manager") return true;
+
+  return !session.data.isBlocked;
+}
+
+function isAccountan({ session }: { session?: Session }) {
+  if (!session) return false;
+
+  if (isManager({ session }) || session.data.role == "accountant") return true;
 
   return !session.data.isBlocked;
 }
@@ -97,7 +115,23 @@ function isManager({ session }: { session?: Session }) {
 function isEmployee({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (session.data.role == "employee" || session.data.role == "admin" || session.data.role == "manager") return true;
+  if (isAccountan({ session }) || session.data.role == "employee") return true;
+
+  return !session.data.isBlocked;
+}
+
+function isIntern({ session }: { session?: Session }) {
+  if (!session) return false;
+
+  if (isEmployee({ session }) || session.data.role == "intern") return true;
+
+  return !session.data.isBlocked;
+}
+
+function isWorker({ session }: { session?: Session }) {
+  if (!session) return false;
+
+  if (isIntern({ session }) || session.data.role == "worker") return true;
 
   return !session.data.isBlocked;
 }
@@ -105,7 +139,7 @@ function isEmployee({ session }: { session?: Session }) {
 function isUser({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (session.data.role == "employee" || session.data.role == "admin" || session.data.role == "manager" || session.data.role == "customer") return true;
+  if (isWorker({ session }) || session.data.role == "customer") return true;
 
   return !session.data.isBlocked;
 }
@@ -117,15 +151,15 @@ export const lists: Lists = {
     },
     access: {
       operation: {
-        create: ({ session, context, listKey, operation, inputData }) => isSuperAdmin(session),
-        query: isInternOfCompany,
-        update: isAdminOfCompany,
+        create: ({ session, context, listKey, operation }) => isAdminAccountantManager(session),
+        query: isWorker,
+        update: isCompanyAdmin,
         delete: denyAll,
       },
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      isActive: checkbox({ defaultValue: false }),
+      isActive: checkbox({ defaultValue: false, access: { update: isAdminAccountantManager } }),
       logo: relationship({
         ref: "File",
         many: false,
@@ -134,8 +168,8 @@ export const lists: Lists = {
         ref: "User.company",
         many: false,
       }),
+      users: relationship({ ref: "User.company", many: true }),
       establishments: relationship({ ref: "Establishment.company", many: true }),
-      admins: relationship({ ref: "User.companyAdmins", many: true }),
       extraFields: json(),
     },
   }),
@@ -145,10 +179,10 @@ export const lists: Lists = {
     },
     access: {
       operation: {
-        create: isSuperAdmin,
-        query: isInternOfEstablishment,
-        update: isAdminOfCompany,
-        delete: isSuperAdming,
+        create: isAdminAccountantManager,
+        query: isWorker,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin,
       },
     },
     fields: {
@@ -158,6 +192,9 @@ export const lists: Lists = {
         ref: "File",
         many: false,
       }),
+      users: relationship({ ref: "User.establishment", many: true }),
+      address: relationship({ ref: "Address", many: false }),
+
       extraFields: json(),
     },
   }),
@@ -335,7 +372,7 @@ export const lists: Lists = {
         create: isUser,
         query: isUser,
         update: isEmployee,
-        delete: isAdmin,
+        delete: denyAll,
       },
     },
     fields: {
@@ -362,7 +399,7 @@ export const lists: Lists = {
         create: isEmployee,
         query: isEmployee,
         update: isManager,
-        delete: isAdmin,
+        delete: isCompanyAdmin,
       },
     },
     fields: {
@@ -430,25 +467,37 @@ export const lists: Lists = {
         query: isUser,
         create: isManager,
         update: isManager,
-        delete: isAdmin,
+        delete: isGlobalAdmin,
       },
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      username: text({ validation: { isRequired: true }, isIndexed: "unique" }),
       email: text({
         isIndexed: "unique",
+        validation: { isRequired: true },
       }),
       isBlocked: checkbox({ defaultValue: false }),
       phone: text(),
       role: select({
         type: "string",
-        options: ["admin", "customer", "employee", "manager"],
+        options: [
+          "superadmin",
+          "global_admin",
+          "owner",
+          "company_admin",
+          "general_manager",
+          "manager",
+          "accountant",
+          "employee",
+          "intern",
+          "worker",
+          "customer",
+        ],
         defaultValue: "customer",
         validation: { isRequired: true },
         isIndexed: true,
         access: {
-          update: isAdmin,
+          update: isCompanyAdmin,
         },
       }),
       permissions: multiselect({
@@ -458,7 +507,7 @@ export const lists: Lists = {
           { label: "Price", value: "price" },
         ],
         access: {
-          update: isAdmin,
+          update: isCompanyAdmin,
         },
       }),
       ssid: text(),
@@ -495,8 +544,8 @@ export const lists: Lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin,
+        update: denyAll,
+        delete: denyAll,
       },
     },
     fields: {
@@ -516,8 +565,8 @@ export const lists: Lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin,
+        update: denyAll,
+        delete: denyAll,
       },
     },
     fields: {
@@ -528,7 +577,7 @@ export const lists: Lists = {
   }),
   Document: list({
     ui: {
-      labelField: "createdAt",
+      labelField: "date",
     },
     access: {
       operation: {
@@ -911,10 +960,10 @@ export const lists: Lists = {
     },
     access: {
       operation: {
-        create: isAdmin,
+        create: isCompanyAdmin,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin,
       },
     },
     fields: {
@@ -934,8 +983,8 @@ export const lists: Lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin,
+        update: denyAll,
+        delete: denyAll,
       },
     },
     fields: {
@@ -987,7 +1036,7 @@ export const lists: Lists = {
         create: isManager,
         query: isUser,
         update: isManager,
-        delete: isAdmin,
+        delete: isGlobalAdmin,
       },
     },
     fields: {
@@ -1006,7 +1055,7 @@ export const lists: Lists = {
         create: isEmployee,
         query: isUser,
         update: isEmployee,
-        delete: isAdmin,
+        delete: isGlobalAdmin,
       },
     },
     fields: {
@@ -1021,10 +1070,10 @@ export const lists: Lists = {
     },
     access: {
       operation: {
-        create: isAdmin,
+        create: isGlobalAdmin,
         query: isUser,
-        update: isAdmin,
-        delete: isAdmin,
+        update: isGlobalAdmin,
+        delete: isGlobalAdmin,
       },
     },
     fields: {
