@@ -497,9 +497,9 @@ export const lists: Lists = {
               });
               let total = 0;
               materials.forEach((docProd) => {
-                total += docProd.total;
+                total += docProd.total * (1 + docProd.tax / 100);
               });
-              return total - (total * (item.reduction ?? 0)) / 100 + total * item.tax;
+              return total - (total * (item.reduction ?? 0)) / 100;
             } catch (e) {
               return 0;
             }
