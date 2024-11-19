@@ -112,6 +112,14 @@ function isAccountan({ session }: { session?: Session }) {
   return !session.data.isBlocked;
 }
 
+const isAdminAccountantIntern = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+
+  if (isAdminAccountantEmployee({ session }) || session.data.role == "admin_accountant_intern") return true;
+
+  return !session.data.isBlocked;
+};
+
 function isEmployee({ session }: { session?: Session }) {
   if (!session) return false;
 
@@ -145,6 +153,30 @@ function isUser({ session }: { session?: Session }) {
 }
 
 export const lists: Lists = {
+  Accountancy: list({
+    ui: {
+      labelField: "name",
+    },
+    access: {
+      operation: {
+        create: isAdminAccountantManager,
+        query: isAdminAccountantEmployee,
+        update: isAdminAccountantEmployee,
+        delete: isAdminAccountantEmployee,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      isActive: checkbox({ defaultValue: false, access: { update: isAdminAccountantManager } }),
+      logo: relationship({
+        ref: "File",
+        many: false,
+      }),
+      companies: relationship({ ref: "Company.accountancy", many: true }),
+      users: relationship({ ref: "User.accountancy", many: true }),
+      extraFields: json(),
+    },
+  }),
   Company: list({
     ui: {
       labelField: "name",
@@ -165,9 +197,10 @@ export const lists: Lists = {
         many: false,
       }),
       owner: relationship({
-        ref: "User.company",
+        ref: "User.ownedCompany",
         many: false,
       }),
+      accountancy: relationship({ ref: "Accountancy.companies", many: false }),
       users: relationship({ ref: "User.company", many: true }),
       establishments: relationship({ ref: "Establishment.company", many: true }),
       extraFields: json(),
@@ -192,6 +225,7 @@ export const lists: Lists = {
         ref: "File",
         many: false,
       }),
+      company: relationship({ ref: "Company.establishments", many: false }),
       users: relationship({ ref: "User.establishment", many: true }),
       address: relationship({ ref: "Address", many: false }),
 
@@ -533,6 +567,10 @@ export const lists: Lists = {
       payments: relationship({ ref: "Payment.creator", many: true }),
       customerAddresses: relationship({ ref: "Address.customer", many: true }),
       workOrders: relationship({ ref: "WorkOrder.creator", many: true }),
+      establishment: relationship({ ref: "Establishment.users", many: false }),
+      accountancy: relationship({ ref: "Accountancy.users", many: false }),
+      company: relationship({ ref: "Company.users", many: false }),
+      ownedCompany: relationship({ ref: "Company.owner", many: false }),
       extraFields: json(),
     },
   }),
@@ -622,6 +660,14 @@ export const lists: Lists = {
       },
     },
     fields: {
+      date: timestamp({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+        access: {
+          create: denyAll,
+          update: isEmployee,
+        },
+      }),
       createdAt: timestamp({
         defaultValue: { kind: "now" },
         isOrderable: true,

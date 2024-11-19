@@ -34,11 +34,11 @@ if (!sessionSecret && process.env.NODE_ENV !== "production") {
 }
 var { withAuth } = (0, import_auth.createAuth)({
   listKey: "User",
-  identityField: "username",
-  sessionData: "id username role permissions isBlocked",
+  identityField: "email",
+  sessionData: "id role permissions isBlocked company { id } accountancy { id }",
   secretField: "password",
   initFirstItem: {
-    fields: ["username", "name", "role", "email", "password"]
+    fields: ["name", "role", "email", "password"]
   }
 });
 var sessionMaxAge = 60 * 60 * 24 * 30;
@@ -54,27 +54,155 @@ var import_core2 = require("@keystone-6/core");
 var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
-function isAdmin({ session: session2 }) {
+var isSuperAdmin = ({ session: session2 }) => {
   if (!session2) return false;
-  if (session2.data.role == "admin") return true;
+  if (session2.data.role == "superadmin") return true;
+  return false;
+};
+var isGlobalAdmin = ({ session: session2 }) => {
+  if (!session2) return false;
+  if (isSuperAdmin({ session: session2 }) || session2.data.role == "global_admin") return true;
+  return !session2.data.isBlocked;
+};
+var isAdminAccountant = ({ session: session2 }) => {
+  if (!session2) return false;
+  if (isGlobalAdmin({ session: session2 }) || session2.data.role == "admin_accountant") return true;
+  return !session2.data.isBlocked;
+};
+var isAdminAccountantManager = ({ session: session2 }) => {
+  if (!session2) return false;
+  if (isAdminAccountant({ session: session2 }) || session2.data.role == "admin_accountant_manager") return true;
+  return !session2.data.isBlocked;
+};
+var isOwner = ({ session: session2 }) => {
+  if (!session2) return false;
+  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "owner") return true;
+  return !session2.data.isBlocked;
+};
+function isCompanyAdmin({ session: session2 }) {
+  if (!session2) return false;
+  if (isOwner({ session: session2 }) || session2.data.role == "company_admin") return true;
+  return !session2.data.isBlocked;
+}
+var isAdminAccountantEmployee = ({ session: session2 }) => {
+  if (!session2) return false;
+  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "admin_accountant_employee") return true;
+  return !session2.data.isBlocked;
+};
+function isGeneralManager({ session: session2 }) {
+  if (!session2) return false;
+  if (isCompanyAdmin({ session: session2 }) || session2.data.role == "general_manager") return true;
   return !session2.data.isBlocked;
 }
 function isManager({ session: session2 }) {
   if (!session2) return false;
-  if (session2.data.role == "admin" || session2.data.role == "manager") return true;
+  if (isGeneralManager({ session: session2 }) || session2.data.role == "manager") return true;
+  return !session2.data.isBlocked;
+}
+function isAccountan({ session: session2 }) {
+  if (!session2) return false;
+  if (isManager({ session: session2 }) || session2.data.role == "accountant") return true;
   return !session2.data.isBlocked;
 }
 function isEmployee({ session: session2 }) {
   if (!session2) return false;
-  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager") return true;
+  if (isAccountan({ session: session2 }) || session2.data.role == "employee") return true;
+  return !session2.data.isBlocked;
+}
+function isIntern({ session: session2 }) {
+  if (!session2) return false;
+  if (isEmployee({ session: session2 }) || session2.data.role == "intern") return true;
+  return !session2.data.isBlocked;
+}
+function isWorker({ session: session2 }) {
+  if (!session2) return false;
+  if (isIntern({ session: session2 }) || session2.data.role == "worker") return true;
   return !session2.data.isBlocked;
 }
 function isUser({ session: session2 }) {
   if (!session2) return false;
-  if (session2.data.role == "employee" || session2.data.role == "admin" || session2.data.role == "manager" || session2.data.role == "customer") return true;
+  if (isWorker({ session: session2 }) || session2.data.role == "customer") return true;
   return !session2.data.isBlocked;
 }
 var lists = {
+  Accountancy: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
+    access: {
+      operation: {
+        create: isAdminAccountantManager,
+        query: isAdminAccountantEmployee,
+        update: isAdminAccountantEmployee,
+        delete: isAdminAccountantEmployee
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      isActive: (0, import_fields.checkbox)({ defaultValue: false, access: { update: isAdminAccountantManager } }),
+      logo: (0, import_fields.relationship)({
+        ref: "File",
+        many: false
+      }),
+      companies: (0, import_fields.relationship)({ ref: "Company.accountancy", many: true }),
+      users: (0, import_fields.relationship)({ ref: "User.accountancy", many: true }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Company: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
+    access: {
+      operation: {
+        create: ({ session: session2, context, listKey, operation }) => isAdminAccountantManager(session2),
+        query: isWorker,
+        update: isCompanyAdmin,
+        delete: import_access.denyAll
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      isActive: (0, import_fields.checkbox)({ defaultValue: false, access: { update: isAdminAccountantManager } }),
+      logo: (0, import_fields.relationship)({
+        ref: "File",
+        many: false
+      }),
+      owner: (0, import_fields.relationship)({
+        ref: "User.ownedCompany",
+        many: false
+      }),
+      accountancy: (0, import_fields.relationship)({ ref: "Accountancy.companies", many: false }),
+      users: (0, import_fields.relationship)({ ref: "User.company", many: true }),
+      establishments: (0, import_fields.relationship)({ ref: "Establishment.company", many: true }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Establishment: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
+    access: {
+      operation: {
+        create: isAdminAccountantManager,
+        query: isWorker,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      defaultCurrency: (0, import_fields.text)({ defaultValue: "EUR" }),
+      logo: (0, import_fields.relationship)({
+        ref: "File",
+        many: false
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company.establishments", many: false }),
+      users: (0, import_fields.relationship)({ ref: "User.establishment", many: true }),
+      address: (0, import_fields.relationship)({ ref: "Address", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
   WorkOrder: (0, import_core.list)({
     ui: {
       labelField: "number"
@@ -116,15 +244,15 @@ var lists = {
         if (operation === "update") {
           if (inputData.startedAt) {
             if (item.finishedAt) {
-              throw new Error("Application already finished");
+              throw new Error("Operation already finished");
             }
           }
           if (inputData.finishedAt) {
             if (!item.startedAt) {
-              throw new Error("Application not started");
+              throw new Error("Operation not started");
             }
             if (item.finishedAt) {
-              throw new Error("Application already finished");
+              throw new Error("Operation already finished");
             }
             if (inputData.finishedAt < item.startedAt) {
               throw new Error("Finish date cannot be before start date");
@@ -274,7 +402,7 @@ var lists = {
         create: isEmployee,
         query: isEmployee,
         update: isManager,
-        delete: import_access.denyAll
+        delete: isCompanyAdmin
       }
     },
     fields: {
@@ -302,6 +430,8 @@ var lists = {
                 case "bor\xE7 dekontu":
                   return false;
                 case "alacak dekontu":
+                  return true;
+                case "sat\u0131n alma":
                   return true;
                 default:
                   return false;
@@ -340,25 +470,37 @@ var lists = {
         query: isUser,
         create: isManager,
         update: isManager,
-        delete: isAdmin
+        delete: isGlobalAdmin
       }
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      username: (0, import_fields.text)({ validation: { isRequired: true }, isIndexed: "unique" }),
       email: (0, import_fields.text)({
-        isIndexed: "unique"
+        isIndexed: "unique",
+        validation: { isRequired: true }
       }),
       isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
       phone: (0, import_fields.text)(),
       role: (0, import_fields.select)({
         type: "string",
-        options: ["admin", "customer", "employee", "manager"],
+        options: [
+          "superadmin",
+          "global_admin",
+          "owner",
+          "company_admin",
+          "general_manager",
+          "manager",
+          "accountant",
+          "employee",
+          "intern",
+          "worker",
+          "customer"
+        ],
         defaultValue: "customer",
         validation: { isRequired: true },
         isIndexed: true,
         access: {
-          update: isAdmin
+          update: isCompanyAdmin
         }
       }),
       permissions: (0, import_fields.multiselect)({
@@ -368,7 +510,7 @@ var lists = {
           { label: "Price", value: "price" }
         ],
         access: {
-          update: isAdmin
+          update: isCompanyAdmin
         }
       }),
       ssid: (0, import_fields.text)(),
@@ -394,6 +536,10 @@ var lists = {
       payments: (0, import_fields.relationship)({ ref: "Payment.creator", many: true }),
       customerAddresses: (0, import_fields.relationship)({ ref: "Address.customer", many: true }),
       workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.creator", many: true }),
+      establishment: (0, import_fields.relationship)({ ref: "Establishment.users", many: false }),
+      accountancy: (0, import_fields.relationship)({ ref: "Accountancy.users", many: false }),
+      company: (0, import_fields.relationship)({ ref: "Company.users", many: false }),
+      ownedCompany: (0, import_fields.relationship)({ ref: "Company.owner", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -405,8 +551,8 @@ var lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin
+        update: import_access.denyAll,
+        delete: import_access.denyAll
       }
     },
     fields: {
@@ -426,8 +572,8 @@ var lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin
+        update: import_access.denyAll,
+        delete: import_access.denyAll
       }
     },
     fields: {
@@ -438,7 +584,7 @@ var lists = {
   }),
   Document: (0, import_core.list)({
     ui: {
-      labelField: "createdAt"
+      labelField: "date"
     },
     access: {
       operation: {
@@ -464,6 +610,7 @@ var lists = {
         if (operation === "create") {
           const docs = await context.query.Document.findMany({
             orderBy: { number: "desc" },
+            where: { type: { equals: resolvedData.type } },
             query: "id number"
           });
           const lastDocument = docs.at(0);
@@ -482,6 +629,14 @@ var lists = {
       }
     },
     fields: {
+      date: (0, import_fields.timestamp)({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+        access: {
+          create: import_access.denyAll,
+          update: isEmployee
+        }
+      }),
       createdAt: (0, import_fields.timestamp)({
         defaultValue: { kind: "now" },
         isOrderable: true,
@@ -512,8 +667,7 @@ var lists = {
       }),
       type: (0, import_fields.select)({
         type: "string",
-        options: ["teklif", "sat\u0131\u015F", "irsaliye", "fatura", "bor\xE7 dekontu", "alacak dekontu", "sat\u0131n alma"],
-        defaultValue: "sat\u0131\u015F",
+        options: ["quote", "sale", "dispatch", "invoice", "debit note", "credit note", "purchase"],
         validation: { isRequired: true }
       }),
       creator: (0, import_fields.relationship)({
@@ -748,8 +902,8 @@ var lists = {
       }),
       status: (0, import_fields.select)({
         type: "string",
-        options: ["aktif", "pasif", "iptal"],
-        defaultValue: "aktif",
+        options: ["active", "passive", "cancelled"],
+        defaultValue: "active",
         validation: { isRequired: true }
       }),
       files: (0, import_fields.relationship)({
@@ -762,6 +916,7 @@ var lists = {
       }),
       code: (0, import_fields.text)(),
       ean: (0, import_fields.text)(),
+      tax: (0, import_fields.float)({ defaultValue: 20, validation: { isRequired: true, min: 0 } }),
       brand: (0, import_fields.relationship)({
         ref: "Brand.materials",
         many: false
@@ -772,13 +927,13 @@ var lists = {
       }),
       pricedBy: (0, import_fields.select)({
         type: "string",
-        options: ["amount", "length(mm)", "weight(g)", "area(m\xB2)"],
+        options: ["amount", "length", "weight", "area"],
         defaultValue: "amount",
         validation: { isRequired: true }
       }),
       type: (0, import_fields.select)({
         type: "string",
-        options: ["raw", "product"],
+        options: ["raw", "product", "assembly", "service"],
         defaultValue: "product",
         validation: { isRequired: true }
       }),
@@ -803,10 +958,10 @@ var lists = {
     },
     access: {
       operation: {
-        create: isAdmin,
+        create: isCompanyAdmin,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin
       }
     },
     fields: {
@@ -826,8 +981,8 @@ var lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: isAdmin,
-        delete: isAdmin
+        update: import_access.denyAll,
+        delete: import_access.denyAll
       }
     },
     fields: {
@@ -842,8 +997,8 @@ var lists = {
       amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       movementType: (0, import_fields.select)({
         type: "string",
-        options: ["giri\u015F", "\xE7\u0131k\u0131\u015F"],
-        defaultValue: "giri\u015F",
+        options: ["in", "out"],
+        defaultValue: "in",
         validation: { isRequired: true }
       }),
       documentProduct: (0, import_fields.relationship)({
@@ -879,7 +1034,7 @@ var lists = {
         create: isManager,
         query: isUser,
         update: isManager,
-        delete: isAdmin
+        delete: isGlobalAdmin
       }
     },
     fields: {
@@ -898,7 +1053,7 @@ var lists = {
         create: isEmployee,
         query: isUser,
         update: isEmployee,
-        delete: isAdmin
+        delete: isGlobalAdmin
       }
     },
     fields: {
@@ -913,10 +1068,10 @@ var lists = {
     },
     access: {
       operation: {
-        create: isAdmin,
+        create: isGlobalAdmin,
         query: isUser,
-        update: isAdmin,
-        delete: isAdmin
+        update: isGlobalAdmin,
+        delete: isGlobalAdmin
       }
     },
     fields: {
@@ -929,7 +1084,19 @@ var lists = {
       handled: (0, import_fields.checkbox)({ defaultValue: false }),
       notifyRoles: (0, import_fields.multiselect)({
         type: "enum",
-        options: ["admin", "customer", "employee", "manager"]
+        options: [
+          "superadmin",
+          "global_admin",
+          "owner",
+          "company_admin",
+          "general_manager",
+          "manager",
+          "accountant",
+          "employee",
+          "intern",
+          "worker",
+          "customer"
+        ]
       })
     }
   }),
@@ -937,10 +1104,10 @@ var lists = {
     isSingleton: true,
     access: {
       operation: {
-        create: isAdmin,
+        create: isSuperAdmin,
         query: isUser,
-        update: isAdmin,
-        delete: isAdmin
+        update: isSuperAdmin,
+        delete: import_access.denyAll
       }
     },
     fields: {
@@ -955,49 +1122,44 @@ var lists = {
         isOrderable: true
       })
     }
-  }),
-  Config: (0, import_core.list)({
-    isSingleton: true,
-    access: {
-      operation: {
-        create: () => false,
-        query: isUser,
-        update: isAdmin,
-        delete: () => false
-      }
-    },
-    ui: {
-      labelField: "name"
-    },
-    fields: {
-      defaultCurrency: (0, import_fields.text)({ defaultValue: "TRY" }),
-      extraFieldsProduct: (0, import_fields.json)()
-    }
   })
 };
 
-// utils/sendmail.ts
-var sendMail = async ({ transport, attachment }) => {
+// keystone.ts
+var import_config2 = require("dotenv/config");
+
+// utils/fileupload.ts
+var import_client_s3 = require("@aws-sdk/client-s3");
+var import_config = require("dotenv/config");
+var s3Client = new import_client_s3.S3Client({
+  region: process.env.REGION,
+  endpoint: process.env.STORAGE_URL,
+  credentials: {
+    accessKeyId: process.env.ACCESS_KEY_ID,
+    accountId: process.env.ACCOUNT_ID,
+    secretAccessKey: process.env.SECRET_ACCESS_KEY
+  }
+});
+var fileUpload = async (file) => {
+  const randomString = Math.random().toString(36).substring(2, 15);
+  const newFileName = `${Date.now()}-${randomString}-${file.originalname}`;
+  const params = {
+    Bucket: process.env.BUCKET_NAME,
+    Key: `uploads/${newFileName}`,
+    Body: file.buffer,
+    ContentType: file.mimetype
+  };
   try {
-    let mailOptionsClient = {
-      from: `"backupsercemdimuhsaebe@huseyinonal.com" <backupsercemdimuhsaebe@huseyinonal.com>`,
-      to: ["sercebackupmdimuhasebe@hotmail.com", "backupsercemdimuhsaebe@huseyinonal.com"],
-      attachments: attachment,
-      subject: "Serce MDI Muhasebe veri taban\u0131 yede\u011Fi",
-      text: `Serce MDI Muhasebe veri taban\u0131 yede\u011Fi ${(/* @__PURE__ */ new Date()).toLocaleString("tr-TR")}`
+    const command = new import_client_s3.PutObjectCommand(params);
+    await s3Client.send(command);
+    return {
+      success: true,
+      fileUrl: `${process.env.STORAGE_URL}${params.Key}`,
+      fileName: newFileName
     };
-    transport.sendMail(mailOptionsClient, (error, info) => {
-      if (error) {
-        console.error(error);
-        return false;
-      } else {
-        console.log("Email sent: " + info.response);
-        return true;
-      }
-    });
-  } catch (e) {
-    console.error(e);
-    return false;
+  } catch (error) {
+    console.error("file upload error:", error);
+    throw new Error("Failed to upload file");
   }
 };
 
@@ -1005,8 +1167,10 @@ var sendMail = async ({ transport, attachment }) => {
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
-      provider: "sqlite",
-      url: "file:./data.db"
+      provider: "postgresql",
+      url: process.env.DB,
+      enableLogging: true,
+      idField: { kind: "cuid" }
     },
     server: {
       port: 3344,
@@ -1021,99 +1185,38 @@ var keystone_default = withAuth(
         credentials: true
       },
       extendExpressApp: (app, context) => {
-        var cron = require("node-cron");
-        var nodemailer = require("nodemailer");
-        var transport = nodemailer.createTransport({
-          host: "mx.huseyinonal.com",
-          port: 587,
-          secure: false,
-          auth: {
-            user: "backupsercemdimuhsaebe@huseyinonal.com",
-            pass: process.env.MAIL_PASS
-          }
-        });
-        const path = require("path");
-        const fs = require("fs");
         const multer = require("multer");
-        const UPLOAD_DIR = path.join(__dirname, "uploads");
-        if (!fs.existsSync(UPLOAD_DIR)) {
-          fs.mkdirSync(UPLOAD_DIR);
-        }
-        const storage = multer.diskStorage({
-          destination: UPLOAD_DIR,
-          // @ts-ignore
-          filename: (file, cb) => {
-            const uniqueName = Date.now() + "-" + (Math.random() * 1e3).toFixed(0) + "-" + file.originalname;
-            cb(null, uniqueName);
+        const upload = multer({
+          storage: multer.memoryStorage(),
+          limits: {
+            fileSize: 50 * 1024 * 1024
           }
         });
-        const upload = multer({ storage });
-        app.post("/rest/upload", upload.single("file"), (req, res) => {
-          if (!req.file) {
-            return res.status(400).json({ message: "File upload failed" });
-          }
-          const fileUrl = `${req.protocol}://${req.get("host")}/rest/files/${req.file.filename}`;
-          context.lists.File.create({
-            data: {
-              // @ts-ignore
-              filename: req.file.filename,
-              // @ts-ignore
-              mimetype: req.file.mimetype,
-              // @ts-ignore
-              encoding: req.file.encoding,
-              // @ts-ignore
-              size: req.file.size,
-              url: fileUrl
-            }
-          });
-          res.json({ fileUrl });
-        });
-        app.get("/rest/files/:filename", (req, res) => {
-          const filePath = path.join(UPLOAD_DIR, req.params.filename);
-          if (fs.existsSync(filePath)) {
-            res.sendFile(filePath);
-          } else {
-            res.status(404).json({ message: "File not found" });
-          }
-        });
-        cron.schedule("0 0 */1 * * *", async () => {
+        app.post("/rest/upload", upload.single("file"), async (req, res) => {
           try {
-            const backupDir = path.join(__dirname, "backup");
-            if (!fs.existsSync(backupDir)) {
-              fs.mkdirSync(backupDir);
+            if (!context.session) {
+              return res.status(401).json({ message: "Unauthorized" });
             }
-            const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:.]/g, "");
-            const backupFilePath = path.join(backupDir, `data-${timestamp2}.db`);
-            fs.copyFileSync("data.db", backupFilePath);
-            const backupFiles = fs.readdirSync(backupDir);
-            if (backupFiles.length > 120) {
-              backupFiles.sort((a, b) => fs.statSync(path.join(backupDir, a)).mtime.getTime() - fs.statSync(path.join(backupDir, b)).mtime.getTime());
-              const backupFilesToDelete = backupFiles.slice(120);
-              const fourteenDaysAgo = /* @__PURE__ */ new Date();
-              fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-              backupFilesToDelete.forEach((file) => {
-                const filePath = path.join(backupDir, file);
-                const fileStats = fs.statSync(filePath);
-                if (fileStats.mtime < fourteenDaysAgo) {
-                  fs.unlinkSync(filePath);
-                }
-              });
+            if (!req.file) {
+              return res.status(400).json({ message: "No valid file provided" });
             }
-            try {
-              sendMail({
-                transport,
-                attachment: [
-                  {
-                    filename: "data.db",
-                    path: backupFilePath
-                  }
-                ]
-              });
-            } catch (error) {
-              console.error("Error sending email", error);
-            }
+            const result = await fileUpload(req.file);
+            const addFile = await context.query.File.createOne({
+              query: "id",
+              data: {
+                name: result.fileName,
+                url: result.fileUrl
+              }
+            });
+            console.log(addFile);
+            res.status(200).json({
+              fileUpload: {
+                id: "somtin"
+              }
+            });
           } catch (error) {
-            console.error("Error running back-up job", error);
+            console.error("Upload error:", error);
+            res.status(500).json({ error: "Upload failed" });
           }
         });
       }
