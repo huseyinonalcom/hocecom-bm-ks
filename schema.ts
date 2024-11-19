@@ -486,6 +486,26 @@ export const lists: Lists = {
           },
         }),
       }),
+      totalWithTax: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "total",
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += docProd.total;
+              });
+              return total - (total * (item.reduction ?? 0)) / 100 + total * item.tax;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
       type: select({
         type: "string",
         options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu", "satın alma"],
