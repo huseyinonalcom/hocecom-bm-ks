@@ -493,7 +493,7 @@ export const lists: Lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "total",
+                query: "total tax",
               });
               let total = 0;
               materials.forEach((docProd) => {
