@@ -8,23 +8,88 @@ export type Session = {
   data: {
     isBlocked: boolean;
     username: string;
-    role: "admin" | "customer" | "employee" | "manager";
+    company?: string;
+    accountancy?: string;
+    role:
+      | "superadmin"
+      | "global_admin"
+      | "admin_accountant"
+      | "admin_accountant_manager"
+      | "owner"
+      | "company_admin"
+      | "admin_accountant_employee"
+      | "general_manager"
+      | "manager"
+      | "accountant"
+      | "admin_accountant_intern"
+      | "employee"
+      | "intern"
+      | "worker"
+      | "customer";
     permissions: any;
   };
 };
 
-function isAdmin({ session }: { session?: Session }) {
+const isSuperAdmin = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (session.data.role == "admin") return true;
+  if (session.data.role == "superadmin") return true;
+
+  return false;
+};
+
+const isGlobalAdmin = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+
+  if (isSuperAdmin({ session }) || session.data.role == "global_admin") return true;
+
+  return !session.data.isBlocked;
+};
+
+const isAdminAccountant = ({ session, accountancy, company }: { session?: Session; accountancy: string; company: string }) => {
+  if (!session || !accountancy) return false;
+
+  if (isGlobalAdmin({ session }) || session.data.role == "admin_accountant") return true;
+
+  return !session.data.isBlocked;
+};
+
+const isAdminAccountantManager = ({ session , accountancy, company }: { session?: Session; accountancy: string; company: string }) => {
+  if (!session) return false;
+
+  if (isAdminAccountant({ session }) || session.data.role == "admin_accountant_manager") return true;
+
+  return !session.data.isBlocked;
+};
+
+const isOwner = ({ session, company }: { session?: Session; company?: string }) => {
+  if (!session) return false;
+
+  if (isAdminAccountantManager({ session }) || (session.data.role == "owner" && company == session.data.company)) return true;
+
+  return !session.data.isBlocked;
+};
+
+function isCompanyAdmin({ session }: { session?: Session }) {
+  if (!session) return false;
+
+  if (session.data.role == "company_admin") return true;
 
   return !session.data.isBlocked;
 }
 
+const isAdminAccountantEmployee = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+
+  if (isAdminAccountantManager({ session }) || session.data.role == "admin_accountant_employee") return true;
+
+  return !session.data.isBlocked;
+};
+
 function isManager({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (session.data.role == "admin" || session.data.role == "manager") return true;
+  if (session.data.role == "admanagermin" || session.data.role == "manager") return true;
 
   return !session.data.isBlocked;
 }
@@ -46,6 +111,56 @@ function isUser({ session }: { session?: Session }) {
 }
 
 export const lists: Lists = {
+  Company: list({
+    ui: {
+      labelField: "name",
+    },
+    access: {
+      operation: {
+        create: ({ session, context, listKey, operation, inputData }) => isSuperAdmin(session),
+        query: isInternOfCompany,
+        update: isAdminOfCompany,
+        delete: denyAll,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      isActive: checkbox({ defaultValue: false }),
+      logo: relationship({
+        ref: "File",
+        many: false,
+      }),
+      owner: relationship({
+        ref: "User.company",
+        many: false,
+      }),
+      establishments: relationship({ ref: "Establishment.company", many: true }),
+      admins: relationship({ ref: "User.companyAdmins", many: true }),
+      extraFields: json(),
+    },
+  }),
+  Establishment: list({
+    ui: {
+      labelField: "name",
+    },
+    access: {
+      operation: {
+        create: isSuperAdmin,
+        query: isInternOfEstablishment,
+        update: isAdminOfCompany,
+        delete: isSuperAdming,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      defaultCurrency: text({ defaultValue: "EUR" }),
+      logo: relationship({
+        ref: "File",
+        many: false,
+      }),
+      extraFields: json(),
+    },
+  }),
   WorkOrder: list({
     ui: {
       labelField: "number",
@@ -87,15 +202,15 @@ export const lists: Lists = {
         if (operation === "update") {
           if (inputData.startedAt) {
             if (item.finishedAt) {
-              throw new Error("Application already finished");
+              throw new Error("Operation already finished");
             }
           }
           if (inputData.finishedAt) {
             if (!item.startedAt) {
-              throw new Error("Application not started");
+              throw new Error("Operation not started");
             }
             if (item.finishedAt) {
-              throw new Error("Application already finished");
+              throw new Error("Operation already finished");
             }
             if (inputData.finishedAt < item.startedAt) {
               throw new Error("Finish date cannot be before start date");
@@ -488,7 +603,7 @@ export const lists: Lists = {
       }),
       type: select({
         type: "string",
-        options: ["teklif", "satış", "irsaliye", "fatura", "borç dekontu", "alacak dekontu", "satın alma"],
+        options: ["quote", "sale", "dispatch", "invoice", "debit note", "credit note", "purchase"],
         validation: { isRequired: true },
       }),
       creator: relationship({
@@ -740,8 +855,8 @@ export const lists: Lists = {
       }),
       status: select({
         type: "string",
-        options: ["aktif", "pasif", "iptal"],
-        defaultValue: "aktif",
+        options: ["active", "passive", "cancelled"],
+        defaultValue: "active",
         validation: { isRequired: true },
       }),
       files: relationship({
@@ -765,13 +880,13 @@ export const lists: Lists = {
       }),
       pricedBy: select({
         type: "string",
-        options: ["amount", "length(mm)", "weight(g)", "area(m²)"],
+        options: ["amount", "length", "weight", "area"],
         defaultValue: "amount",
         validation: { isRequired: true },
       }),
       type: select({
         type: "string",
-        options: ["raw", "product"],
+        options: ["raw", "product", "assembly", "service"],
         defaultValue: "product",
         validation: { isRequired: true },
       }),
@@ -835,8 +950,8 @@ export const lists: Lists = {
       amount: float({ validation: { isRequired: true, min: 0 } }),
       movementType: select({
         type: "string",
-        options: ["giriş", "çıkış"],
-        defaultValue: "giriş",
+        options: ["in", "out"],
+        defaultValue: "in",
         validation: { isRequired: true },
       }),
       documentProduct: relationship({
@@ -922,7 +1037,19 @@ export const lists: Lists = {
       handled: checkbox({ defaultValue: false }),
       notifyRoles: multiselect({
         type: "enum",
-        options: ["admin", "customer", "employee", "manager"],
+        options: [
+          "superadmin",
+          "global_admin",
+          "owner",
+          "company_admin",
+          "general_manager",
+          "manager",
+          "accountant",
+          "employee",
+          "intern",
+          "worker",
+          "customer",
+        ],
       }),
     },
   }),
@@ -930,10 +1057,10 @@ export const lists: Lists = {
     isSingleton: true,
     access: {
       operation: {
-        create: isAdmin,
+        create: isSuperAdmin,
         query: isUser,
-        update: isAdmin,
-        delete: isAdmin,
+        update: isSuperAdmin,
+        delete: denyAll,
       },
     },
     fields: {
@@ -947,24 +1074,6 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
-    },
-  }),
-  Config: list({
-    isSingleton: true,
-    access: {
-      operation: {
-        create: () => false,
-        query: isUser,
-        update: isAdmin,
-        delete: () => false,
-      },
-    },
-    ui: {
-      labelField: "name",
-    },
-    fields: {
-      defaultCurrency: text({ defaultValue: "TRY" }),
-      extraFieldsProduct: json(),
     },
   }),
 };
