@@ -1,173 +1,27 @@
 import { text, relationship, password, timestamp, select, float, multiselect, virtual, checkbox, integer, json } from "@keystone-6/core/fields";
 import { allowAll, denyAll } from "@keystone-6/core/access";
-import type { Lists } from ".keystone/types";
 import { graphql, list } from "@keystone-6/core";
-
-export type Role =
-  | "superadmin"
-  | "global_admin"
-  | "admin_accountant"
-  | "admin_accountant_manager"
-  | "owner"
-  | "company_admin"
-  | "admin_accountant_employee"
-  | "general_manager"
-  | "manager"
-  | "accountant"
-  | "admin_accountant_intern"
-  | "employee"
-  | "intern"
-  | "worker"
-  | "customer";
-
-export type Session = {
-  itemId: string;
-  data: {
-    isBlocked: boolean;
-    username: string;
-    company?: string;
-    accountancy?: string;
-    role: Role;
-    permissions: any;
-  };
-};
-
-const isSuperAdmin = ({ session }: { session?: Session }) => {
-  console.log("superadmin check");
-  if (!session) return false;
-
-  if (session.data.role == "superadmin") return true;
-
-  return false;
-};
-
-const isGlobalAdmin = ({ session }: { session?: Session }) => {
-  console.log("globaladmin check");
-  if (!session) return false;
-
-  if (isSuperAdmin({ session }) || session.data.role == "global_admin") return true;
-
-  return !session.data.isBlocked;
-};
-
-const isAdminAccountant = ({ session }: { session?: Session }) => {
-  console.log("adminaccountant check");
-  if (!session) return false;
-
-  if (isGlobalAdmin({ session }) || session.data.role == "admin_accountant") return true;
-
-  return !session.data.isBlocked;
-};
-
-const isAdminAccountantManager = ({ session }: { session?: Session }) => {
-  console.log("adminaccountantmanager check");
-  console.log(session);
-  if (!session) return false;
-
-  if (isAdminAccountant({ session }) || session.data.role == "admin_accountant_manager") return true;
-
-  return !session.data.isBlocked;
-};
-
-const isOwner = ({ session }: { session?: Session }) => {
-  if (!session) return false;
-
-  if (isAdminAccountantManager({ session }) || session.data.role == "owner") return true;
-
-  return !session.data.isBlocked;
-};
-
-function isCompanyAdmin({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isOwner({ session }) || session.data.role == "company_admin") return true;
-
-  return !session.data.isBlocked;
-}
-
-const isAdminAccountantEmployee = ({ session }: { session?: Session }) => {
-  if (!session) return false;
-
-  if (isAdminAccountantManager({ session }) || session.data.role == "admin_accountant_employee") return true;
-
-  return !session.data.isBlocked;
-};
-
-function isGeneralManager({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isCompanyAdmin({ session }) || session.data.role == "general_manager") return true;
-
-  return !session.data.isBlocked;
-}
-
-function isManager({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isGeneralManager({ session }) || session.data.role == "manager") return true;
-
-  return !session.data.isBlocked;
-}
-
-function isAccountant({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isManager({ session }) || session.data.role == "accountant") return true;
-
-  return !session.data.isBlocked;
-}
-
-const isAdminAccountantIntern = ({ session }: { session?: Session }) => {
-  if (!session) return false;
-
-  if (isAdminAccountantEmployee({ session }) || session.data.role == "admin_accountant_intern") return true;
-
-  return !session.data.isBlocked;
-};
-
-function isEmployee({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isAccountant({ session }) || session.data.role == "employee") return true;
-
-  return !session.data.isBlocked;
-}
-
-function isIntern({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isEmployee({ session }) || session.data.role == "intern") return true;
-
-  return !session.data.isBlocked;
-}
-
-function isWorker({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isIntern({ session }) || session.data.role == "worker") return true;
-
-  return !session.data.isBlocked;
-}
-
-function isUser({ session }: { session?: Session }) {
-  if (!session) return false;
-
-  if (isWorker({ session }) || session.data.role == "customer") return true;
-
-  return !session.data.isBlocked;
-}
+import type { Lists } from ".keystone/types";
+import {
+  isAdminAccountantManager,
+  isWorker,
+  isCompanyAdmin,
+  isGlobalAdmin,
+  isEmployee,
+  isManager,
+  isUser,
+  isSuperAdmin,
+  isAdminAccountantIntern,
+} from "./functions";
 
 export const lists: Lists = {
   Accountancy: list({
-    ui: {
-      labelField: "name",
-    },
     access: {
       operation: {
-        create: isAdminAccountantManager,
-        query: isAdminAccountantEmployee,
-        update: isAdminAccountantEmployee,
-        delete: isAdminAccountantEmployee,
+        create: isSuperAdmin,
+        query: isAdminAccountantIntern,
+        update: isAdminAccountantManager,
+        delete: isSuperAdmin,
       },
     },
     fields: {
@@ -182,10 +36,76 @@ export const lists: Lists = {
       extraFields: json(),
     },
   }),
-  Company: list({
+  Address: list({
     ui: {
-      labelField: "name",
+      labelField: "street",
     },
+    access: {
+      operation: {
+        create: isUser,
+        query: isUser,
+        update: isEmployee,
+        delete: denyAll,
+      },
+    },
+    fields: {
+      street: text({ validation: { isRequired: true } }),
+      door: text(),
+      zip: text(),
+      city: text(),
+      floor: text(),
+      province: text(),
+      country: text(),
+      customer: relationship({
+        ref: "User.customerAddresses",
+        many: false,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  AssemblyComponent: list({
+    access: {
+      operation: {
+        create: isManager,
+        query: isEmployee,
+        update: isManager,
+        delete: isManager,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      description: text(),
+      amount: integer(),
+      assembly: relationship({
+        ref: "Material.components",
+        many: false,
+      }),
+      material: relationship({
+        ref: "Material.assemblyComponents",
+        many: false,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  Brand: list({
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isUser,
+        update: isEmployee,
+        delete: isGlobalAdmin,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      materials: relationship({ ref: "Material.brand", many: true }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  Company: list({
     access: {
       operation: {
         create: isAdminAccountantManager,
@@ -206,424 +126,9 @@ export const lists: Lists = {
         ref: "User.ownedCompany",
         many: false,
       }),
-      accountancy: relationship({ ref: "Accountancy.companies", many: false }),
       users: relationship({ ref: "User.company", many: true }),
       establishments: relationship({ ref: "Establishment.company", many: true }),
-      extraFields: json(),
-    },
-  }),
-  Establishment: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isAdminAccountantManager,
-        query: isWorker,
-        update: isCompanyAdmin,
-        delete: isGlobalAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      defaultCurrency: text({ defaultValue: "EUR" }),
-      logo: relationship({
-        ref: "File",
-        many: false,
-      }),
-      company: relationship({ ref: "Company.establishments", many: false }),
-      users: relationship({ ref: "User.establishment", many: true }),
-      address: relationship({ ref: "Address", many: false }),
-
-      extraFields: json(),
-    },
-  }),
-  WorkOrder: list({
-    ui: {
-      labelField: "number",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager,
-      },
-    },
-    fields: {
-      number: text({ validation: { isRequired: true } }),
-      materials: relationship({
-        ref: "Material.workOrders",
-        many: true,
-      }),
-      operations: relationship({
-        ref: "WorkOrderOperation.workOrder",
-        many: true,
-      }),
-      datePlanned: timestamp(),
-      dateStarted: timestamp(),
-      dateFinished: timestamp(),
-      creator: relationship({
-        ref: "User.workOrders",
-        many: false,
-      }),
-      extraFields: json(),
-    },
-  }),
-  WorkOrderOperation: list({
-    ui: {
-      labelField: "name",
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "update") {
-          if (inputData.startedAt) {
-            if (item.finishedAt) {
-              throw new Error("Operation already finished");
-            }
-          }
-          if (inputData.finishedAt) {
-            if (!item.startedAt) {
-              throw new Error("Operation not started");
-            }
-            if (item.finishedAt) {
-              throw new Error("Operation already finished");
-            }
-            if (inputData.finishedAt < item.startedAt) {
-              throw new Error("Finish date cannot be before start date");
-            }
-          }
-        }
-      },
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee,
-      },
-    },
-    fields: {
-      files: relationship({
-        ref: "File",
-        many: true,
-      }),
-      startedAt: timestamp(),
-      finishedAt: timestamp(),
-      name: text({ validation: { isRequired: true } }),
-      description: text(),
-      value: float({ validation: { isRequired: true, min: 0 } }),
-      price: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const workOrder = await context.query.WorkOrder.findOne({
-                where: { id: item.workOrderId },
-                query: "reduction",
-              });
-              let total = item.value;
-
-              total -= (total * (workOrder.reduction ?? 0)) / 100;
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      reduction: float({ defaultValue: 0 }),
-      amount: float({ validation: { isRequired: true, min: 0 } }),
-      total: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const workOrder = await context.query.WorkOrder.findOne({
-                where: { id: item.workOrderId },
-                query: "reduction",
-              });
-              let total = item.value * item.amount - (item.value * item.amount * (item.reduction ?? 0)) / 100;
-
-              total -= (total * (workOrder.reduction ?? 0)) / 100;
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      wastage: float({
-        validation: { min: 0 },
-        defaultValue: 0,
-      }),
-      workOrder: relationship({
-        ref: "WorkOrder.operations",
-        many: false,
-      }),
-      operation: relationship({
-        ref: "Operation.workOrderOperations",
-        many: false,
-      }),
-      extraFields: json(),
-    },
-  }),
-  Operation: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      files: relationship({
-        ref: "File",
-        many: true,
-      }),
-      material: relationship({
-        ref: "Material.operations",
-        many: false,
-      }),
-      workOrderOperations: relationship({
-        ref: "WorkOrderOperation.operation",
-        many: true,
-      }),
-      user: relationship({ ref: "User.operations", many: false }),
-      cost: float(),
-      value: float({ validation: { isRequired: true, min: 0 } }),
-      duration: integer(),
-      description: text(),
-      extraFields: json(),
-    },
-  }),
-  Address: list({
-    ui: {
-      labelField: "street",
-    },
-    access: {
-      operation: {
-        create: isUser,
-        query: isUser,
-        update: isEmployee,
-        delete: denyAll,
-      },
-    },
-    fields: {
-      street: text({ validation: { isRequired: true } }),
-      door: text({ validation: { isRequired: true } }),
-      zip: text({ validation: { isRequired: true } }),
-      city: text({ validation: { isRequired: true } }),
-      floor: text({ validation: { isRequired: true } }),
-      province: text({ validation: { isRequired: true } }),
-      country: text({ validation: { isRequired: true } }),
-      customer: relationship({
-        ref: "User.customerAddresses",
-        many: false,
-      }),
-      extraFields: json(),
-    },
-  }),
-  Payment: list({
-    ui: {
-      labelField: "timestamp",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isCompanyAdmin,
-      },
-    },
-    fields: {
-      value: float({ validation: { isRequired: true, min: 0 } }),
-      document: relationship({
-        ref: "Document.payments",
-        many: true,
-      }),
-      out: virtual({
-        field: graphql.field({
-          type: graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findMany({
-                where: {
-                  payments: {
-                    some: {
-                      id: {
-                        equals: item.id,
-                      },
-                    },
-                  },
-                },
-                query: "type",
-              });
-              switch (document[0].type) {
-                case "satış":
-                  return false;
-                case "irsaliye":
-                  return false;
-                case "fatura":
-                  return false;
-                case "borç dekontu":
-                  return false;
-                case "alacak dekontu":
-                  return true;
-                case "satın alma":
-                  return true;
-                default:
-                  return false;
-              }
-            } catch (e) {
-              return false;
-            }
-          },
-        }),
-      }),
-      isDeleted: checkbox({ defaultValue: false }),
-      creator: relationship({
-        ref: "User.payments",
-        many: false,
-      }),
-      reference: text(),
-      type: select({
-        type: "string",
-        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory"],
-        defaultValue: "cash",
-        validation: { isRequired: true },
-      }),
-      timestamp: timestamp({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-      }),
-      extraFields: json(),
-    },
-  }),
-  User: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        query: isUser,
-        create: isManager,
-        update: isManager,
-        delete: isGlobalAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      email: text({
-        isIndexed: "unique",
-        validation: { isRequired: true },
-      }),
-      isBlocked: checkbox({ defaultValue: false }),
-      phone: text(),
-      role: select({
-        type: "string",
-        options: [
-          "superadmin",
-          "global_admin",
-          "owner",
-          "company_admin",
-          "general_manager",
-          "manager",
-          "accountant",
-          "employee",
-          "intern",
-          "worker",
-          "customer",
-        ],
-        defaultValue: "customer",
-        validation: { isRequired: true },
-        isIndexed: true,
-        access: {
-          update: isCompanyAdmin,
-        },
-      }),
-      permissions: multiselect({
-        type: "enum",
-        options: [
-          { label: "Warranty", value: "warranty" },
-          { label: "Price", value: "price" },
-        ],
-        access: {
-          update: isCompanyAdmin,
-        },
-      }),
-      ssid: text(),
-      password: password({
-        validation: {
-          isRequired: true,
-          length: {
-            min: 6,
-          },
-        },
-      }),
-      operations: relationship({ ref: "Operation.user", many: true }),
-      notes: relationship({ ref: "Note.creator", many: true }),
-      documents: relationship({ ref: "Document.creator", many: true }),
-      customerDocuments: relationship({ ref: "Document.customer", many: true }),
-      customerMovements: relationship({
-        ref: "StockMovement.customer",
-        many: true,
-      }),
-      customerCompany: text(),
-      customerTaxNumber: text(),
-      customerTaxCenter: text(),
-      payments: relationship({ ref: "Payment.creator", many: true }),
-      customerAddresses: relationship({ ref: "Address.customer", many: true }),
-      workOrders: relationship({ ref: "WorkOrder.creator", many: true }),
-      establishment: relationship({ ref: "Establishment.users", many: false }),
-      accountancy: relationship({ ref: "Accountancy.users", many: false }),
-      company: relationship({ ref: "Company.users", many: false }),
-      ownedCompany: relationship({ ref: "Company.owner", many: false }),
-      extraFields: json(),
-    },
-  }),
-  Note: list({
-    ui: {
-      labelField: "note",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: denyAll,
-        delete: denyAll,
-      },
-    },
-    fields: {
-      note: text({ validation: { isRequired: true } }),
-      creator: relationship({
-        ref: "User.notes",
-        many: false,
-      }),
-      extraFields: json(),
-    },
-  }),
-  File: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: denyAll,
-        delete: denyAll,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      url: text(),
+      accountancy: relationship({ ref: "Accountancy.companies", many: false }),
       extraFields: json(),
     },
   }),
@@ -641,35 +146,39 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
-        if (operation === "delete") {
-          const products = await context.query.DocumentProduct.findMany({
-            where: { document: { id: { equals: item.id } } },
-            query: "id",
-          });
-          products.forEach(async (dp) => {
-            await context.query.DocumentProduct.deleteOne({
-              where: { id: dp.id },
+        try {
+          if (operation === "delete") {
+            const products = await context.query.DocumentProduct.findMany({
+              where: { document: { id: { equals: item.id } } },
+              query: "id",
             });
-          });
-        }
-        if (operation === "create") {
-          const docs = await context.query.Document.findMany({
-            orderBy: { number: "desc" },
-            where: { type: { equals: resolvedData.type } },
-            query: "id number",
-          });
-          const lastDocument = docs.at(0);
-          if (lastDocument) {
-            const lastNumber = lastDocument.number.split("-")[1];
-            const lastYear = lastDocument.number.split("-")[0];
-            if (lastYear == new Date().getFullYear()) {
-              resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
-            } else {
-              resolvedData.number = `${new Date().getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
-            }
-          } else {
-            resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(8, "0")}`;
+            products.forEach(async (dp) => {
+              await context.query.DocumentProduct.deleteOne({
+                where: { id: dp.id },
+              });
+            });
           }
+          if (operation === "create") {
+            const docs = await context.query.Document.findMany({
+              orderBy: { number: "desc" },
+              where: { type: { equals: resolvedData.type } },
+              query: "id number",
+            });
+            const lastDocument = docs.at(0);
+            if (lastDocument) {
+              const lastNumber = lastDocument.number.split("-")[1];
+              const lastYear = lastDocument.number.split("-")[0];
+              if (lastYear == new Date().getFullYear()) {
+                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+              } else {
+                resolvedData.number = `${new Date().getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+              }
+            } else {
+              resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(8, "0")}`;
+            }
+          }
+        } catch (error) {
+          console.log(error);
         }
       },
     },
@@ -732,7 +241,7 @@ export const lists: Lists = {
       }),
       type: select({
         type: "string",
-        options: ["quote", "sale", "dispatch", "invoice", "debit note", "credit note", "purchase"],
+        options: ["quote", "sale", "dispatch", "invoice", "debit_note", "credit_note", "purchase"],
         validation: { isRequired: true },
       }),
       creator: relationship({
@@ -800,6 +309,7 @@ export const lists: Lists = {
           },
         }),
       }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
       extraFields: json(),
     },
   }),
@@ -809,16 +319,20 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const movements = await context.query.StockMovement.findMany({
-            where: { documentProduct: { id: { equals: item.id } } },
-            query: "id",
-          });
-          movements.forEach(async (movement) => {
-            await context.query.StockMovement.deleteOne({
-              where: { id: movement.id },
+        try {
+          if (operation === "delete") {
+            const movements = await context.query.StockMovement.findMany({
+              where: { documentProduct: { id: { equals: item.id } } },
+              query: "id",
             });
-          });
+            movements.forEach(async (movement) => {
+              await context.query.StockMovement.deleteOne({
+                where: { id: movement.id },
+              });
+            });
+          }
+        } catch (error) {
+          console.log(error);
         }
       },
       afterOperation: async ({ operation, item, context }) => {
@@ -902,40 +416,53 @@ export const lists: Lists = {
         ref: "Document.products",
         many: false,
       }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
       extraFields: json(),
     },
   }),
-  AssemblyComponent: list({
-    ui: {
-      labelField: "name",
-    },
+  Establishment: list({
     access: {
       operation: {
-        create: isManager,
-        query: isEmployee,
-        update: isManager,
-        delete: isManager,
+        create: isAdminAccountantManager,
+        query: isWorker,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin,
       },
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      description: text(),
-      amount: integer(),
-      assembly: relationship({
-        ref: "Material.components",
+      defaultCurrency: text({ defaultValue: "EUR" }),
+      logo: relationship({
+        ref: "File",
         many: false,
       }),
-      material: relationship({
-        ref: "Material.assemblyComponents",
-        many: false,
+      stockMovements: relationship({
+        ref: "StockMovement.establishment",
+        many: true,
       }),
+      company: relationship({ ref: "Company.establishments", many: false }),
+      users: relationship({ ref: "User.establishment", many: true }),
+      address: relationship({ ref: "Address", many: false }),
+      extraFields: json(),
+    },
+  }),
+  File: list({
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: denyAll,
+        delete: denyAll,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      url: text(),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
       extraFields: json(),
     },
   }),
   Material: list({
-    ui: {
-      labelField: "name",
-    },
     access: {
       operation: {
         create: isManager,
@@ -1009,7 +536,7 @@ export const lists: Lists = {
       }),
       pricedBy: select({
         type: "string",
-        options: ["amount", "length", "weight", "area"],
+        options: ["amount", "volume", "length", "weight", "area"],
         defaultValue: "amount",
         validation: { isRequired: true },
       }),
@@ -1031,33 +558,13 @@ export const lists: Lists = {
         ref: "DocumentProduct.product",
         many: true,
       }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
       extraFields: json(),
     },
   }),
-  Storage: list({
+  Note: list({
     ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isCompanyAdmin,
-        query: isEmployee,
-        update: isCompanyAdmin,
-        delete: isGlobalAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      stockMovements: relationship({
-        ref: "StockMovement.storage",
-        many: true,
-      }),
-      extraFields: json(),
-    },
-  }),
-  StockMovement: list({
-    ui: {
-      labelField: "movementType",
+      labelField: "note",
     },
     access: {
       operation: {
@@ -1068,79 +575,12 @@ export const lists: Lists = {
       },
     },
     fields: {
-      material: relationship({
-        ref: "Material.stockMovements",
+      note: text({ validation: { isRequired: true } }),
+      creator: relationship({
+        ref: "User.notes",
         many: false,
       }),
-      storage: relationship({
-        ref: "Storage.stockMovements",
-        many: false,
-      }),
-      amount: float({ validation: { isRequired: true, min: 0 } }),
-      movementType: select({
-        type: "string",
-        options: ["in", "out"],
-        defaultValue: "in",
-        validation: { isRequired: true },
-      }),
-      documentProduct: relationship({
-        ref: "DocumentProduct.stockMovements",
-        many: false,
-      }),
-      note: text(),
-      customer: relationship({
-        ref: "User.customerMovements",
-        many: false,
-      }),
-      date: timestamp({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-      }),
-      createdAt: timestamp({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-        access: {
-          create: denyAll,
-          update: denyAll,
-        },
-      }),
-      extraFields: json(),
-    },
-  }),
-  Supplier: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isManager,
-        query: isUser,
-        update: isManager,
-        delete: isGlobalAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      materials: relationship({ ref: "Material.suppliers", many: true }),
-      extraFields: json(),
-      documents: relationship({ ref: "Document.supplier", many: true }),
-    },
-  }),
-  Brand: list({
-    ui: {
-      labelField: "name",
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isUser,
-        update: isEmployee,
-        delete: isGlobalAdmin,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      materials: relationship({ ref: "Material.brand", many: true }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
       extraFields: json(),
     },
   }),
@@ -1180,6 +620,116 @@ export const lists: Lists = {
           "customer",
         ],
       }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+    },
+  }),
+  Operation: list({
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      files: relationship({
+        ref: "File",
+        many: true,
+      }),
+      material: relationship({
+        ref: "Material.operations",
+        many: false,
+      }),
+      workOrderOperations: relationship({
+        ref: "WorkOrderOperation.operation",
+        many: true,
+      }),
+      user: relationship({ ref: "User.operations", many: false }),
+      cost: float(),
+      value: float({ validation: { isRequired: true, min: 0 } }),
+      duration: integer(),
+      description: text(),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  Payment: list({
+    ui: {
+      labelField: "timestamp",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isManager,
+        delete: isCompanyAdmin,
+      },
+    },
+    fields: {
+      value: float({ validation: { isRequired: true, min: 0 } }),
+      document: relationship({
+        ref: "Document.payments",
+        many: true,
+      }),
+      out: virtual({
+        field: graphql.field({
+          type: graphql.Boolean,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findMany({
+                where: {
+                  payments: {
+                    some: {
+                      id: {
+                        equals: item.id,
+                      },
+                    },
+                  },
+                },
+                query: "type",
+              });
+              switch (document[0].type) {
+                case "satış":
+                  return false;
+                case "irsaliye":
+                  return false;
+                case "fatura":
+                  return false;
+                case "borç dekontu":
+                  return false;
+                case "alacak dekontu":
+                  return true;
+                case "satın alma":
+                  return true;
+                default:
+                  return false;
+              }
+            } catch (e) {
+              return false;
+            }
+          },
+        }),
+      }),
+      isDeleted: checkbox({ defaultValue: false }),
+      creator: relationship({
+        ref: "User.payments",
+        many: false,
+      }),
+      reference: text(),
+      type: select({
+        type: "string",
+        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory"],
+        defaultValue: "cash",
+        validation: { isRequired: true },
+      }),
+      timestamp: timestamp({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
     },
   }),
   SoftwareVersion: list({
@@ -1203,6 +753,304 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
+    },
+  }),
+  StockMovement: list({
+    ui: {
+      labelField: "movementType",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: denyAll,
+        delete: denyAll,
+      },
+    },
+    fields: {
+      material: relationship({
+        ref: "Material.stockMovements",
+        many: false,
+      }),
+      establishment: relationship({
+        ref: "Establishment.stockMovements",
+        many: false,
+      }),
+      amount: float({ validation: { isRequired: true, min: 0 } }),
+      movementType: select({
+        type: "string",
+        options: ["in", "out"],
+        defaultValue: "in",
+        validation: { isRequired: true },
+      }),
+      documentProduct: relationship({
+        ref: "DocumentProduct.stockMovements",
+        many: false,
+      }),
+      note: text(),
+      customer: relationship({
+        ref: "User.customerMovements",
+        many: false,
+      }),
+      date: timestamp({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+      }),
+      createdAt: timestamp({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+        access: {
+          create: denyAll,
+          update: denyAll,
+        },
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  Storage: list({
+    access: {
+      operation: {
+        create: isCompanyAdmin,
+        query: isEmployee,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  Supplier: list({
+    access: {
+      operation: {
+        create: isManager,
+        query: isUser,
+        update: isManager,
+        delete: isGlobalAdmin,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      materials: relationship({ ref: "Material.suppliers", many: true }),
+      documents: relationship({ ref: "Document.supplier", many: true }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  User: list({
+    access: {
+      operation: {
+        query: isUser,
+        create: isManager,
+        update: isManager,
+        delete: isGlobalAdmin,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      email: text({
+        isIndexed: "unique",
+        validation: { isRequired: true },
+      }),
+      isBlocked: checkbox({ defaultValue: false }),
+      phone: text(),
+      role: select({
+        type: "string",
+        options: [
+          "superadmin",
+          "global_admin",
+          "owner",
+          "company_admin",
+          "general_manager",
+          "manager",
+          "accountant",
+          "employee",
+          "intern",
+          "worker",
+          "customer",
+        ],
+        defaultValue: "customer",
+        validation: { isRequired: true },
+        isIndexed: true,
+        access: {
+          update: isCompanyAdmin,
+        },
+      }),
+      permissions: multiselect({
+        type: "enum",
+        options: [
+          { label: "Warranty", value: "warranty" },
+          { label: "Price", value: "price" },
+        ],
+        access: {
+          update: isCompanyAdmin,
+        },
+      }),
+      ssid: text(),
+      password: password({
+        validation: {
+          isRequired: true,
+          length: {
+            min: 6,
+          },
+        },
+      }),
+      operations: relationship({ ref: "Operation.user", many: true }),
+      notes: relationship({ ref: "Note.creator", many: true }),
+      documents: relationship({ ref: "Document.creator", many: true }),
+      customerDocuments: relationship({ ref: "Document.customer", many: true }),
+      customerMovements: relationship({
+        ref: "StockMovement.customer",
+        many: true,
+      }),
+      customerCompany: text(),
+      customerTaxNumber: text(),
+      customerTaxCenter: text(),
+      payments: relationship({ ref: "Payment.creator", many: true }),
+      customerAddresses: relationship({ ref: "Address.customer", many: true }),
+      workOrders: relationship({ ref: "WorkOrder.creator", many: true }),
+      establishment: relationship({ ref: "Establishment.users", many: false }),
+      accountancy: relationship({ ref: "Accountancy.users", many: false }),
+      ownedCompany: relationship({ ref: "Company.owner", many: false }),
+      company: relationship({ ref: "Company.users", many: false }),
+      extraFields: json(),
+    },
+  }),
+  WorkOrder: list({
+    ui: {
+      labelField: "number",
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager,
+      },
+    },
+    fields: {
+      number: text({ validation: { isRequired: true } }),
+      materials: relationship({
+        ref: "Material.workOrders",
+        many: true,
+      }),
+      operations: relationship({
+        ref: "WorkOrderOperation.workOrder",
+        many: true,
+      }),
+      datePlanned: timestamp(),
+      dateStarted: timestamp(),
+      dateFinished: timestamp(),
+      creator: relationship({
+        ref: "User.workOrders",
+        many: false,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
+    },
+  }),
+  WorkOrderOperation: list({
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        try {
+          if (operation === "update") {
+            if (inputData.startedAt) {
+              if (item.finishedAt) {
+                throw new Error("Operation already finished");
+              }
+            }
+            if (inputData.finishedAt) {
+              if (!item.startedAt) {
+                throw new Error("Operation not started");
+              }
+              if (item.finishedAt) {
+                throw new Error("Operation already finished");
+              }
+              if (inputData.finishedAt < item.startedAt) {
+                throw new Error("Finish date cannot be before start date");
+              }
+            }
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      },
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee,
+      },
+    },
+    fields: {
+      files: relationship({
+        ref: "File",
+        many: true,
+      }),
+      startedAt: timestamp(),
+      finishedAt: timestamp(),
+      name: text({ validation: { isRequired: true } }),
+      description: text(),
+      value: float({ validation: { isRequired: true, min: 0 } }),
+      price: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const workOrder = await context.query.WorkOrder.findOne({
+                where: { id: item.workOrderId },
+                query: "reduction",
+              });
+              let total = item.value;
+
+              total -= (total * (workOrder.reduction ?? 0)) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      reduction: float({ defaultValue: 0 }),
+      amount: float({ validation: { isRequired: true, min: 0 } }),
+      total: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const workOrder = await context.query.WorkOrder.findOne({
+                where: { id: item.workOrderId },
+                query: "reduction",
+              });
+              let total = item.value * item.amount - (item.value * item.amount * (item.reduction ?? 0)) / 100;
+
+              total -= (total * (workOrder.reduction ?? 0)) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      wastage: float({
+        validation: { min: 0 },
+        defaultValue: 0,
+      }),
+      workOrder: relationship({
+        ref: "WorkOrder.operations",
+        many: false,
+      }),
+      operation: relationship({
+        ref: "Operation.workOrderOperations",
+        many: false,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      extraFields: json(),
     },
   }),
 };

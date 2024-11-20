@@ -24,36 +24,160 @@ model Accountancy {
   @@index([logoId])
 }
 
+model Address {
+  id                         String          @id @default(cuid())
+  street                     String          @default("")
+  door                       String          @default("")
+  zip                        String          @default("")
+  city                       String          @default("")
+  floor                      String          @default("")
+  province                   String          @default("")
+  country                    String          @default("")
+  customer                   User?           @relation("Address_customer", fields: [customerId], references: [id])
+  customerId                 String?         @map("customer")
+  company                    Company?        @relation("Address_company", fields: [companyId], references: [id])
+  companyId                  String?         @map("company")
+  extraFields                Json?
+  from_Document_delAddress   Document[]      @relation("Document_delAddress")
+  from_Document_docAddress   Document[]      @relation("Document_docAddress")
+  from_Establishment_address Establishment[] @relation("Establishment_address")
+
+  @@index([customerId])
+  @@index([companyId])
+}
+
+model AssemblyComponent {
+  id          String    @id @default(cuid())
+  name        String    @default("")
+  description String    @default("")
+  amount      Int?
+  assembly    Material? @relation("AssemblyComponent_assembly", fields: [assemblyId], references: [id])
+  assemblyId  String?   @map("assembly")
+  material    Material? @relation("AssemblyComponent_material", fields: [materialId], references: [id])
+  materialId  String?   @map("material")
+  company     Company?  @relation("AssemblyComponent_company", fields: [companyId], references: [id])
+  companyId   String?   @map("company")
+  extraFields Json?
+
+  @@index([assemblyId])
+  @@index([materialId])
+  @@index([companyId])
+}
+
+model Brand {
+  id          String     @id @default(cuid())
+  name        String     @default("")
+  materials   Material[] @relation("Material_brand")
+  company     Company?   @relation("Brand_company", fields: [companyId], references: [id])
+  companyId   String?    @map("company")
+  extraFields Json?
+
+  @@index([companyId])
+}
+
 model Company {
-  id             String          @id @default(cuid())
-  name           String          @default("")
-  isActive       Boolean         @default(false)
-  logo           File?           @relation("Company_logo", fields: [logoId], references: [id])
-  logoId         String?         @map("logo")
-  pincode        String          @unique @default("")
-  owner          User?           @relation("Company_owner", fields: [ownerId], references: [id])
-  ownerId        String?         @unique @map("owner")
-  accountancy    Accountancy?    @relation("Company_accountancy", fields: [accountancyId], references: [id])
-  accountancyId  String?         @map("accountancy")
-  users          User[]          @relation("User_company")
-  establishments Establishment[] @relation("Establishment_company")
-  extraFields    Json?
+  id                              String               @id @default(cuid())
+  name                            String               @default("")
+  isActive                        Boolean              @default(false)
+  logo                            File?                @relation("Company_logo", fields: [logoId], references: [id])
+  logoId                          String?              @map("logo")
+  pincode                         String               @unique @default("")
+  owner                           User?                @relation("Company_owner", fields: [ownerId], references: [id])
+  ownerId                         String?              @unique @map("owner")
+  users                           User[]               @relation("User_company")
+  establishments                  Establishment[]      @relation("Establishment_company")
+  accountancy                     Accountancy?         @relation("Company_accountancy", fields: [accountancyId], references: [id])
+  accountancyId                   String?              @map("accountancy")
+  extraFields                     Json?
+  from_Address_company            Address[]            @relation("Address_company")
+  from_AssemblyComponent_company  AssemblyComponent[]  @relation("AssemblyComponent_company")
+  from_Brand_company              Brand[]              @relation("Brand_company")
+  from_Document_company           Document[]           @relation("Document_company")
+  from_DocumentProduct_company    DocumentProduct[]    @relation("DocumentProduct_company")
+  from_File_company               File[]               @relation("File_company")
+  from_Material_company           Material[]           @relation("Material_company")
+  from_Note_company               Note[]               @relation("Note_company")
+  from_Notification_company       Notification[]       @relation("Notification_company")
+  from_Operation_company          Operation[]          @relation("Operation_company")
+  from_Payment_company            Payment[]            @relation("Payment_company")
+  from_StockMovement_company      StockMovement[]      @relation("StockMovement_company")
+  from_Storage_company            Storage[]            @relation("Storage_company")
+  from_Supplier_company           Supplier[]           @relation("Supplier_company")
+  from_WorkOrder_company          WorkOrder[]          @relation("WorkOrder_company")
+  from_WorkOrderOperation_company WorkOrderOperation[] @relation("WorkOrderOperation_company")
 
   @@index([logoId])
   @@index([accountancyId])
 }
 
+model Document {
+  id             String            @id @default(cuid())
+  date           DateTime?         @default(now())
+  createdAt      DateTime?         @default(now())
+  type           String
+  creator        User?             @relation("Document_creator", fields: [creatorId], references: [id])
+  creatorId      String?           @map("creator")
+  supplier       Supplier?         @relation("Document_supplier", fields: [supplierId], references: [id])
+  supplierId     String?           @map("supplier")
+  customer       User?             @relation("Document_customer", fields: [customerId], references: [id])
+  customerId     String?           @map("customer")
+  reduction      Float?            @default(0)
+  isDeleted      Boolean           @default(false)
+  fromDocument   Document?         @relation("Document_fromDocument", fields: [fromDocumentId], references: [id])
+  fromDocumentId String?           @unique @map("fromDocument")
+  delAddress     Address?          @relation("Document_delAddress", fields: [delAddressId], references: [id])
+  delAddressId   String?           @map("delAddress")
+  docAddress     Address?          @relation("Document_docAddress", fields: [docAddressId], references: [id])
+  docAddressId   String?           @map("docAddress")
+  toDocument     Document?         @relation("Document_fromDocument")
+  products       DocumentProduct[] @relation("DocumentProduct_document")
+  payments       Payment[]         @relation("Document_payments")
+  number         String            @default("")
+  company        Company?          @relation("Document_company", fields: [companyId], references: [id])
+  companyId      String?           @map("company")
+  extraFields    Json?
+
+  @@index([creatorId])
+  @@index([supplierId])
+  @@index([customerId])
+  @@index([delAddressId])
+  @@index([docAddressId])
+  @@index([companyId])
+}
+
+model DocumentProduct {
+  id             String          @id @default(cuid())
+  amount         Float
+  stockMovements StockMovement[] @relation("StockMovement_documentProduct")
+  product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
+  productId      String?         @map("product")
+  name           String          @default("")
+  tax            Float
+  price          Float
+  reduction      Float?          @default(0)
+  document       Document?       @relation("DocumentProduct_document", fields: [documentId], references: [id])
+  documentId     String?         @map("document")
+  company        Company?        @relation("DocumentProduct_company", fields: [companyId], references: [id])
+  companyId      String?         @map("company")
+  extraFields    Json?
+
+  @@index([productId])
+  @@index([documentId])
+  @@index([companyId])
+}
+
 model Establishment {
-  id              String   @id @default(cuid())
-  name            String   @default("")
-  defaultCurrency String   @default("EUR")
-  logo            File?    @relation("Establishment_logo", fields: [logoId], references: [id])
-  logoId          String?  @map("logo")
-  company         Company? @relation("Establishment_company", fields: [companyId], references: [id])
-  companyId       String?  @map("company")
-  users           User[]   @relation("User_establishment")
-  address         Address? @relation("Establishment_address", fields: [addressId], references: [id])
-  addressId       String?  @map("address")
+  id              String          @id @default(cuid())
+  name            String          @default("")
+  defaultCurrency String          @default("EUR")
+  logo            File?           @relation("Establishment_logo", fields: [logoId], references: [id])
+  logoId          String?         @map("logo")
+  stockMovements  StockMovement[] @relation("StockMovement_establishment")
+  company         Company?        @relation("Establishment_company", fields: [companyId], references: [id])
+  companyId       String?         @map("company")
+  users           User[]          @relation("User_establishment")
+  address         Address?        @relation("Establishment_address", fields: [addressId], references: [id])
+  addressId       String?         @map("address")
   extraFields     Json?
 
   @@index([logoId])
@@ -61,40 +185,76 @@ model Establishment {
   @@index([addressId])
 }
 
-model WorkOrder {
-  id           String               @id @default(cuid())
-  number       String               @default("")
-  materials    Material[]           @relation("Material_workOrders")
-  operations   WorkOrderOperation[] @relation("WorkOrderOperation_workOrder")
-  datePlanned  DateTime?
-  dateStarted  DateTime?
-  dateFinished DateTime?
-  creator      User?                @relation("WorkOrder_creator", fields: [creatorId], references: [id])
-  creatorId    String?              @map("creator")
-  extraFields  Json?
+model File {
+  id                            String               @id @default(cuid())
+  name                          String               @default("")
+  url                           String               @default("")
+  company                       Company?             @relation("File_company", fields: [companyId], references: [id])
+  companyId                     String?              @map("company")
+  extraFields                   Json?
+  from_Accountancy_logo         Accountancy[]        @relation("Accountancy_logo")
+  from_Company_logo             Company[]            @relation("Company_logo")
+  from_Establishment_logo       Establishment[]      @relation("Establishment_logo")
+  from_Material_files           Material[]           @relation("Material_files")
+  from_Operation_files          Operation[]          @relation("Operation_files")
+  from_WorkOrderOperation_files WorkOrderOperation[] @relation("WorkOrderOperation_files")
 
-  @@index([creatorId])
+  @@index([companyId])
 }
 
-model WorkOrderOperation {
-  id          String     @id @default(cuid())
-  files       File[]     @relation("WorkOrderOperation_files")
-  startedAt   DateTime?
-  finishedAt  DateTime?
-  name        String     @default("")
-  description String     @default("")
-  value       Float
-  reduction   Float?     @default(0)
-  amount      Float
-  wastage     Float?     @default(0)
-  workOrder   WorkOrder? @relation("WorkOrderOperation_workOrder", fields: [workOrderId], references: [id])
-  workOrderId String?    @map("workOrder")
-  operation   Operation? @relation("WorkOrderOperation_operation", fields: [operationId], references: [id])
-  operationId String?    @map("operation")
+model Material {
+  id                 String              @id @default(cuid())
+  name               String              @default("")
+  components         AssemblyComponent[] @relation("AssemblyComponent_assembly")
+  assemblyComponents AssemblyComponent[] @relation("AssemblyComponent_material")
+  description        String              @default("")
+  price              Float
+  status             String              @default("active")
+  files              File[]              @relation("Material_files")
+  workOrders         WorkOrder[]         @relation("Material_workOrders")
+  code               String              @default("")
+  ean                String              @default("")
+  tax                Float               @default(20)
+  brand              Brand?              @relation("Material_brand", fields: [brandId], references: [id])
+  brandId            String?             @map("brand")
+  suppliers          Supplier[]          @relation("Material_suppliers")
+  pricedBy           String              @default("amount")
+  type               String              @default("product")
+  operations         Operation[]         @relation("Operation_material")
+  stockMovements     StockMovement[]     @relation("StockMovement_material")
+  documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
+  company            Company?            @relation("Material_company", fields: [companyId], references: [id])
+  companyId          String?             @map("company")
+  extraFields        Json?
+
+  @@index([brandId])
+  @@index([companyId])
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  note        String   @default("")
+  creator     User?    @relation("Note_creator", fields: [creatorId], references: [id])
+  creatorId   String?  @map("creator")
+  company     Company? @relation("Note_company", fields: [companyId], references: [id])
+  companyId   String?  @map("company")
   extraFields Json?
 
-  @@index([workOrderId])
-  @@index([operationId])
+  @@index([creatorId])
+  @@index([companyId])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  date        DateTime? @default(now())
+  message     String    @default("")
+  link        String    @default("")
+  handled     Boolean   @default(false)
+  notifyRoles Json      @default("[]")
+  company     Company?  @relation("Notification_company", fields: [companyId], references: [id])
+  companyId   String?   @map("company")
+
+  @@index([companyId])
 }
 
 model Operation {
@@ -110,46 +270,90 @@ model Operation {
   value               Float
   duration            Int?
   description         String               @default("")
+  company             Company?             @relation("Operation_company", fields: [companyId], references: [id])
+  companyId           String?              @map("company")
   extraFields         Json?
 
   @@index([materialId])
   @@index([userId])
-}
-
-model Address {
-  id                         String          @id @default(cuid())
-  street                     String          @default("")
-  door                       String          @default("")
-  zip                        String          @default("")
-  city                       String          @default("")
-  floor                      String          @default("")
-  province                   String          @default("")
-  country                    String          @default("")
-  customer                   User?           @relation("Address_customer", fields: [customerId], references: [id])
-  customerId                 String?         @map("customer")
-  extraFields                Json?
-  from_Establishment_address Establishment[] @relation("Establishment_address")
-  from_Document_delAddress   Document[]      @relation("Document_delAddress")
-  from_Document_docAddress   Document[]      @relation("Document_docAddress")
-
-  @@index([customerId])
+  @@index([companyId])
 }
 
 model Payment {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   value       Float
-  document    Document? @relation("Payment_document", fields: [documentId], references: [id])
-  documentId  String?   @map("document")
-  isDeleted   Boolean   @default(false)
-  creator     User?     @relation("Payment_creator", fields: [creatorId], references: [id])
-  creatorId   String?   @map("creator")
-  reference   String    @default("")
-  type        String    @default("cash")
-  timestamp   DateTime? @default(now())
+  document    Document[] @relation("Document_payments")
+  isDeleted   Boolean    @default(false)
+  creator     User?      @relation("Payment_creator", fields: [creatorId], references: [id])
+  creatorId   String?    @map("creator")
+  reference   String     @default("")
+  type        String     @default("cash")
+  timestamp   DateTime?  @default(now())
+  company     Company?   @relation("Payment_company", fields: [companyId], references: [id])
+  companyId   String?    @map("company")
   extraFields Json?
 
-  @@index([documentId])
   @@index([creatorId])
+  @@index([companyId])
+}
+
+model SoftwareVersion {
+  id          Int       @id
+  version     Int
+  iosLink     String    @default("")
+  androidLink String    @default("")
+  webLink     String    @default("")
+  windowsLink String    @default("")
+  macLink     String    @default("")
+  date        DateTime? @default(now())
+}
+
+model StockMovement {
+  id                String           @id @default(cuid())
+  material          Material?        @relation("StockMovement_material", fields: [materialId], references: [id])
+  materialId        String?          @map("material")
+  establishment     Establishment?   @relation("StockMovement_establishment", fields: [establishmentId], references: [id])
+  establishmentId   String?          @map("establishment")
+  amount            Float
+  movementType      String           @default("in")
+  documentProduct   DocumentProduct? @relation("StockMovement_documentProduct", fields: [documentProductId], references: [id])
+  documentProductId String?          @map("documentProduct")
+  note              String           @default("")
+  customer          User?            @relation("StockMovement_customer", fields: [customerId], references: [id])
+  customerId        String?          @map("customer")
+  date              DateTime?        @default(now())
+  createdAt         DateTime?        @default(now())
+  company           Company?         @relation("StockMovement_company", fields: [companyId], references: [id])
+  companyId         String?          @map("company")
+  extraFields       Json?
+
+  @@index([materialId])
+  @@index([establishmentId])
+  @@index([documentProductId])
+  @@index([customerId])
+  @@index([companyId])
+}
+
+model Storage {
+  id          String   @id @default(cuid())
+  name        String   @default("")
+  company     Company? @relation("Storage_company", fields: [companyId], references: [id])
+  companyId   String?  @map("company")
+  extraFields Json?
+
+  @@index([companyId])
+}
+
+model Supplier {
+  id          String     @id @default(cuid())
+  name        String     @default("")
+  materials   Material[] @relation("Material_suppliers")
+  documents   Document[] @relation("Document_supplier")
+  company     Company?   @relation("Supplier_company", fields: [companyId], references: [id])
+  companyId   String?    @map("company")
+  extraFields Json?
+
+  @@index([companyId])
 }
 
 model User {
@@ -177,9 +381,9 @@ model User {
   establishmentId   String?         @map("establishment")
   accountancy       Accountancy?    @relation("User_accountancy", fields: [accountancyId], references: [id])
   accountancyId     String?         @map("accountancy")
+  ownedCompany      Company?        @relation("Company_owner")
   company           Company?        @relation("User_company", fields: [companyId], references: [id])
   companyId         String?         @map("company")
-  ownedCompany      Company?        @relation("Company_owner")
   extraFields       Json?
 
   @@index([role])
@@ -188,181 +392,44 @@ model User {
   @@index([companyId])
 }
 
-model Note {
-  id          String  @id @default(cuid())
-  note        String  @default("")
-  creator     User?   @relation("Note_creator", fields: [creatorId], references: [id])
-  creatorId   String? @map("creator")
-  extraFields Json?
+model WorkOrder {
+  id           String               @id @default(cuid())
+  number       String               @default("")
+  materials    Material[]           @relation("Material_workOrders")
+  operations   WorkOrderOperation[] @relation("WorkOrderOperation_workOrder")
+  datePlanned  DateTime?
+  dateStarted  DateTime?
+  dateFinished DateTime?
+  creator      User?                @relation("WorkOrder_creator", fields: [creatorId], references: [id])
+  creatorId    String?              @map("creator")
+  company      Company?             @relation("WorkOrder_company", fields: [companyId], references: [id])
+  companyId    String?              @map("company")
+  extraFields  Json?
 
   @@index([creatorId])
+  @@index([companyId])
 }
 
-model File {
-  id                            String               @id @default(cuid())
-  name                          String               @default("")
-  url                           String               @default("")
-  extraFields                   Json?
-  from_Accountancy_logo         Accountancy[]        @relation("Accountancy_logo")
-  from_Company_logo             Company[]            @relation("Company_logo")
-  from_Establishment_logo       Establishment[]      @relation("Establishment_logo")
-  from_WorkOrderOperation_files WorkOrderOperation[] @relation("WorkOrderOperation_files")
-  from_Operation_files          Operation[]          @relation("Operation_files")
-  from_Material_files           Material[]           @relation("Material_files")
-}
-
-model Document {
-  id             String            @id @default(cuid())
-  date           DateTime?         @default(now())
-  createdAt      DateTime?         @default(now())
-  type           String
-  creator        User?             @relation("Document_creator", fields: [creatorId], references: [id])
-  creatorId      String?           @map("creator")
-  supplier       Supplier?         @relation("Document_supplier", fields: [supplierId], references: [id])
-  supplierId     String?           @map("supplier")
-  customer       User?             @relation("Document_customer", fields: [customerId], references: [id])
-  customerId     String?           @map("customer")
-  reduction      Float?            @default(0)
-  isDeleted      Boolean           @default(false)
-  fromDocument   Document?         @relation("Document_fromDocument", fields: [fromDocumentId], references: [id])
-  fromDocumentId String?           @unique @map("fromDocument")
-  delAddress     Address?          @relation("Document_delAddress", fields: [delAddressId], references: [id])
-  delAddressId   String?           @map("delAddress")
-  docAddress     Address?          @relation("Document_docAddress", fields: [docAddressId], references: [id])
-  docAddressId   String?           @map("docAddress")
-  toDocument     Document?         @relation("Document_fromDocument")
-  products       DocumentProduct[] @relation("DocumentProduct_document")
-  payments       Payment[]         @relation("Payment_document")
-  number         String            @default("")
-  extraFields    Json?
-
-  @@index([creatorId])
-  @@index([supplierId])
-  @@index([customerId])
-  @@index([delAddressId])
-  @@index([docAddressId])
-}
-
-model DocumentProduct {
-  id             String          @id @default(cuid())
-  amount         Float
-  stockMovements StockMovement[] @relation("StockMovement_documentProduct")
-  product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
-  productId      String?         @map("product")
-  name           String          @default("")
-  tax            Float
-  price          Float
-  reduction      Float?          @default(0)
-  document       Document?       @relation("DocumentProduct_document", fields: [documentId], references: [id])
-  documentId     String?         @map("document")
-  extraFields    Json?
-
-  @@index([productId])
-  @@index([documentId])
-}
-
-model AssemblyComponent {
-  id          String    @id @default(cuid())
-  name        String    @default("")
-  description String    @default("")
-  amount      Int?
-  assembly    Material? @relation("AssemblyComponent_assembly", fields: [assemblyId], references: [id])
-  assemblyId  String?   @map("assembly")
-  material    Material? @relation("AssemblyComponent_material", fields: [materialId], references: [id])
-  materialId  String?   @map("material")
-  extraFields Json?
-
-  @@index([assemblyId])
-  @@index([materialId])
-}
-
-model Material {
-  id                 String              @id @default(cuid())
-  name               String              @default("")
-  components         AssemblyComponent[] @relation("AssemblyComponent_assembly")
-  assemblyComponents AssemblyComponent[] @relation("AssemblyComponent_material")
-  description        String              @default("")
-  price              Float
-  status             String              @default("active")
-  files              File[]              @relation("Material_files")
-  workOrders         WorkOrder[]         @relation("Material_workOrders")
-  code               String              @default("")
-  ean                String              @default("")
-  tax                Float               @default(20)
-  brand              Brand?              @relation("Material_brand", fields: [brandId], references: [id])
-  brandId            String?             @map("brand")
-  suppliers          Supplier[]          @relation("Material_suppliers")
-  pricedBy           String              @default("amount")
-  type               String              @default("product")
-  operations         Operation[]         @relation("Operation_material")
-  stockMovements     StockMovement[]     @relation("StockMovement_material")
-  documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
-  extraFields        Json?
-
-  @@index([brandId])
-}
-
-model Storage {
-  id             String          @id @default(cuid())
-  name           String          @default("")
-  stockMovements StockMovement[] @relation("StockMovement_storage")
-  extraFields    Json?
-}
-
-model StockMovement {
-  id                String           @id @default(cuid())
-  material          Material?        @relation("StockMovement_material", fields: [materialId], references: [id])
-  materialId        String?          @map("material")
-  storage           Storage?         @relation("StockMovement_storage", fields: [storageId], references: [id])
-  storageId         String?          @map("storage")
-  amount            Float
-  movementType      String           @default("in")
-  documentProduct   DocumentProduct? @relation("StockMovement_documentProduct", fields: [documentProductId], references: [id])
-  documentProductId String?          @map("documentProduct")
-  note              String           @default("")
-  customer          User?            @relation("StockMovement_customer", fields: [customerId], references: [id])
-  customerId        String?          @map("customer")
-  date              DateTime?        @default(now())
-  createdAt         DateTime?        @default(now())
-  extraFields       Json?
-
-  @@index([materialId])
-  @@index([storageId])
-  @@index([documentProductId])
-  @@index([customerId])
-}
-
-model Supplier {
+model WorkOrderOperation {
   id          String     @id @default(cuid())
+  files       File[]     @relation("WorkOrderOperation_files")
+  startedAt   DateTime?
+  finishedAt  DateTime?
   name        String     @default("")
-  materials   Material[] @relation("Material_suppliers")
+  description String     @default("")
+  value       Float
+  reduction   Float?     @default(0)
+  amount      Float
+  wastage     Float?     @default(0)
+  workOrder   WorkOrder? @relation("WorkOrderOperation_workOrder", fields: [workOrderId], references: [id])
+  workOrderId String?    @map("workOrder")
+  operation   Operation? @relation("WorkOrderOperation_operation", fields: [operationId], references: [id])
+  operationId String?    @map("operation")
+  company     Company?   @relation("WorkOrderOperation_company", fields: [companyId], references: [id])
+  companyId   String?    @map("company")
   extraFields Json?
-  documents   Document[] @relation("Document_supplier")
-}
 
-model Brand {
-  id          String     @id @default(cuid())
-  name        String     @default("")
-  materials   Material[] @relation("Material_brand")
-  extraFields Json?
-}
-
-model Notification {
-  id          String    @id @default(cuid())
-  date        DateTime? @default(now())
-  message     String    @default("")
-  link        String    @default("")
-  handled     Boolean   @default(false)
-  notifyRoles Json      @default("[]")
-}
-
-model SoftwareVersion {
-  id          Int       @id
-  version     Int
-  iosLink     String    @default("")
-  androidLink String    @default("")
-  webLink     String    @default("")
-  windowsLink String    @default("")
-  macLink     String    @default("")
-  date        DateTime? @default(now())
+  @@index([workOrderId])
+  @@index([operationId])
+  @@index([companyId])
 }

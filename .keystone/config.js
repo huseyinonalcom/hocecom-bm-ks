@@ -89,6 +89,8 @@ var import_core2 = require("@keystone-6/core");
 var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
+
+// functions.ts
 var isSuperAdmin = ({ session: session2 }) => {
   console.log("superadmin check");
   if (!session2) return false;
@@ -101,7 +103,7 @@ var isGlobalAdmin = ({ session: session2 }) => {
   if (isSuperAdmin({ session: session2 }) || session2.data.role == "global_admin") return true;
   return !session2.data.isBlocked;
 };
-var isAdminAccountant = ({ session: session2 }) => {
+var isAdminAccountantOwner = ({ session: session2 }) => {
   console.log("adminaccountant check");
   if (!session2) return false;
   if (isGlobalAdmin({ session: session2 }) || session2.data.role == "admin_accountant") return true;
@@ -111,7 +113,7 @@ var isAdminAccountantManager = ({ session: session2 }) => {
   console.log("adminaccountantmanager check");
   console.log(session2);
   if (!session2) return false;
-  if (isAdminAccountant({ session: session2 }) || session2.data.role == "admin_accountant_manager") return true;
+  if (isAdminAccountantOwner({ session: session2 }) || session2.data.role == "admin_accountant_manager") return true;
   return !session2.data.isBlocked;
 };
 var isOwner = ({ session: session2 }) => {
@@ -119,62 +121,66 @@ var isOwner = ({ session: session2 }) => {
   if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "owner") return true;
   return !session2.data.isBlocked;
 };
-function isCompanyAdmin({ session: session2 }) {
+var isCompanyAdmin = ({ session: session2 }) => {
   if (!session2) return false;
   if (isOwner({ session: session2 }) || session2.data.role == "company_admin") return true;
   return !session2.data.isBlocked;
-}
+};
 var isAdminAccountantEmployee = ({ session: session2 }) => {
   if (!session2) return false;
   if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "admin_accountant_employee") return true;
   return !session2.data.isBlocked;
 };
-function isGeneralManager({ session: session2 }) {
+var isGeneralManager = ({ session: session2 }) => {
   if (!session2) return false;
   if (isCompanyAdmin({ session: session2 }) || session2.data.role == "general_manager") return true;
   return !session2.data.isBlocked;
-}
-function isManager({ session: session2 }) {
+};
+var isManager = ({ session: session2 }) => {
   if (!session2) return false;
   if (isGeneralManager({ session: session2 }) || session2.data.role == "manager") return true;
   return !session2.data.isBlocked;
-}
-function isAccountant({ session: session2 }) {
+};
+var isAccountant = ({ session: session2 }) => {
   if (!session2) return false;
   if (isManager({ session: session2 }) || session2.data.role == "accountant") return true;
   return !session2.data.isBlocked;
-}
-function isEmployee({ session: session2 }) {
+};
+var isAdminAccountantIntern = ({ session: session2 }) => {
+  if (!session2) return false;
+  if (isAdminAccountantEmployee({ session: session2 }) || session2.data.role == "admin_accountant_intern") return true;
+  return !session2.data.isBlocked;
+};
+var isEmployee = ({ session: session2 }) => {
   if (!session2) return false;
   if (isAccountant({ session: session2 }) || session2.data.role == "employee") return true;
   return !session2.data.isBlocked;
-}
-function isIntern({ session: session2 }) {
+};
+var isIntern = ({ session: session2 }) => {
   if (!session2) return false;
   if (isEmployee({ session: session2 }) || session2.data.role == "intern") return true;
   return !session2.data.isBlocked;
-}
-function isWorker({ session: session2 }) {
+};
+var isWorker = ({ session: session2 }) => {
   if (!session2) return false;
   if (isIntern({ session: session2 }) || session2.data.role == "worker") return true;
   return !session2.data.isBlocked;
-}
-function isUser({ session: session2 }) {
+};
+var isUser = ({ session: session2 }) => {
   if (!session2) return false;
   if (isWorker({ session: session2 }) || session2.data.role == "customer") return true;
   return !session2.data.isBlocked;
-}
+};
+
+// schema.ts
 var lists = {
   Accountancy: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
     access: {
       operation: {
-        create: isAdminAccountantManager,
-        query: isAdminAccountantEmployee,
-        update: isAdminAccountantEmployee,
-        delete: isAdminAccountantEmployee
+        create: isSuperAdmin,
+        query: isAdminAccountantIntern,
+        update: isAdminAccountantManager,
+        delete: isSuperAdmin
       }
     },
     fields: {
@@ -189,10 +195,76 @@ var lists = {
       extraFields: (0, import_fields.json)()
     }
   }),
-  Company: (0, import_core.list)({
+  Address: (0, import_core.list)({
     ui: {
-      labelField: "name"
+      labelField: "street"
     },
+    access: {
+      operation: {
+        create: isUser,
+        query: isUser,
+        update: isEmployee,
+        delete: import_access.denyAll
+      }
+    },
+    fields: {
+      street: (0, import_fields.text)({ validation: { isRequired: true } }),
+      door: (0, import_fields.text)(),
+      zip: (0, import_fields.text)(),
+      city: (0, import_fields.text)(),
+      floor: (0, import_fields.text)(),
+      province: (0, import_fields.text)(),
+      country: (0, import_fields.text)(),
+      customer: (0, import_fields.relationship)({
+        ref: "User.customerAddresses",
+        many: false
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  AssemblyComponent: (0, import_core.list)({
+    access: {
+      operation: {
+        create: isManager,
+        query: isEmployee,
+        update: isManager,
+        delete: isManager
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      description: (0, import_fields.text)(),
+      amount: (0, import_fields.integer)(),
+      assembly: (0, import_fields.relationship)({
+        ref: "Material.components",
+        many: false
+      }),
+      material: (0, import_fields.relationship)({
+        ref: "Material.assemblyComponents",
+        many: false
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Brand: (0, import_core.list)({
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isUser,
+        update: isEmployee,
+        delete: isGlobalAdmin
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      materials: (0, import_fields.relationship)({ ref: "Material.brand", many: true }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Company: (0, import_core.list)({
     access: {
       operation: {
         create: isAdminAccountantManager,
@@ -213,413 +285,9 @@ var lists = {
         ref: "User.ownedCompany",
         many: false
       }),
-      accountancy: (0, import_fields.relationship)({ ref: "Accountancy.companies", many: false }),
       users: (0, import_fields.relationship)({ ref: "User.company", many: true }),
       establishments: (0, import_fields.relationship)({ ref: "Establishment.company", many: true }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Establishment: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isAdminAccountantManager,
-        query: isWorker,
-        update: isCompanyAdmin,
-        delete: isGlobalAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      defaultCurrency: (0, import_fields.text)({ defaultValue: "EUR" }),
-      logo: (0, import_fields.relationship)({
-        ref: "File",
-        many: false
-      }),
-      company: (0, import_fields.relationship)({ ref: "Company.establishments", many: false }),
-      users: (0, import_fields.relationship)({ ref: "User.establishment", many: true }),
-      address: (0, import_fields.relationship)({ ref: "Address", many: false }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  WorkOrder: (0, import_core.list)({
-    ui: {
-      labelField: "number"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager
-      }
-    },
-    fields: {
-      number: (0, import_fields.text)({ validation: { isRequired: true } }),
-      materials: (0, import_fields.relationship)({
-        ref: "Material.workOrders",
-        many: true
-      }),
-      operations: (0, import_fields.relationship)({
-        ref: "WorkOrderOperation.workOrder",
-        many: true
-      }),
-      datePlanned: (0, import_fields.timestamp)(),
-      dateStarted: (0, import_fields.timestamp)(),
-      dateFinished: (0, import_fields.timestamp)(),
-      creator: (0, import_fields.relationship)({
-        ref: "User.workOrders",
-        many: false
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  WorkOrderOperation: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "update") {
-          if (inputData.startedAt) {
-            if (item.finishedAt) {
-              throw new Error("Operation already finished");
-            }
-          }
-          if (inputData.finishedAt) {
-            if (!item.startedAt) {
-              throw new Error("Operation not started");
-            }
-            if (item.finishedAt) {
-              throw new Error("Operation already finished");
-            }
-            if (inputData.finishedAt < item.startedAt) {
-              throw new Error("Finish date cannot be before start date");
-            }
-          }
-        }
-      }
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee
-      }
-    },
-    fields: {
-      files: (0, import_fields.relationship)({
-        ref: "File",
-        many: true
-      }),
-      startedAt: (0, import_fields.timestamp)(),
-      finishedAt: (0, import_fields.timestamp)(),
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      description: (0, import_fields.text)(),
-      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      price: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const workOrder = await context.query.WorkOrder.findOne({
-                where: { id: item.workOrderId },
-                query: "reduction"
-              });
-              let total = item.value;
-              total -= total * (workOrder.reduction ?? 0) / 100;
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      reduction: (0, import_fields.float)({ defaultValue: 0 }),
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      total: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const workOrder = await context.query.WorkOrder.findOne({
-                where: { id: item.workOrderId },
-                query: "reduction"
-              });
-              let total = item.value * item.amount - item.value * item.amount * (item.reduction ?? 0) / 100;
-              total -= total * (workOrder.reduction ?? 0) / 100;
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          }
-        })
-      }),
-      wastage: (0, import_fields.float)({
-        validation: { min: 0 },
-        defaultValue: 0
-      }),
-      workOrder: (0, import_fields.relationship)({
-        ref: "WorkOrder.operations",
-        many: false
-      }),
-      operation: (0, import_fields.relationship)({
-        ref: "Operation.workOrderOperations",
-        many: false
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Operation: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      files: (0, import_fields.relationship)({
-        ref: "File",
-        many: true
-      }),
-      material: (0, import_fields.relationship)({
-        ref: "Material.operations",
-        many: false
-      }),
-      workOrderOperations: (0, import_fields.relationship)({
-        ref: "WorkOrderOperation.operation",
-        many: true
-      }),
-      user: (0, import_fields.relationship)({ ref: "User.operations", many: false }),
-      cost: (0, import_fields.float)(),
-      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      duration: (0, import_fields.integer)(),
-      description: (0, import_fields.text)(),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Address: (0, import_core.list)({
-    ui: {
-      labelField: "street"
-    },
-    access: {
-      operation: {
-        create: isUser,
-        query: isUser,
-        update: isEmployee,
-        delete: import_access.denyAll
-      }
-    },
-    fields: {
-      street: (0, import_fields.text)({ validation: { isRequired: true } }),
-      door: (0, import_fields.text)({ validation: { isRequired: true } }),
-      zip: (0, import_fields.text)({ validation: { isRequired: true } }),
-      city: (0, import_fields.text)({ validation: { isRequired: true } }),
-      floor: (0, import_fields.text)({ validation: { isRequired: true } }),
-      province: (0, import_fields.text)({ validation: { isRequired: true } }),
-      country: (0, import_fields.text)({ validation: { isRequired: true } }),
-      customer: (0, import_fields.relationship)({
-        ref: "User.customerAddresses",
-        many: false
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Payment: (0, import_core.list)({
-    ui: {
-      labelField: "timestamp"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isManager,
-        delete: isCompanyAdmin
-      }
-    },
-    fields: {
-      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      document: (0, import_fields.relationship)({
-        ref: "Document.payments",
-        many: false
-      }),
-      out: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
-                query: "type"
-              });
-              switch (document.type) {
-                case "sat\u0131\u015F":
-                  return false;
-                case "irsaliye":
-                  return false;
-                case "fatura":
-                  return false;
-                case "bor\xE7 dekontu":
-                  return false;
-                case "alacak dekontu":
-                  return true;
-                case "sat\u0131n alma":
-                  return true;
-                default:
-                  return false;
-              }
-            } catch (e) {
-              return false;
-            }
-          }
-        })
-      }),
-      isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
-      creator: (0, import_fields.relationship)({
-        ref: "User.payments",
-        many: false
-      }),
-      reference: (0, import_fields.text)(),
-      type: (0, import_fields.select)({
-        type: "string",
-        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory"],
-        defaultValue: "cash",
-        validation: { isRequired: true }
-      }),
-      timestamp: (0, import_fields.timestamp)({
-        defaultValue: { kind: "now" },
-        isOrderable: true
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  User: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        query: isUser,
-        create: isManager,
-        update: isManager,
-        delete: isGlobalAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      email: (0, import_fields.text)({
-        isIndexed: "unique",
-        validation: { isRequired: true }
-      }),
-      isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
-      phone: (0, import_fields.text)(),
-      role: (0, import_fields.select)({
-        type: "string",
-        options: [
-          "superadmin",
-          "global_admin",
-          "owner",
-          "company_admin",
-          "general_manager",
-          "manager",
-          "accountant",
-          "employee",
-          "intern",
-          "worker",
-          "customer"
-        ],
-        defaultValue: "customer",
-        validation: { isRequired: true },
-        isIndexed: true,
-        access: {
-          update: isCompanyAdmin
-        }
-      }),
-      permissions: (0, import_fields.multiselect)({
-        type: "enum",
-        options: [
-          { label: "Warranty", value: "warranty" },
-          { label: "Price", value: "price" }
-        ],
-        access: {
-          update: isCompanyAdmin
-        }
-      }),
-      ssid: (0, import_fields.text)(),
-      password: (0, import_fields.password)({
-        validation: {
-          isRequired: true,
-          length: {
-            min: 6
-          }
-        }
-      }),
-      operations: (0, import_fields.relationship)({ ref: "Operation.user", many: true }),
-      notes: (0, import_fields.relationship)({ ref: "Note.creator", many: true }),
-      documents: (0, import_fields.relationship)({ ref: "Document.creator", many: true }),
-      customerDocuments: (0, import_fields.relationship)({ ref: "Document.customer", many: true }),
-      customerMovements: (0, import_fields.relationship)({
-        ref: "StockMovement.customer",
-        many: true
-      }),
-      customerCompany: (0, import_fields.text)(),
-      customerTaxNumber: (0, import_fields.text)(),
-      customerTaxCenter: (0, import_fields.text)(),
-      payments: (0, import_fields.relationship)({ ref: "Payment.creator", many: true }),
-      customerAddresses: (0, import_fields.relationship)({ ref: "Address.customer", many: true }),
-      workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.creator", many: true }),
-      establishment: (0, import_fields.relationship)({ ref: "Establishment.users", many: false }),
-      accountancy: (0, import_fields.relationship)({ ref: "Accountancy.users", many: false }),
-      company: (0, import_fields.relationship)({ ref: "Company.users", many: false }),
-      ownedCompany: (0, import_fields.relationship)({ ref: "Company.owner", many: false }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Note: (0, import_core.list)({
-    ui: {
-      labelField: "note"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: import_access.denyAll,
-        delete: import_access.denyAll
-      }
-    },
-    fields: {
-      note: (0, import_fields.text)({ validation: { isRequired: true } }),
-      creator: (0, import_fields.relationship)({
-        ref: "User.notes",
-        many: false
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  File: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: import_access.denyAll,
-        delete: import_access.denyAll
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      url: (0, import_fields.text)(),
+      accountancy: (0, import_fields.relationship)({ ref: "Accountancy.companies", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -637,35 +305,39 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
-        if (operation === "delete") {
-          const products = await context.query.DocumentProduct.findMany({
-            where: { document: { id: { equals: item.id } } },
-            query: "id"
-          });
-          products.forEach(async (dp) => {
-            await context.query.DocumentProduct.deleteOne({
-              where: { id: dp.id }
+        try {
+          if (operation === "delete") {
+            const products = await context.query.DocumentProduct.findMany({
+              where: { document: { id: { equals: item.id } } },
+              query: "id"
             });
-          });
-        }
-        if (operation === "create") {
-          const docs = await context.query.Document.findMany({
-            orderBy: { number: "desc" },
-            where: { type: { equals: resolvedData.type } },
-            query: "id number"
-          });
-          const lastDocument = docs.at(0);
-          if (lastDocument) {
-            const lastNumber = lastDocument.number.split("-")[1];
-            const lastYear = lastDocument.number.split("-")[0];
-            if (lastYear == (/* @__PURE__ */ new Date()).getFullYear()) {
-              resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
-            } else {
-              resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
-            }
-          } else {
-            resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(8, "0")}`;
+            products.forEach(async (dp) => {
+              await context.query.DocumentProduct.deleteOne({
+                where: { id: dp.id }
+              });
+            });
           }
+          if (operation === "create") {
+            const docs = await context.query.Document.findMany({
+              orderBy: { number: "desc" },
+              where: { type: { equals: resolvedData.type } },
+              query: "id number"
+            });
+            const lastDocument = docs.at(0);
+            if (lastDocument) {
+              const lastNumber = lastDocument.number.split("-")[1];
+              const lastYear = lastDocument.number.split("-")[0];
+              if (lastYear == (/* @__PURE__ */ new Date()).getFullYear()) {
+                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+              } else {
+                resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+              }
+            } else {
+              resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(8, "0")}`;
+            }
+          }
+        } catch (error) {
+          console.log(error);
         }
       }
     },
@@ -706,9 +378,29 @@ var lists = {
           }
         })
       }),
+      totalWithTax: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "total tax"
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += docProd.total * (1 + docProd.tax / 100);
+              });
+              return total - total * (item.reduction ?? 0) / 100;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
       type: (0, import_fields.select)({
         type: "string",
-        options: ["quote", "sale", "dispatch", "invoice", "debit note", "credit note", "purchase"],
+        options: ["quote", "sale", "dispatch", "invoice", "debit_note", "credit_note", "purchase"],
         validation: { isRequired: true }
       }),
       creator: (0, import_fields.relationship)({
@@ -762,7 +454,7 @@ var lists = {
           async resolve(item, args, context) {
             try {
               const payments = await context.query.Payment.findMany({
-                where: { document: { id: { equals: item.id } }, isDeleted: { equals: false } },
+                where: { document: { some: { id: { equals: item.id } } }, isDeleted: { equals: false } },
                 query: "value"
               });
               let total = 0;
@@ -776,6 +468,7 @@ var lists = {
           }
         })
       }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -785,16 +478,20 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context }) => {
-        if (operation === "delete") {
-          const movements = await context.query.StockMovement.findMany({
-            where: { documentProduct: { id: { equals: item.id } } },
-            query: "id"
-          });
-          movements.forEach(async (movement) => {
-            await context.query.StockMovement.deleteOne({
-              where: { id: movement.id }
+        try {
+          if (operation === "delete") {
+            const movements = await context.query.StockMovement.findMany({
+              where: { documentProduct: { id: { equals: item.id } } },
+              query: "id"
             });
-          });
+            movements.forEach(async (movement) => {
+              await context.query.StockMovement.deleteOne({
+                where: { id: movement.id }
+              });
+            });
+          }
+        } catch (error) {
+          console.log(error);
         }
       },
       afterOperation: async ({ operation, item, context }) => {
@@ -861,40 +558,53 @@ var lists = {
         ref: "Document.products",
         many: false
       }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
-  AssemblyComponent: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
+  Establishment: (0, import_core.list)({
     access: {
       operation: {
-        create: isManager,
-        query: isEmployee,
-        update: isManager,
-        delete: isManager
+        create: isAdminAccountantManager,
+        query: isWorker,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin
       }
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      description: (0, import_fields.text)(),
-      amount: (0, import_fields.integer)(),
-      assembly: (0, import_fields.relationship)({
-        ref: "Material.components",
+      defaultCurrency: (0, import_fields.text)({ defaultValue: "EUR" }),
+      logo: (0, import_fields.relationship)({
+        ref: "File",
         many: false
       }),
-      material: (0, import_fields.relationship)({
-        ref: "Material.assemblyComponents",
-        many: false
+      stockMovements: (0, import_fields.relationship)({
+        ref: "StockMovement.establishment",
+        many: true
       }),
+      company: (0, import_fields.relationship)({ ref: "Company.establishments", many: false }),
+      users: (0, import_fields.relationship)({ ref: "User.establishment", many: true }),
+      address: (0, import_fields.relationship)({ ref: "Address", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  File: (0, import_core.list)({
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: import_access.denyAll,
+        delete: import_access.denyAll
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      url: (0, import_fields.text)(),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
   Material: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
     access: {
       operation: {
         create: isManager,
@@ -968,7 +678,7 @@ var lists = {
       }),
       pricedBy: (0, import_fields.select)({
         type: "string",
-        options: ["amount", "length", "weight", "area"],
+        options: ["amount", "volume", "length", "weight", "area"],
         defaultValue: "amount",
         validation: { isRequired: true }
       }),
@@ -990,33 +700,13 @@ var lists = {
         ref: "DocumentProduct.product",
         many: true
       }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
-  Storage: (0, import_core.list)({
+  Note: (0, import_core.list)({
     ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isCompanyAdmin,
-        query: isEmployee,
-        update: isCompanyAdmin,
-        delete: isGlobalAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      stockMovements: (0, import_fields.relationship)({
-        ref: "StockMovement.storage",
-        many: true
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  StockMovement: (0, import_core.list)({
-    ui: {
-      labelField: "movementType"
+      labelField: "note"
     },
     access: {
       operation: {
@@ -1027,79 +717,12 @@ var lists = {
       }
     },
     fields: {
-      material: (0, import_fields.relationship)({
-        ref: "Material.stockMovements",
+      note: (0, import_fields.text)({ validation: { isRequired: true } }),
+      creator: (0, import_fields.relationship)({
+        ref: "User.notes",
         many: false
       }),
-      storage: (0, import_fields.relationship)({
-        ref: "Storage.stockMovements",
-        many: false
-      }),
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      movementType: (0, import_fields.select)({
-        type: "string",
-        options: ["in", "out"],
-        defaultValue: "in",
-        validation: { isRequired: true }
-      }),
-      documentProduct: (0, import_fields.relationship)({
-        ref: "DocumentProduct.stockMovements",
-        many: false
-      }),
-      note: (0, import_fields.text)(),
-      customer: (0, import_fields.relationship)({
-        ref: "User.customerMovements",
-        many: false
-      }),
-      date: (0, import_fields.timestamp)({
-        defaultValue: { kind: "now" },
-        isOrderable: true
-      }),
-      createdAt: (0, import_fields.timestamp)({
-        defaultValue: { kind: "now" },
-        isOrderable: true,
-        access: {
-          create: import_access.denyAll,
-          update: import_access.denyAll
-        }
-      }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Supplier: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isManager,
-        query: isUser,
-        update: isManager,
-        delete: isGlobalAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      materials: (0, import_fields.relationship)({ ref: "Material.suppliers", many: true }),
-      extraFields: (0, import_fields.json)(),
-      documents: (0, import_fields.relationship)({ ref: "Document.supplier", many: true })
-    }
-  }),
-  Brand: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isUser,
-        update: isEmployee,
-        delete: isGlobalAdmin
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      materials: (0, import_fields.relationship)({ ref: "Material.brand", many: true }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1138,7 +761,117 @@ var lists = {
           "worker",
           "customer"
         ]
-      })
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false })
+    }
+  }),
+  Operation: (0, import_core.list)({
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      files: (0, import_fields.relationship)({
+        ref: "File",
+        many: true
+      }),
+      material: (0, import_fields.relationship)({
+        ref: "Material.operations",
+        many: false
+      }),
+      workOrderOperations: (0, import_fields.relationship)({
+        ref: "WorkOrderOperation.operation",
+        many: true
+      }),
+      user: (0, import_fields.relationship)({ ref: "User.operations", many: false }),
+      cost: (0, import_fields.float)(),
+      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      duration: (0, import_fields.integer)(),
+      description: (0, import_fields.text)(),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Payment: (0, import_core.list)({
+    ui: {
+      labelField: "timestamp"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isManager,
+        delete: isCompanyAdmin
+      }
+    },
+    fields: {
+      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      document: (0, import_fields.relationship)({
+        ref: "Document.payments",
+        many: true
+      }),
+      out: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Boolean,
+          async resolve(item, args, context) {
+            try {
+              const document = await context.query.Document.findMany({
+                where: {
+                  payments: {
+                    some: {
+                      id: {
+                        equals: item.id
+                      }
+                    }
+                  }
+                },
+                query: "type"
+              });
+              switch (document[0].type) {
+                case "sat\u0131\u015F":
+                  return false;
+                case "irsaliye":
+                  return false;
+                case "fatura":
+                  return false;
+                case "bor\xE7 dekontu":
+                  return false;
+                case "alacak dekontu":
+                  return true;
+                case "sat\u0131n alma":
+                  return true;
+                default:
+                  return false;
+              }
+            } catch (e) {
+              return false;
+            }
+          }
+        })
+      }),
+      isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
+      creator: (0, import_fields.relationship)({
+        ref: "User.payments",
+        many: false
+      }),
+      reference: (0, import_fields.text)(),
+      type: (0, import_fields.select)({
+        type: "string",
+        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory"],
+        defaultValue: "cash",
+        validation: { isRequired: true }
+      }),
+      timestamp: (0, import_fields.timestamp)({
+        defaultValue: { kind: "now" },
+        isOrderable: true
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   SoftwareVersion: (0, import_core.list)({
@@ -1162,6 +895,302 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       })
+    }
+  }),
+  StockMovement: (0, import_core.list)({
+    ui: {
+      labelField: "movementType"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: import_access.denyAll,
+        delete: import_access.denyAll
+      }
+    },
+    fields: {
+      material: (0, import_fields.relationship)({
+        ref: "Material.stockMovements",
+        many: false
+      }),
+      establishment: (0, import_fields.relationship)({
+        ref: "Establishment.stockMovements",
+        many: false
+      }),
+      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      movementType: (0, import_fields.select)({
+        type: "string",
+        options: ["in", "out"],
+        defaultValue: "in",
+        validation: { isRequired: true }
+      }),
+      documentProduct: (0, import_fields.relationship)({
+        ref: "DocumentProduct.stockMovements",
+        many: false
+      }),
+      note: (0, import_fields.text)(),
+      customer: (0, import_fields.relationship)({
+        ref: "User.customerMovements",
+        many: false
+      }),
+      date: (0, import_fields.timestamp)({
+        defaultValue: { kind: "now" },
+        isOrderable: true
+      }),
+      createdAt: (0, import_fields.timestamp)({
+        defaultValue: { kind: "now" },
+        isOrderable: true,
+        access: {
+          create: import_access.denyAll,
+          update: import_access.denyAll
+        }
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Storage: (0, import_core.list)({
+    access: {
+      operation: {
+        create: isCompanyAdmin,
+        query: isEmployee,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Supplier: (0, import_core.list)({
+    access: {
+      operation: {
+        create: isManager,
+        query: isUser,
+        update: isManager,
+        delete: isGlobalAdmin
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      materials: (0, import_fields.relationship)({ ref: "Material.suppliers", many: true }),
+      documents: (0, import_fields.relationship)({ ref: "Document.supplier", many: true }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  User: (0, import_core.list)({
+    access: {
+      operation: {
+        query: isUser,
+        create: isManager,
+        update: isManager,
+        delete: isGlobalAdmin
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      email: (0, import_fields.text)({
+        isIndexed: "unique",
+        validation: { isRequired: true }
+      }),
+      isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
+      phone: (0, import_fields.text)(),
+      role: (0, import_fields.select)({
+        type: "string",
+        options: [
+          "superadmin",
+          "global_admin",
+          "owner",
+          "company_admin",
+          "general_manager",
+          "manager",
+          "accountant",
+          "employee",
+          "intern",
+          "worker",
+          "customer"
+        ],
+        defaultValue: "customer",
+        validation: { isRequired: true },
+        isIndexed: true,
+        access: {
+          update: isCompanyAdmin
+        }
+      }),
+      permissions: (0, import_fields.multiselect)({
+        type: "enum",
+        options: [
+          { label: "Warranty", value: "warranty" },
+          { label: "Price", value: "price" }
+        ],
+        access: {
+          update: isCompanyAdmin
+        }
+      }),
+      ssid: (0, import_fields.text)(),
+      password: (0, import_fields.password)({
+        validation: {
+          isRequired: true,
+          length: {
+            min: 6
+          }
+        }
+      }),
+      operations: (0, import_fields.relationship)({ ref: "Operation.user", many: true }),
+      notes: (0, import_fields.relationship)({ ref: "Note.creator", many: true }),
+      documents: (0, import_fields.relationship)({ ref: "Document.creator", many: true }),
+      customerDocuments: (0, import_fields.relationship)({ ref: "Document.customer", many: true }),
+      customerMovements: (0, import_fields.relationship)({
+        ref: "StockMovement.customer",
+        many: true
+      }),
+      customerCompany: (0, import_fields.text)(),
+      customerTaxNumber: (0, import_fields.text)(),
+      customerTaxCenter: (0, import_fields.text)(),
+      payments: (0, import_fields.relationship)({ ref: "Payment.creator", many: true }),
+      customerAddresses: (0, import_fields.relationship)({ ref: "Address.customer", many: true }),
+      workOrders: (0, import_fields.relationship)({ ref: "WorkOrder.creator", many: true }),
+      establishment: (0, import_fields.relationship)({ ref: "Establishment.users", many: false }),
+      accountancy: (0, import_fields.relationship)({ ref: "Accountancy.users", many: false }),
+      ownedCompany: (0, import_fields.relationship)({ ref: "Company.owner", many: false }),
+      company: (0, import_fields.relationship)({ ref: "Company.users", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  WorkOrder: (0, import_core.list)({
+    ui: {
+      labelField: "number"
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager
+      }
+    },
+    fields: {
+      number: (0, import_fields.text)({ validation: { isRequired: true } }),
+      materials: (0, import_fields.relationship)({
+        ref: "Material.workOrders",
+        many: true
+      }),
+      operations: (0, import_fields.relationship)({
+        ref: "WorkOrderOperation.workOrder",
+        many: true
+      }),
+      datePlanned: (0, import_fields.timestamp)(),
+      dateStarted: (0, import_fields.timestamp)(),
+      dateFinished: (0, import_fields.timestamp)(),
+      creator: (0, import_fields.relationship)({
+        ref: "User.workOrders",
+        many: false
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  WorkOrderOperation: (0, import_core.list)({
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        try {
+          if (operation === "update") {
+            if (inputData.startedAt) {
+              if (item.finishedAt) {
+                throw new Error("Operation already finished");
+              }
+            }
+            if (inputData.finishedAt) {
+              if (!item.startedAt) {
+                throw new Error("Operation not started");
+              }
+              if (item.finishedAt) {
+                throw new Error("Operation already finished");
+              }
+              if (inputData.finishedAt < item.startedAt) {
+                throw new Error("Finish date cannot be before start date");
+              }
+            }
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    },
+    access: {
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee
+      }
+    },
+    fields: {
+      files: (0, import_fields.relationship)({
+        ref: "File",
+        many: true
+      }),
+      startedAt: (0, import_fields.timestamp)(),
+      finishedAt: (0, import_fields.timestamp)(),
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      description: (0, import_fields.text)(),
+      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      price: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const workOrder = await context.query.WorkOrder.findOne({
+                where: { id: item.workOrderId },
+                query: "reduction"
+              });
+              let total = item.value;
+              total -= total * (workOrder.reduction ?? 0) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      reduction: (0, import_fields.float)({ defaultValue: 0 }),
+      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      total: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const workOrder = await context.query.WorkOrder.findOne({
+                where: { id: item.workOrderId },
+                query: "reduction"
+              });
+              let total = item.value * item.amount - item.value * item.amount * (item.reduction ?? 0) / 100;
+              total -= total * (workOrder.reduction ?? 0) / 100;
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      wastage: (0, import_fields.float)({
+        validation: { min: 0 },
+        defaultValue: 0
+      }),
+      workOrder: (0, import_fields.relationship)({
+        ref: "WorkOrder.operations",
+        many: false
+      }),
+      operation: (0, import_fields.relationship)({
+        ref: "Operation.workOrderOperations",
+        many: false
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      extraFields: (0, import_fields.json)()
     }
   })
 };
