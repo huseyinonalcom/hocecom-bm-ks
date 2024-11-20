@@ -911,7 +911,7 @@ export const lists: Lists = {
       name: text({ validation: { isRequired: true } }),
       materials: relationship({ ref: "Material.suppliers", many: true }),
       documents: relationship({ ref: "Document.supplier", many: true }),
-      address: relationship({ ref: "Address" }),
+      address: text(),
       iban: text({ validation: { isRequired: false } }),
       taxId: text({ validation: { isRequired: false } }),
       taxCenter: text({ validation: { isRequired: false } }),
