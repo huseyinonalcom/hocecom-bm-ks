@@ -30,6 +30,7 @@ model Company {
   isActive       Boolean         @default(false)
   logo           File?           @relation("Company_logo", fields: [logoId], references: [id])
   logoId         String?         @map("logo")
+  pincode        String          @unique @default("")
   owner          User?           @relation("Company_owner", fields: [ownerId], references: [id])
   ownerId        String?         @unique @map("owner")
   accountancy    Accountancy?    @relation("Company_accountancy", fields: [accountancyId], references: [id])

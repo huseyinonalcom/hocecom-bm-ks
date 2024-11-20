@@ -1,16 +1,14 @@
+import { fileUpload } from "./utils/fileupload";
 import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
-import { fileUpload } from "./utils/fileupload";
-import { file } from "@keystone-6/core/fields";
 
 export default withAuth(
   config({
     db: {
       provider: "postgresql",
       url: process.env.DB as string,
-      enableLogging: true,
       idField: { kind: "cuid" },
     },
     server: {
