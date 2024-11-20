@@ -702,6 +702,26 @@ export const lists: Lists = {
           },
         }),
       }),
+      totalWithTax: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "total tax",
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += docProd.total * (1 + docProd.tax / 100);
+              });
+              return total - (total * (item.reduction ?? 0)) / 100;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
       type: select({
         type: "string",
         options: ["quote", "sale", "dispatch", "invoice", "debit note", "credit note", "purchase"],
