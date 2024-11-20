@@ -589,7 +589,7 @@ var lists = {
           async resolve(item, args, context) {
             try {
               const payments = await context.query.Payment.findMany({
-                where: { document: { id: { equals: item.id } }, isDeleted: { equals: false } },
+                where: { document: { some: { id: { equals: item.id } } }, isDeleted: { equals: false } },
                 query: "value"
               });
               let total = 0;
@@ -599,6 +599,7 @@ var lists = {
               return total;
             } catch (e) {
               return 0;
+              \u0192;
             }
           }
         })
