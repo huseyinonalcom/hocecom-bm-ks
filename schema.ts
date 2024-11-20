@@ -261,11 +261,19 @@ export const lists: Lists = {
           type: graphql.Boolean,
           async resolve(item, args, context) {
             try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
+              const document = await context.query.Document.findMany({
+                where: {
+                  payments: {
+                    some: {
+                      id: {
+                        equals: item.id,
+                      },
+                    },
+                  },
+                },
                 query: "type",
               });
-              switch (document.type) {
+              switch (document[0].type) {
                 case "satış":
                   return false;
                 case "irsaliye":
@@ -571,7 +579,8 @@ export const lists: Lists = {
               });
               return total;
             } catch (e) {
-              return 0;ƒ
+              return 0;
+              ƒ;
             }
           },
         }),
