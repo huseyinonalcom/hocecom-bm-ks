@@ -446,18 +446,26 @@ export const lists: Lists = {
       value: float({ validation: { isRequired: true, min: 0 } }),
       document: relationship({
         ref: "Document.payments",
-        many: false,
+        many: true,
       }),
       out: virtual({
         field: graphql.field({
           type: graphql.Boolean,
           async resolve(item, args, context) {
             try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
+              const document = await context.query.Document.findMany({
+                where: {
+                  payments: {
+                    some: {
+                      id: {
+                        equals: item.id,
+                      },
+                    },
+                  },
+                },
                 query: "type",
               });
-              switch (document.type) {
+              switch (document[0].type) {
                 case "satış":
                   return false;
                 case "irsaliye":
@@ -778,7 +786,7 @@ export const lists: Lists = {
           async resolve(item, args, context) {
             try {
               const payments = await context.query.Payment.findMany({
-                where: { document: { id: { equals: item.id } }, isDeleted: { equals: false } },
+                where: { document: { some: { id: { equals: item.id } } }, isDeleted: { equals: false } },
                 query: "value",
               });
               let total = 0;
