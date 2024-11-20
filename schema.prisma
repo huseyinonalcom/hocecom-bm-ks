@@ -115,6 +115,7 @@ model User {
   documents         Document[]      @relation("Document_creator")
   customerDocuments Document[]      @relation("Document_customer")
   customerMovements StockMovement[] @relation("StockMovement_customer")
+  stockMovements    StockMovement[] @relation("StockMovement_creator")
   customerCompany   String          @default("")
   customerTaxNumber String          @default("")
   customerTaxCenter String          @default("")
@@ -231,6 +232,9 @@ model Material {
   operations         Operation[]         @relation("Operation_material")
   stockMovements     StockMovement[]     @relation("StockMovement_material")
   documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
+  width              Float?
+  height             Float?
+  length             Float?
   extraFields        String?
 
   @@index([brandId])
@@ -257,6 +261,8 @@ model StockMovement {
   customer          User?            @relation("StockMovement_customer", fields: [customerId], references: [id])
   customerId        String?          @map("customer")
   date              DateTime?        @default(now())
+  creator           User?            @relation("StockMovement_creator", fields: [creatorId], references: [id])
+  creatorId         String?          @map("creator")
   createdAt         DateTime?        @default(now())
   extraFields       String?
 
@@ -264,14 +270,21 @@ model StockMovement {
   @@index([storageId])
   @@index([documentProductId])
   @@index([customerId])
+  @@index([creatorId])
 }
 
 model Supplier {
   id          String     @id @default(cuid())
   name        String     @default("")
   materials   Material[] @relation("Material_suppliers")
-  extraFields String?
   documents   Document[] @relation("Document_supplier")
+  address     String     @default("")
+  iban        String     @default("")
+  taxId       String     @default("")
+  taxCenter   String     @default("")
+  email       String     @default("")
+  phone       String     @default("")
+  extraFields String?
 }
 
 model Brand {

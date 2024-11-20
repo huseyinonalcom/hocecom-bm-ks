@@ -604,6 +604,8 @@ type User {
   customerDocumentsCount(where: DocumentWhereInput! = {}): Int
   customerMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   customerMovementsCount(where: StockMovementWhereInput! = {}): Int
+  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
+  stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   customerCompany: String
   customerTaxNumber: String
   customerTaxCenter: String
@@ -648,6 +650,7 @@ input UserWhereInput {
   documents: DocumentManyRelationFilter
   customerDocuments: DocumentManyRelationFilter
   customerMovements: StockMovementManyRelationFilter
+  stockMovements: StockMovementManyRelationFilter
   customerCompany: StringFilter
   customerTaxNumber: StringFilter
   customerTaxCenter: StringFilter
@@ -721,6 +724,7 @@ input UserUpdateInput {
   documents: DocumentRelateToManyForUpdateInput
   customerDocuments: DocumentRelateToManyForUpdateInput
   customerMovements: StockMovementRelateToManyForUpdateInput
+  stockMovements: StockMovementRelateToManyForUpdateInput
   customerCompany: String
   customerTaxNumber: String
   customerTaxCenter: String
@@ -792,6 +796,7 @@ input UserCreateInput {
   documents: DocumentRelateToManyForCreateInput
   customerDocuments: DocumentRelateToManyForCreateInput
   customerMovements: StockMovementRelateToManyForCreateInput
+  stockMovements: StockMovementRelateToManyForCreateInput
   customerCompany: String
   customerTaxNumber: String
   customerTaxCenter: String
@@ -1224,6 +1229,9 @@ type Material {
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
+  width: Float
+  height: Float
+  length: Float
   extraFields: JSON
 }
 
@@ -1254,6 +1262,9 @@ input MaterialWhereInput {
   operations: OperationManyRelationFilter
   stockMovements: StockMovementManyRelationFilter
   documentProducts: DocumentProductManyRelationFilter
+  width: FloatNullableFilter
+  height: FloatNullableFilter
+  length: FloatNullableFilter
 }
 
 input AssemblyComponentManyRelationFilter {
@@ -1279,6 +1290,9 @@ input MaterialOrderByInput {
   tax: OrderDirection
   pricedBy: OrderDirection
   type: OrderDirection
+  width: OrderDirection
+  height: OrderDirection
+  length: OrderDirection
 }
 
 input MaterialUpdateInput {
@@ -1300,6 +1314,9 @@ input MaterialUpdateInput {
   operations: OperationRelateToManyForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
+  width: Float
+  height: Float
+  length: Float
   extraFields: JSON
 }
 
@@ -1347,6 +1364,9 @@ input MaterialCreateInput {
   operations: OperationRelateToManyForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput
+  width: Float
+  height: Float
+  length: Float
   extraFields: JSON
 }
 
@@ -1418,6 +1438,7 @@ type StockMovement {
   note: String
   customer: User
   date: DateTime
+  creator: User
   createdAt: DateTime
   extraFields: JSON
 }
@@ -1439,6 +1460,7 @@ input StockMovementWhereInput {
   note: StringFilter
   customer: UserWhereInput
   date: DateTimeNullableFilter
+  creator: UserWhereInput
   createdAt: DateTimeNullableFilter
 }
 
@@ -1460,6 +1482,7 @@ input StockMovementUpdateInput {
   note: String
   customer: UserRelateToOneForUpdateInput
   date: DateTime
+  creator: UserRelateToOneForUpdateInput
   createdAt: DateTime
   extraFields: JSON
 }
@@ -1490,6 +1513,7 @@ input StockMovementCreateInput {
   note: String
   customer: UserRelateToOneForCreateInput
   date: DateTime
+  creator: UserRelateToOneForCreateInput
   createdAt: DateTime
   extraFields: JSON
 }
@@ -1509,9 +1533,15 @@ type Supplier {
   name: String
   materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
   materialsCount(where: MaterialWhereInput! = {}): Int
-  extraFields: JSON
   documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
   documentsCount(where: DocumentWhereInput! = {}): Int
+  address: String
+  iban: String
+  taxId: String
+  taxCenter: String
+  email: String
+  phone: String
+  extraFields: JSON
 }
 
 input SupplierWhereUniqueInput {
@@ -1526,18 +1556,36 @@ input SupplierWhereInput {
   name: StringFilter
   materials: MaterialManyRelationFilter
   documents: DocumentManyRelationFilter
+  address: StringFilter
+  iban: StringFilter
+  taxId: StringFilter
+  taxCenter: StringFilter
+  email: StringFilter
+  phone: StringFilter
 }
 
 input SupplierOrderByInput {
   id: OrderDirection
   name: OrderDirection
+  address: OrderDirection
+  iban: OrderDirection
+  taxId: OrderDirection
+  taxCenter: OrderDirection
+  email: OrderDirection
+  phone: OrderDirection
 }
 
 input SupplierUpdateInput {
   name: String
   materials: MaterialRelateToManyForUpdateInput
-  extraFields: JSON
   documents: DocumentRelateToManyForUpdateInput
+  address: String
+  iban: String
+  taxId: String
+  taxCenter: String
+  email: String
+  phone: String
+  extraFields: JSON
 }
 
 input SupplierUpdateArgs {
@@ -1548,8 +1596,14 @@ input SupplierUpdateArgs {
 input SupplierCreateInput {
   name: String
   materials: MaterialRelateToManyForCreateInput
-  extraFields: JSON
   documents: DocumentRelateToManyForCreateInput
+  address: String
+  iban: String
+  taxId: String
+  taxCenter: String
+  email: String
+  phone: String
+  extraFields: JSON
 }
 
 type Brand {

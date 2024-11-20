@@ -371,6 +371,7 @@ export const lists: Lists = {
         ref: "StockMovement.customer",
         many: true,
       }),
+      stockMovements: relationship({ ref: "StockMovement.creator", many: true }),
       customerCompany: text(),
       customerTaxNumber: text(),
       customerTaxCenter: text(),
@@ -580,7 +581,6 @@ export const lists: Lists = {
               return total;
             } catch (e) {
               return 0;
-              ƒ;
             }
           },
         }),
@@ -884,6 +884,7 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
+      creator: relationship({ ref: "User.stockMovements", many: false }),
       createdAt: timestamp({
         defaultValue: { kind: "now" },
         isOrderable: true,

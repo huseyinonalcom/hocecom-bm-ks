@@ -278,7 +278,7 @@ var lists = {
       }
     },
     fields: {
-      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0.1 } }),
       document: (0, import_fields.relationship)({
         ref: "Document.payments",
         many: true
@@ -288,11 +288,19 @@ var lists = {
           type: import_core.graphql.Boolean,
           async resolve(item, args, context) {
             try {
-              const document = await context.query.Document.findOne({
-                where: { id: item.documentId },
+              const document = await context.query.Document.findMany({
+                where: {
+                  payments: {
+                    some: {
+                      id: {
+                        equals: item.id
+                      }
+                    }
+                  }
+                },
                 query: "type"
               });
-              switch (document.type) {
+              switch (document[0].type) {
                 case "sat\u0131\u015F":
                   return false;
                 case "irsaliye":
@@ -390,6 +398,7 @@ var lists = {
         ref: "StockMovement.customer",
         many: true
       }),
+      stockMovements: (0, import_fields.relationship)({ ref: "StockMovement.creator", many: true }),
       customerCompany: (0, import_fields.text)(),
       customerTaxNumber: (0, import_fields.text)(),
       customerTaxCenter: (0, import_fields.text)(),
@@ -599,7 +608,6 @@ var lists = {
               return total;
             } catch (e) {
               return 0;
-              \u0192;
             }
           }
         })
@@ -796,7 +804,7 @@ var lists = {
       }),
       pricedBy: (0, import_fields.select)({
         type: "string",
-        options: ["amount", "length(mm)", "weight(g)", "area(m\xB2)"],
+        options: ["amount", "volume(m\xB3)", "length(mm)", "weight(g)", "area(m\xB2)"],
         defaultValue: "amount",
         validation: { isRequired: true }
       }),
@@ -818,6 +826,9 @@ var lists = {
         ref: "DocumentProduct.product",
         many: true
       }),
+      width: (0, import_fields.float)({ validation: { min: 1 } }),
+      height: (0, import_fields.float)({ validation: { min: 1 } }),
+      length: (0, import_fields.float)({ validation: { min: 1 } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -883,6 +894,7 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
+      creator: (0, import_fields.relationship)({ ref: "User.stockMovements", many: false }),
       createdAt: (0, import_fields.timestamp)({
         defaultValue: { kind: "now" },
         isOrderable: true,
@@ -909,8 +921,14 @@ var lists = {
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       materials: (0, import_fields.relationship)({ ref: "Material.suppliers", many: true }),
-      extraFields: (0, import_fields.json)(),
-      documents: (0, import_fields.relationship)({ ref: "Document.supplier", many: true })
+      documents: (0, import_fields.relationship)({ ref: "Document.supplier", many: true }),
+      address: (0, import_fields.text)(),
+      iban: (0, import_fields.text)({ validation: { isRequired: false } }),
+      taxId: (0, import_fields.text)({ validation: { isRequired: false } }),
+      taxCenter: (0, import_fields.text)({ validation: { isRequired: false } }),
+      email: (0, import_fields.text)({ validation: { isRequired: false } }),
+      phone: (0, import_fields.text)({ validation: { isRequired: false } }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   Brand: (0, import_core.list)({
