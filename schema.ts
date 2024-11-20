@@ -251,7 +251,7 @@ export const lists: Lists = {
       },
     },
     fields: {
-      value: float({ validation: { isRequired: true, min: 0 } }),
+      value: float({ validation: { isRequired: true, min: 0.1 } }),
       document: relationship({
         ref: "Document.payments",
         many: true,
