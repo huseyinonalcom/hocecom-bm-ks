@@ -53,7 +53,6 @@ export default withAuth(
                 url: result.fileUrl,
               },
             });
-            console.log(addFile);
             res.status(200).json({
               fileUpload: {
                 id: "somtin",

@@ -178,7 +178,7 @@ export const lists: Lists = {
             }
           }
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
       },
     },
@@ -332,7 +332,7 @@ export const lists: Lists = {
             });
           }
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
       },
       afterOperation: async ({ operation, item, context }) => {
@@ -975,7 +975,7 @@ export const lists: Lists = {
             }
           }
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
       },
     },

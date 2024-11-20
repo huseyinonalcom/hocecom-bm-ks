@@ -107,7 +107,6 @@ var isAdminAccountantOwner = ({ session: session2 }) => {
   return !session2.data.isBlocked;
 };
 var isAdminAccountantManager = ({ session: session2 }) => {
-  console.log(session2);
   if (!session2) return false;
   if (isAdminAccountantOwner({ session: session2 }) || session2.data.role == "admin_accountant_manager") return true;
   return !session2.data.isBlocked;
@@ -333,7 +332,7 @@ var lists = {
             }
           }
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
       }
     },
@@ -487,7 +486,7 @@ var lists = {
             });
           }
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
       },
       afterOperation: async ({ operation, item, context }) => {
@@ -1113,7 +1112,7 @@ var lists = {
             }
           }
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
       }
     },
@@ -1236,7 +1235,6 @@ var keystone_default = withAuth(
                 url: result.fileUrl
               }
             });
-            console.log(addFile);
             res.status(200).json({
               fileUpload: {
                 id: "somtin"

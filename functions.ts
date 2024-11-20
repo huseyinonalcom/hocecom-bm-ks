@@ -52,7 +52,6 @@ export const isAdminAccountantOwner = ({ session }: { session?: Session }) => {
 };
 
 export const isAdminAccountantManager = ({ session }: { session?: Session }) => {
-  console.log(session);
   if (!session) return false;
 
   if (isAdminAccountantOwner({ session }) || session.data.role == "admin_accountant_manager") return true;
