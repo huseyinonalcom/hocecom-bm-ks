@@ -85,19 +85,17 @@ model Address {
 }
 
 model Payment {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   value       Float
-  document    Document? @relation("Payment_document", fields: [documentId], references: [id])
-  documentId  String?   @map("document")
-  isDeleted   Boolean   @default(false)
-  creator     User?     @relation("Payment_creator", fields: [creatorId], references: [id])
-  creatorId   String?   @map("creator")
-  reference   String    @default("")
-  type        String    @default("cash")
-  timestamp   DateTime? @default(now())
+  document    Document[] @relation("Document_payments")
+  isDeleted   Boolean    @default(false)
+  creator     User?      @relation("Payment_creator", fields: [creatorId], references: [id])
+  creatorId   String?    @map("creator")
+  reference   String     @default("")
+  type        String     @default("cash")
+  timestamp   DateTime?  @default(now())
   extraFields String?
 
-  @@index([documentId])
   @@index([creatorId])
 }
 
@@ -151,7 +149,7 @@ model File {
 model Document {
   id             String            @id @default(cuid())
   createdAt      DateTime?         @default(now())
-  type           String            @default("satış")
+  type           String
   creator        User?             @relation("Document_creator", fields: [creatorId], references: [id])
   creatorId      String?           @map("creator")
   supplier       Supplier?         @relation("Document_supplier", fields: [supplierId], references: [id])
@@ -168,7 +166,7 @@ model Document {
   docAddressId   String?           @map("docAddress")
   toDocument     Document?         @relation("Document_fromDocument")
   products       DocumentProduct[] @relation("DocumentProduct_document")
-  payments       Payment[]         @relation("Payment_document")
+  payments       Payment[]         @relation("Document_payments")
   number         String            @default("")
   extraFields    String?
 
@@ -224,6 +222,7 @@ model Material {
   workOrders         WorkOrder[]         @relation("Material_workOrders")
   code               String              @default("")
   ean                String              @default("")
+  tax                Float               @default(20)
   brand              Brand?              @relation("Material_brand", fields: [brandId], references: [id])
   brandId            String?             @map("brand")
   suppliers          Supplier[]          @relation("Material_suppliers")

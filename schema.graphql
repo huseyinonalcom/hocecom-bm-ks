@@ -495,7 +495,8 @@ input AddressCreateInput {
 type Payment {
   id: ID!
   value: Float
-  document: Document
+  document(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
+  documentCount(where: DocumentWhereInput! = {}): Int
   out: Boolean
   isDeleted: Boolean
   creator: User
@@ -515,12 +516,18 @@ input PaymentWhereInput {
   NOT: [PaymentWhereInput!]
   id: IDFilter
   value: FloatFilter
-  document: DocumentWhereInput
+  document: DocumentManyRelationFilter
   isDeleted: BooleanFilter
   creator: UserWhereInput
   reference: StringFilter
   type: StringFilter
   timestamp: DateTimeNullableFilter
+}
+
+input DocumentManyRelationFilter {
+  every: DocumentWhereInput
+  some: DocumentWhereInput
+  none: DocumentWhereInput
 }
 
 input BooleanFilter {
@@ -539,7 +546,7 @@ input PaymentOrderByInput {
 
 input PaymentUpdateInput {
   value: Float
-  document: DocumentRelateToOneForUpdateInput
+  document: DocumentRelateToManyForUpdateInput
   isDeleted: Boolean
   creator: UserRelateToOneForUpdateInput
   reference: String
@@ -548,10 +555,11 @@ input PaymentUpdateInput {
   extraFields: JSON
 }
 
-input DocumentRelateToOneForUpdateInput {
-  create: DocumentCreateInput
-  connect: DocumentWhereUniqueInput
-  disconnect: Boolean
+input DocumentRelateToManyForUpdateInput {
+  disconnect: [DocumentWhereUniqueInput!]
+  set: [DocumentWhereUniqueInput!]
+  create: [DocumentCreateInput!]
+  connect: [DocumentWhereUniqueInput!]
 }
 
 input PaymentUpdateArgs {
@@ -561,7 +569,7 @@ input PaymentUpdateArgs {
 
 input PaymentCreateInput {
   value: Float
-  document: DocumentRelateToOneForCreateInput
+  document: DocumentRelateToManyForCreateInput
   isDeleted: Boolean
   creator: UserRelateToOneForCreateInput
   reference: String
@@ -570,9 +578,9 @@ input PaymentCreateInput {
   extraFields: JSON
 }
 
-input DocumentRelateToOneForCreateInput {
-  create: DocumentCreateInput
-  connect: DocumentWhereUniqueInput
+input DocumentRelateToManyForCreateInput {
+  create: [DocumentCreateInput!]
+  connect: [DocumentWhereUniqueInput!]
 }
 
 type User {
@@ -660,12 +668,6 @@ input NoteManyRelationFilter {
   none: NoteWhereInput
 }
 
-input DocumentManyRelationFilter {
-  every: DocumentWhereInput
-  some: DocumentWhereInput
-  none: DocumentWhereInput
-}
-
 input StockMovementManyRelationFilter {
   every: StockMovementWhereInput
   some: StockMovementWhereInput
@@ -742,13 +744,6 @@ input NoteRelateToManyForUpdateInput {
   connect: [NoteWhereUniqueInput!]
 }
 
-input DocumentRelateToManyForUpdateInput {
-  disconnect: [DocumentWhereUniqueInput!]
-  set: [DocumentWhereUniqueInput!]
-  create: [DocumentCreateInput!]
-  connect: [DocumentWhereUniqueInput!]
-}
-
 input StockMovementRelateToManyForUpdateInput {
   disconnect: [StockMovementWhereUniqueInput!]
   set: [StockMovementWhereUniqueInput!]
@@ -814,11 +809,6 @@ input OperationRelateToManyForCreateInput {
 input NoteRelateToManyForCreateInput {
   create: [NoteCreateInput!]
   connect: [NoteWhereUniqueInput!]
-}
-
-input DocumentRelateToManyForCreateInput {
-  create: [DocumentCreateInput!]
-  connect: [DocumentWhereUniqueInput!]
 }
 
 input StockMovementRelateToManyForCreateInput {
@@ -930,6 +920,7 @@ type Document {
   id: ID!
   createdAt: DateTime
   total: Float
+  totalWithTax: Float
   type: String
   creator: User
   supplier: Supplier
@@ -1013,6 +1004,12 @@ input SupplierRelateToOneForUpdateInput {
   disconnect: Boolean
 }
 
+input DocumentRelateToOneForUpdateInput {
+  create: DocumentCreateInput
+  connect: DocumentWhereUniqueInput
+  disconnect: Boolean
+}
+
 input AddressRelateToOneForUpdateInput {
   create: AddressCreateInput
   connect: AddressWhereUniqueInput
@@ -1052,6 +1049,11 @@ input DocumentCreateInput {
 input SupplierRelateToOneForCreateInput {
   create: SupplierCreateInput
   connect: SupplierWhereUniqueInput
+}
+
+input DocumentRelateToOneForCreateInput {
+  create: DocumentCreateInput
+  connect: DocumentWhereUniqueInput
 }
 
 input AddressRelateToOneForCreateInput {
@@ -1210,6 +1212,7 @@ type Material {
   workOrdersCount(where: WorkOrderWhereInput! = {}): Int
   code: String
   ean: String
+  tax: Float
   brand: Brand
   suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
   suppliersCount(where: SupplierWhereInput! = {}): Int
@@ -1243,6 +1246,7 @@ input MaterialWhereInput {
   workOrders: WorkOrderManyRelationFilter
   code: StringFilter
   ean: StringFilter
+  tax: FloatFilter
   brand: BrandWhereInput
   suppliers: SupplierManyRelationFilter
   pricedBy: StringFilter
@@ -1272,6 +1276,7 @@ input MaterialOrderByInput {
   status: OrderDirection
   code: OrderDirection
   ean: OrderDirection
+  tax: OrderDirection
   pricedBy: OrderDirection
   type: OrderDirection
 }
@@ -1287,6 +1292,7 @@ input MaterialUpdateInput {
   workOrders: WorkOrderRelateToManyForUpdateInput
   code: String
   ean: String
+  tax: Float
   brand: BrandRelateToOneForUpdateInput
   suppliers: SupplierRelateToManyForUpdateInput
   pricedBy: String
@@ -1333,6 +1339,7 @@ input MaterialCreateInput {
   workOrders: WorkOrderRelateToManyForCreateInput
   code: String
   ean: String
+  tax: Float
   brand: BrandRelateToOneForCreateInput
   suppliers: SupplierRelateToManyForCreateInput
   pricedBy: String

@@ -254,7 +254,7 @@ export const lists: Lists = {
       value: float({ validation: { isRequired: true, min: 0 } }),
       document: relationship({
         ref: "Document.payments",
-        many: false,
+        many: true,
       }),
       out: virtual({
         field: graphql.field({

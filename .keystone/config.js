@@ -247,7 +247,7 @@ var lists = {
         create: isUser,
         query: isUser,
         update: isEmployee,
-        delete: import_access.denyAll
+        delete: isAdmin
       }
     },
     fields: {
@@ -274,14 +274,14 @@ var lists = {
         create: isEmployee,
         query: isEmployee,
         update: isManager,
-        delete: import_access.denyAll
+        delete: isAdmin
       }
     },
     fields: {
       value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       document: (0, import_fields.relationship)({
         ref: "Document.payments",
-        many: false
+        many: true
       }),
       out: (0, import_fields.virtual)({
         field: import_core.graphql.field({
@@ -302,6 +302,8 @@ var lists = {
                 case "bor\xE7 dekontu":
                   return false;
                 case "alacak dekontu":
+                  return true;
+                case "sat\u0131n alma":
                   return true;
                 default:
                   return false;
@@ -464,6 +466,7 @@ var lists = {
         if (operation === "create") {
           const docs = await context.query.Document.findMany({
             orderBy: { number: "desc" },
+            where: { type: { equals: resolvedData.type } },
             query: "id number"
           });
           const lastDocument = docs.at(0);
@@ -510,10 +513,29 @@ var lists = {
           }
         })
       }),
+      totalWithTax: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "total tax"
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += docProd.total * (1 + docProd.tax / 100);
+              });
+              return total - total * (item.reduction ?? 0) / 100;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
       type: (0, import_fields.select)({
         type: "string",
         options: ["teklif", "sat\u0131\u015F", "irsaliye", "fatura", "bor\xE7 dekontu", "alacak dekontu", "sat\u0131n alma"],
-        defaultValue: "sat\u0131\u015F",
         validation: { isRequired: true }
       }),
       creator: (0, import_fields.relationship)({
@@ -762,6 +784,7 @@ var lists = {
       }),
       code: (0, import_fields.text)(),
       ean: (0, import_fields.text)(),
+      tax: (0, import_fields.float)({ defaultValue: 20, validation: { isRequired: true, min: 0 } }),
       brand: (0, import_fields.relationship)({
         ref: "Brand.materials",
         many: false
