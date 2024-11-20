@@ -24,6 +24,41 @@ __export(keystone_exports, {
 });
 module.exports = __toCommonJS(keystone_exports);
 
+// utils/fileupload.ts
+var import_client_s3 = require("@aws-sdk/client-s3");
+var import_config = require("dotenv/config");
+var s3Client = new import_client_s3.S3Client({
+  region: process.env.REGION,
+  endpoint: process.env.STORAGE_URL,
+  credentials: {
+    accessKeyId: process.env.ACCESS_KEY_ID,
+    accountId: process.env.ACCOUNT_ID,
+    secretAccessKey: process.env.SECRET_ACCESS_KEY
+  }
+});
+var fileUpload = async (file) => {
+  const randomString = Math.random().toString(36).substring(2, 15);
+  const newFileName = `${Date.now()}-${randomString}-${file.originalname}`;
+  const params = {
+    Bucket: process.env.BUCKET_NAME,
+    Key: `uploads/${newFileName}`,
+    Body: file.buffer,
+    ContentType: file.mimetype
+  };
+  try {
+    const command = new import_client_s3.PutObjectCommand(params);
+    await s3Client.send(command);
+    return {
+      success: true,
+      fileUrl: `${process.env.STORAGE_URL}${params.Key}`,
+      fileName: newFileName
+    };
+  } catch (error) {
+    console.error("file upload error:", error);
+    throw new Error("Failed to upload file");
+  }
+};
+
 // auth.ts
 var import_crypto = require("crypto");
 var import_auth = require("@keystone-6/auth");
@@ -35,7 +70,7 @@ if (!sessionSecret && process.env.NODE_ENV !== "production") {
 var { withAuth } = (0, import_auth.createAuth)({
   listKey: "User",
   identityField: "email",
-  sessionData: "id role permissions isBlocked company { id } accountancy { id }",
+  sessionData: "id role permissions isBlocked",
   secretField: "password",
   initFirstItem: {
     fields: ["name", "role", "email", "password"]
@@ -55,21 +90,26 @@ var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
 var isSuperAdmin = ({ session: session2 }) => {
+  console.log("superadmin check");
   if (!session2) return false;
   if (session2.data.role == "superadmin") return true;
   return false;
 };
 var isGlobalAdmin = ({ session: session2 }) => {
+  console.log("globaladmin check");
   if (!session2) return false;
   if (isSuperAdmin({ session: session2 }) || session2.data.role == "global_admin") return true;
   return !session2.data.isBlocked;
 };
 var isAdminAccountant = ({ session: session2 }) => {
+  console.log("adminaccountant check");
   if (!session2) return false;
   if (isGlobalAdmin({ session: session2 }) || session2.data.role == "admin_accountant") return true;
   return !session2.data.isBlocked;
 };
 var isAdminAccountantManager = ({ session: session2 }) => {
+  console.log("adminaccountantmanager check");
+  console.log(session2);
   if (!session2) return false;
   if (isAdminAccountant({ session: session2 }) || session2.data.role == "admin_accountant_manager") return true;
   return !session2.data.isBlocked;
@@ -99,14 +139,14 @@ function isManager({ session: session2 }) {
   if (isGeneralManager({ session: session2 }) || session2.data.role == "manager") return true;
   return !session2.data.isBlocked;
 }
-function isAccountan({ session: session2 }) {
+function isAccountant({ session: session2 }) {
   if (!session2) return false;
   if (isManager({ session: session2 }) || session2.data.role == "accountant") return true;
   return !session2.data.isBlocked;
 }
 function isEmployee({ session: session2 }) {
   if (!session2) return false;
-  if (isAccountan({ session: session2 }) || session2.data.role == "employee") return true;
+  if (isAccountant({ session: session2 }) || session2.data.role == "employee") return true;
   return !session2.data.isBlocked;
 }
 function isIntern({ session: session2 }) {
@@ -155,7 +195,7 @@ var lists = {
     },
     access: {
       operation: {
-        create: ({ session: session2, context, listKey, operation }) => isAdminAccountantManager(session2),
+        create: isAdminAccountantManager,
         query: isWorker,
         update: isCompanyAdmin,
         delete: import_access.denyAll
@@ -168,6 +208,7 @@ var lists = {
         ref: "File",
         many: false
       }),
+      pincode: (0, import_fields.text)({ validation: { isRequired: true }, isIndexed: "unique" }),
       owner: (0, import_fields.relationship)({
         ref: "User.ownedCompany",
         many: false
@@ -1105,7 +1146,7 @@ var lists = {
     access: {
       operation: {
         create: isSuperAdmin,
-        query: isUser,
+        query: import_access.allowAll,
         update: isSuperAdmin,
         delete: import_access.denyAll
       }
@@ -1127,49 +1168,11 @@ var lists = {
 
 // keystone.ts
 var import_config2 = require("dotenv/config");
-
-// utils/fileupload.ts
-var import_client_s3 = require("@aws-sdk/client-s3");
-var import_config = require("dotenv/config");
-var s3Client = new import_client_s3.S3Client({
-  region: process.env.REGION,
-  endpoint: process.env.STORAGE_URL,
-  credentials: {
-    accessKeyId: process.env.ACCESS_KEY_ID,
-    accountId: process.env.ACCOUNT_ID,
-    secretAccessKey: process.env.SECRET_ACCESS_KEY
-  }
-});
-var fileUpload = async (file) => {
-  const randomString = Math.random().toString(36).substring(2, 15);
-  const newFileName = `${Date.now()}-${randomString}-${file.originalname}`;
-  const params = {
-    Bucket: process.env.BUCKET_NAME,
-    Key: `uploads/${newFileName}`,
-    Body: file.buffer,
-    ContentType: file.mimetype
-  };
-  try {
-    const command = new import_client_s3.PutObjectCommand(params);
-    await s3Client.send(command);
-    return {
-      success: true,
-      fileUrl: `${process.env.STORAGE_URL}${params.Key}`,
-      fileName: newFileName
-    };
-  } catch (error) {
-    console.error("file upload error:", error);
-    throw new Error("Failed to upload file");
-  }
-};
-
-// keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
       provider: "postgresql",
       url: process.env.DB,
-      enableLogging: true,
       idField: { kind: "cuid" }
     },
     server: {

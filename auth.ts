@@ -10,7 +10,7 @@ if (!sessionSecret && process.env.NODE_ENV !== "production") {
 const { withAuth } = createAuth({
   listKey: "User",
   identityField: "email",
-  sessionData: "id role permissions isBlocked company { id } accountancy { id }",
+  sessionData: "id role permissions isBlocked",
   secretField: "password",
   initFirstItem: {
     fields: ["name", "role", "email", "password"],

@@ -165,6 +165,7 @@ type Company {
   name: String
   isActive: Boolean
   logo: File
+  pincode: String
   owner: User
   accountancy: Accountancy
   users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
@@ -176,6 +177,7 @@ type Company {
 
 input CompanyWhereUniqueInput {
   id: ID
+  pincode: String
 }
 
 input CompanyWhereInput {
@@ -186,6 +188,7 @@ input CompanyWhereInput {
   name: StringFilter
   isActive: BooleanFilter
   logo: FileWhereInput
+  pincode: StringFilter
   owner: UserWhereInput
   accountancy: AccountancyWhereInput
   users: UserManyRelationFilter
@@ -202,12 +205,14 @@ input CompanyOrderByInput {
   id: OrderDirection
   name: OrderDirection
   isActive: OrderDirection
+  pincode: OrderDirection
 }
 
 input CompanyUpdateInput {
   name: String
   isActive: Boolean
   logo: FileRelateToOneForUpdateInput
+  pincode: String
   owner: UserRelateToOneForUpdateInput
   accountancy: AccountancyRelateToOneForUpdateInput
   users: UserRelateToManyForUpdateInput
@@ -243,6 +248,7 @@ input CompanyCreateInput {
   name: String
   isActive: Boolean
   logo: FileRelateToOneForCreateInput
+  pincode: String
   owner: UserRelateToOneForCreateInput
   accountancy: AccountancyRelateToOneForCreateInput
   users: UserRelateToManyForCreateInput

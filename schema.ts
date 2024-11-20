@@ -1,5 +1,5 @@
 import { text, relationship, password, timestamp, select, float, multiselect, virtual, checkbox, integer, json } from "@keystone-6/core/fields";
-import { denyAll } from "@keystone-6/core/access";
+import { allowAll, denyAll } from "@keystone-6/core/access";
 import type { Lists } from ".keystone/types";
 import { graphql, list } from "@keystone-6/core";
 
@@ -33,6 +33,7 @@ export type Session = {
 };
 
 const isSuperAdmin = ({ session }: { session?: Session }) => {
+  console.log("superadmin check");
   if (!session) return false;
 
   if (session.data.role == "superadmin") return true;
@@ -41,6 +42,7 @@ const isSuperAdmin = ({ session }: { session?: Session }) => {
 };
 
 const isGlobalAdmin = ({ session }: { session?: Session }) => {
+  console.log("globaladmin check");
   if (!session) return false;
 
   if (isSuperAdmin({ session }) || session.data.role == "global_admin") return true;
@@ -49,6 +51,7 @@ const isGlobalAdmin = ({ session }: { session?: Session }) => {
 };
 
 const isAdminAccountant = ({ session }: { session?: Session }) => {
+  console.log("adminaccountant check");
   if (!session) return false;
 
   if (isGlobalAdmin({ session }) || session.data.role == "admin_accountant") return true;
@@ -57,6 +60,8 @@ const isAdminAccountant = ({ session }: { session?: Session }) => {
 };
 
 const isAdminAccountantManager = ({ session }: { session?: Session }) => {
+  console.log("adminaccountantmanager check");
+  console.log(session);
   if (!session) return false;
 
   if (isAdminAccountant({ session }) || session.data.role == "admin_accountant_manager") return true;
@@ -104,7 +109,7 @@ function isManager({ session }: { session?: Session }) {
   return !session.data.isBlocked;
 }
 
-function isAccountan({ session }: { session?: Session }) {
+function isAccountant({ session }: { session?: Session }) {
   if (!session) return false;
 
   if (isManager({ session }) || session.data.role == "accountant") return true;
@@ -123,7 +128,7 @@ const isAdminAccountantIntern = ({ session }: { session?: Session }) => {
 function isEmployee({ session }: { session?: Session }) {
   if (!session) return false;
 
-  if (isAccountan({ session }) || session.data.role == "employee") return true;
+  if (isAccountant({ session }) || session.data.role == "employee") return true;
 
   return !session.data.isBlocked;
 }
@@ -183,7 +188,7 @@ export const lists: Lists = {
     },
     access: {
       operation: {
-        create: ({ session, context, listKey, operation }) => isAdminAccountantManager(session),
+        create: isAdminAccountantManager,
         query: isWorker,
         update: isCompanyAdmin,
         delete: denyAll,
@@ -196,6 +201,7 @@ export const lists: Lists = {
         ref: "File",
         many: false,
       }),
+      pincode: text({ validation: { isRequired: true }, isIndexed: "unique" }),
       owner: relationship({
         ref: "User.ownedCompany",
         many: false,
@@ -1153,7 +1159,7 @@ export const lists: Lists = {
     access: {
       operation: {
         create: isSuperAdmin,
-        query: isUser,
+        query: allowAll,
         update: isSuperAdmin,
         delete: denyAll,
       },
