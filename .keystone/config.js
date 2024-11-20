@@ -92,25 +92,21 @@ var import_core = require("@keystone-6/core");
 
 // functions.ts
 var isSuperAdmin = ({ session: session2 }) => {
-  console.log("superadmin check");
   if (!session2) return false;
   if (session2.data.role == "superadmin") return true;
   return false;
 };
 var isGlobalAdmin = ({ session: session2 }) => {
-  console.log("globaladmin check");
   if (!session2) return false;
   if (isSuperAdmin({ session: session2 }) || session2.data.role == "global_admin") return true;
   return !session2.data.isBlocked;
 };
 var isAdminAccountantOwner = ({ session: session2 }) => {
-  console.log("adminaccountant check");
   if (!session2) return false;
   if (isGlobalAdmin({ session: session2 }) || session2.data.role == "admin_accountant") return true;
   return !session2.data.isBlocked;
 };
 var isAdminAccountantManager = ({ session: session2 }) => {
-  console.log("adminaccountantmanager check");
   console.log(session2);
   if (!session2) return false;
   if (isAdminAccountantOwner({ session: session2 }) || session2.data.role == "admin_accountant_manager") return true;
@@ -1249,6 +1245,29 @@ var keystone_default = withAuth(
           } catch (error) {
             console.error("Upload error:", error);
             res.status(500).json({ error: "Upload failed" });
+          }
+        });
+        app.get("/rest/pincheck", async (req, res) => {
+          if (!req.query.pin) {
+            return res.status(400).json({ message: "No pin provided" });
+          }
+          try {
+            let pin = req.query.pin;
+            const pinCheck = await context.sudo().query.Company.findOne({
+              where: {
+                pincode: String(pin)
+              },
+              query: "id"
+            });
+            if (pinCheck) {
+              res.status(200).json({ id: pinCheck.id });
+            } else {
+              res.status(404).json({ message: "Bad pin" });
+            }
+          } catch (error) {
+            console.error("Pin check error:", error);
+            res.status(500).json({ error: "Pin check failed" });
+            return;
           }
         });
       }

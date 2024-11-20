@@ -64,6 +64,31 @@ export default withAuth(
             res.status(500).json({ error: "Upload failed" });
           }
         });
+
+        app.get("/rest/pincheck", async (req, res) => {
+          if (!req.query.pin) {
+            return res.status(400).json({ message: "No pin provided" });
+          }
+
+          try {
+            let pin = req.query.pin;
+            const pinCheck = await context.sudo().query.Company.findOne({
+              where: {
+                pincode: String(pin),
+              },
+              query: "id",
+            });
+            if (pinCheck) {
+              res.status(200).json({ id: pinCheck.id });
+            } else {
+              res.status(404).json({ message: "Bad pin" });
+            }
+          } catch (error) {
+            console.error("Pin check error:", error);
+            res.status(500).json({ error: "Pin check failed" });
+            return;
+          }
+        });
       },
     },
     lists,

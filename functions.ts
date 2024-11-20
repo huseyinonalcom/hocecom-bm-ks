@@ -28,7 +28,6 @@ export type Session = {
 };
 
 export const isSuperAdmin = ({ session }: { session?: Session }) => {
-  console.log("superadmin check");
   if (!session) return false;
 
   if (session.data.role == "superadmin") return true;
@@ -37,7 +36,6 @@ export const isSuperAdmin = ({ session }: { session?: Session }) => {
 };
 
 export const isGlobalAdmin = ({ session }: { session?: Session }) => {
-  console.log("globaladmin check");
   if (!session) return false;
 
   if (isSuperAdmin({ session }) || session.data.role == "global_admin") return true;
@@ -46,7 +44,6 @@ export const isGlobalAdmin = ({ session }: { session?: Session }) => {
 };
 
 export const isAdminAccountantOwner = ({ session }: { session?: Session }) => {
-  console.log("adminaccountant check");
   if (!session) return false;
 
   if (isGlobalAdmin({ session }) || session.data.role == "admin_accountant") return true;
@@ -55,7 +52,6 @@ export const isAdminAccountantOwner = ({ session }: { session?: Session }) => {
 };
 
 export const isAdminAccountantManager = ({ session }: { session?: Session }) => {
-  console.log("adminaccountantmanager check");
   console.log(session);
   if (!session) return false;
 
