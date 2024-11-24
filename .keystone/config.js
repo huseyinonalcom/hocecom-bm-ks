@@ -168,6 +168,13 @@ var isUser = ({ session: session2 }) => {
 };
 
 // schema.ts
+var companyFilter = ({ session: session2 }) => {
+  if (isGlobalAdmin({ session: session2 })) {
+    return {};
+  } else {
+    return { company: { id: { equals: session2.data.company.id } } };
+  }
+};
 var lists = {
   Accountancy: (0, import_core.list)({
     access: {
@@ -195,11 +202,30 @@ var lists = {
       labelField: "street"
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isUser,
         query: isUser,
         update: isEmployee,
         delete: import_access.denyAll
+      }
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        try {
+          console.log(context.session);
+          if (operation === "create") {
+            if (!inputData.company) {
+              throw new Error("Company is required");
+            }
+          }
+        } catch (error) {
+          console.error(error);
+        }
       }
     },
     fields: {
@@ -214,12 +240,17 @@ var lists = {
         ref: "User.customerAddresses",
         many: false
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
   AssemblyComponent: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isManager,
         query: isEmployee,
@@ -245,6 +276,11 @@ var lists = {
   }),
   Brand: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isUser,
@@ -283,7 +319,20 @@ var lists = {
       users: (0, import_fields.relationship)({ ref: "User.company", many: true }),
       establishments: (0, import_fields.relationship)({ ref: "Establishment.company", many: true }),
       accountancy: (0, import_fields.relationship)({ ref: "Accountancy.companies", many: false }),
-      extraFields: (0, import_fields.json)()
+      extraFields: (0, import_fields.json)(),
+      emailUser: (0, import_fields.text)(),
+      emailPassword: (0, import_fields.text)(),
+      emailHost: (0, import_fields.text)(),
+      emailPort: (0, import_fields.text)(),
+      emailSec: (0, import_fields.text)(),
+      stripeSecretKey: (0, import_fields.text)(),
+      stripePublishableKey: (0, import_fields.text)(),
+      bolClientID: (0, import_fields.text)(),
+      bolClientSecret: (0, import_fields.text)(),
+      amazonClientID: (0, import_fields.text)(),
+      amazonClientSecret: (0, import_fields.text)(),
+      accountantEmail: (0, import_fields.text)(),
+      monthlyReports: (0, import_fields.checkbox)({ defaultValue: false })
     }
   }),
   Document: (0, import_core.list)({
@@ -291,6 +340,11 @@ var lists = {
       labelField: "date"
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -315,7 +369,7 @@ var lists = {
           if (operation === "create") {
             const docs = await context.query.Document.findMany({
               orderBy: { number: "desc" },
-              where: { type: { equals: resolvedData.type } },
+              where: { type: { equals: inputData.type } },
               query: "id number"
             });
             const lastDocument = docs.at(0);
@@ -323,12 +377,12 @@ var lists = {
               const lastNumber = lastDocument.number.split("-")[1];
               const lastYear = lastDocument.number.split("-")[0];
               if (lastYear == (/* @__PURE__ */ new Date()).getFullYear()) {
-                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(7, "0")}`;
               } else {
-                resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+                resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(7, "0")}`;
               }
             } else {
-              resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(8, "0")}`;
+              resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(7, "0")}`;
             }
           }
         } catch (error) {
@@ -341,7 +395,12 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
         access: {
-          create: import_access.denyAll,
+          update: isEmployee
+        }
+      }),
+      deliveryDate: (0, import_fields.timestamp)({
+        isOrderable: true,
+        access: {
           update: isEmployee
         }
       }),
@@ -395,8 +454,17 @@ var lists = {
       }),
       type: (0, import_fields.select)({
         type: "string",
-        options: ["quote", "sale", "dispatch", "invoice", "debit_note", "credit_note", "purchase"],
+        options: ["quote", "sale", "dispatch", "invoice", "credit_note", "debit_note", "purchase"],
         validation: { isRequired: true }
+      }),
+      currency: (0, import_fields.select)({
+        type: "string",
+        options: ["TRY", "USD", "EUR"],
+        defaultValue: "EUR",
+        validation: { isRequired: true },
+        access: {
+          update: isCompanyAdmin
+        }
       }),
       creator: (0, import_fields.relationship)({
         ref: "User.documents",
@@ -442,6 +510,8 @@ var lists = {
         ref: "Payment.document",
         many: true
       }),
+      prefix: (0, import_fields.text)(),
+      phase: (0, import_fields.integer)(),
       number: (0, import_fields.text)({ validation: { isRequired: true } }),
       totalPaid: (0, import_fields.virtual)({
         field: import_core.graphql.field({
@@ -463,7 +533,12 @@ var lists = {
           }
         })
       }),
+      comments: (0, import_fields.text)(),
+      references: (0, import_fields.text)(),
+      managerNotes: (0, import_fields.text)(),
+      establishment: (0, import_fields.relationship)({ ref: "Establishment.documents", many: false }),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      taxIncluded: (0, import_fields.checkbox)({ defaultValue: true }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -493,6 +568,11 @@ var lists = {
       }
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -559,6 +639,11 @@ var lists = {
   }),
   Establishment: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isAdminAccountantManager,
         query: isWorker,
@@ -573,18 +658,30 @@ var lists = {
         ref: "File",
         many: false
       }),
+      phone: (0, import_fields.text)(),
+      phone2: (0, import_fields.text)(),
+      taxID: (0, import_fields.text)(),
+      bankAccount1: (0, import_fields.text)(),
+      bankAccount2: (0, import_fields.text)(),
+      bankAccount3: (0, import_fields.text)(),
       stockMovements: (0, import_fields.relationship)({
         ref: "StockMovement.establishment",
         many: true
       }),
-      company: (0, import_fields.relationship)({ ref: "Company.establishments", many: false }),
       users: (0, import_fields.relationship)({ ref: "User.establishment", many: true }),
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
+      documents: (0, import_fields.relationship)({ ref: "Document.establishment", many: true }),
+      company: (0, import_fields.relationship)({ ref: "Company.establishments", many: false }),
       extraFields: (0, import_fields.json)()
     }
   }),
   File: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -601,6 +698,11 @@ var lists = {
   }),
   Material: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isManager,
         query: isUser,
@@ -704,6 +806,11 @@ var lists = {
       labelField: "note"
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -726,6 +833,11 @@ var lists = {
       labelField: "date"
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isGlobalAdmin,
         query: isUser,
@@ -762,6 +874,11 @@ var lists = {
   }),
   Operation: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -797,6 +914,11 @@ var lists = {
       labelField: "timestamp"
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -897,6 +1019,11 @@ var lists = {
       labelField: "movementType"
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -947,6 +1074,11 @@ var lists = {
   }),
   Storage: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isCompanyAdmin,
         query: isEmployee,
@@ -962,6 +1094,11 @@ var lists = {
   }),
   Supplier: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isManager,
         query: isUser,
@@ -979,11 +1116,30 @@ var lists = {
   }),
   User: (0, import_core.list)({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         query: isUser,
         create: isManager,
         update: isManager,
         delete: isGlobalAdmin
+      }
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            let mail = inputData.email;
+            let mailPart1 = mail.split("@")[0];
+            let mailPart2 = mail.split("@")[1];
+            console.log(context.session);
+          }
+        } catch (error) {
+          console.error(error);
+        }
       }
     },
     fields: {
@@ -1061,6 +1217,11 @@ var lists = {
       labelField: "number"
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -1090,6 +1251,19 @@ var lists = {
     }
   }),
   WorkOrderOperation: (0, import_core.list)({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee
+      }
+    },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context }) => {
         try {
@@ -1114,14 +1288,6 @@ var lists = {
         } catch (error) {
           console.error(error);
         }
-      }
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee
       }
     },
     fields: {

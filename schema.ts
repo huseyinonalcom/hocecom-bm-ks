@@ -14,6 +14,14 @@ import {
   isAdminAccountantIntern,
 } from "./functions";
 
+const companyFilter = ({ session }: { session?: any }) => {
+  if (isGlobalAdmin({ session })) {
+    return {};
+  } else {
+    return { company: { id: { equals: session.data.company.id } } };
+  }
+};
+
 export const lists: Lists = {
   Accountancy: list({
     access: {
@@ -41,11 +49,30 @@ export const lists: Lists = {
       labelField: "street",
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isUser,
         query: isUser,
         update: isEmployee,
         delete: denyAll,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context }) => {
+        try {
+          console.log(context.session);
+          if (operation === "create") {
+            if (!inputData.company) {
+              throw new Error("Company is required");
+            }
+          }
+        } catch (error) {
+          console.error(error);
+        }
       },
     },
     fields: {
@@ -60,12 +87,17 @@ export const lists: Lists = {
         ref: "User.customerAddresses",
         many: false,
       }),
-      company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      company: relationship({ ref: "Company", many: false }),
       extraFields: json(),
     },
   }),
   AssemblyComponent: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isManager,
         query: isEmployee,
@@ -91,6 +123,11 @@ export const lists: Lists = {
   }),
   Brand: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isUser,
@@ -130,6 +167,19 @@ export const lists: Lists = {
       establishments: relationship({ ref: "Establishment.company", many: true }),
       accountancy: relationship({ ref: "Accountancy.companies", many: false }),
       extraFields: json(),
+      emailUser: text(),
+      emailPassword: text(),
+      emailHost: text(),
+      emailPort: text(),
+      emailSec: text(),
+      stripeSecretKey: text(),
+      stripePublishableKey: text(),
+      bolClientID: text(),
+      bolClientSecret: text(),
+      amazonClientID: text(),
+      amazonClientSecret: text(),
+      accountantEmail: text(),
+      monthlyReports: checkbox({ defaultValue: false }),
     },
   }),
   Document: list({
@@ -137,6 +187,11 @@ export const lists: Lists = {
       labelField: "date",
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -161,7 +216,7 @@ export const lists: Lists = {
           if (operation === "create") {
             const docs = await context.query.Document.findMany({
               orderBy: { number: "desc" },
-              where: { type: { equals: resolvedData.type } },
+              where: { type: { equals: inputData.type } },
               query: "id number",
             });
             const lastDocument = docs.at(0);
@@ -169,12 +224,12 @@ export const lists: Lists = {
               const lastNumber = lastDocument.number.split("-")[1];
               const lastYear = lastDocument.number.split("-")[0];
               if (lastYear == new Date().getFullYear()) {
-                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(7, "0")}`;
               } else {
-                resolvedData.number = `${new Date().getFullYear()}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(8, "0")}`;
+                resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(7, "0")}`;
               }
             } else {
-              resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(8, "0")}`;
+              resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(7, "0")}`;
             }
           }
         } catch (error) {
@@ -187,7 +242,12 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
         access: {
-          create: denyAll,
+          update: isEmployee,
+        },
+      }),
+      deliveryDate: timestamp({
+        isOrderable: true,
+        access: {
           update: isEmployee,
         },
       }),
@@ -241,8 +301,17 @@ export const lists: Lists = {
       }),
       type: select({
         type: "string",
-        options: ["quote", "sale", "dispatch", "invoice", "debit_note", "credit_note", "purchase"],
+        options: ["quote", "sale", "dispatch", "invoice", "credit_note", "debit_note", "purchase"],
         validation: { isRequired: true },
+      }),
+      currency: select({
+        type: "string",
+        options: ["TRY", "USD", "EUR"],
+        defaultValue: "EUR",
+        validation: { isRequired: true },
+        access: {
+          update: isCompanyAdmin,
+        },
       }),
       creator: relationship({
         ref: "User.documents",
@@ -288,6 +357,8 @@ export const lists: Lists = {
         ref: "Payment.document",
         many: true,
       }),
+      prefix: text(),
+      phase: integer(),
       number: text({ validation: { isRequired: true } }),
       totalPaid: virtual({
         field: graphql.field({
@@ -309,7 +380,12 @@ export const lists: Lists = {
           },
         }),
       }),
+      comments: text(),
+      references: text(),
+      managerNotes: text(),
+      establishment: relationship({ ref: "Establishment.documents", many: false }),
       company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      taxIncluded: checkbox({ defaultValue: true }),
       extraFields: json(),
     },
   }),
@@ -354,6 +430,11 @@ export const lists: Lists = {
       },
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -422,6 +503,11 @@ export const lists: Lists = {
   }),
   Establishment: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isAdminAccountantManager,
         query: isWorker,
@@ -436,18 +522,30 @@ export const lists: Lists = {
         ref: "File",
         many: false,
       }),
+      phone: text(),
+      phone2: text(),
+      taxID: text(),
+      bankAccount1: text(),
+      bankAccount2: text(),
+      bankAccount3: text(),
       stockMovements: relationship({
         ref: "StockMovement.establishment",
         many: true,
       }),
-      company: relationship({ ref: "Company.establishments", many: false }),
       users: relationship({ ref: "User.establishment", many: true }),
       address: relationship({ ref: "Address", many: false }),
+      documents: relationship({ ref: "Document.establishment", many: true }),
+      company: relationship({ ref: "Company.establishments", many: false }),
       extraFields: json(),
     },
   }),
   File: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -464,6 +562,11 @@ export const lists: Lists = {
   }),
   Material: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isManager,
         query: isUser,
@@ -567,6 +670,11 @@ export const lists: Lists = {
       labelField: "note",
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -589,6 +697,11 @@ export const lists: Lists = {
       labelField: "date",
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isGlobalAdmin,
         query: isUser,
@@ -625,6 +738,11 @@ export const lists: Lists = {
   }),
   Operation: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -660,6 +778,11 @@ export const lists: Lists = {
       labelField: "timestamp",
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -760,6 +883,11 @@ export const lists: Lists = {
       labelField: "movementType",
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -810,6 +938,11 @@ export const lists: Lists = {
   }),
   Storage: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isCompanyAdmin,
         query: isEmployee,
@@ -825,6 +958,11 @@ export const lists: Lists = {
   }),
   Supplier: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isManager,
         query: isUser,
@@ -842,11 +980,32 @@ export const lists: Lists = {
   }),
   User: list({
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         query: isUser,
         create: isManager,
         update: isManager,
         delete: isGlobalAdmin,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            let mail = inputData.email!;
+
+            let mailPart1 = mail.split("@")[0];
+            let mailPart2 = mail.split("@")[1];
+
+            console.log(context.session);
+          }
+        } catch (error) {
+          console.error(error);
+        }
       },
     },
     fields: {
@@ -924,6 +1083,11 @@ export const lists: Lists = {
       labelField: "number",
     },
     access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
       operation: {
         create: isEmployee,
         query: isEmployee,
@@ -953,6 +1117,19 @@ export const lists: Lists = {
     },
   }),
   WorkOrderOperation: list({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee,
+      },
+    },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context }) => {
         try {
@@ -977,14 +1154,6 @@ export const lists: Lists = {
         } catch (error) {
           console.error(error);
         }
-      },
-    },
-    access: {
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee,
       },
     },
     fields: {

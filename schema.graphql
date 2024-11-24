@@ -418,6 +418,19 @@ type Company {
   establishmentsCount(where: EstablishmentWhereInput! = {}): Int
   accountancy: Accountancy
   extraFields: JSON
+  emailUser: String
+  emailPassword: String
+  emailHost: String
+  emailPort: String
+  emailSec: String
+  stripeSecretKey: String
+  stripePublishableKey: String
+  bolClientID: String
+  bolClientSecret: String
+  amazonClientID: String
+  amazonClientSecret: String
+  accountantEmail: String
+  monthlyReports: Boolean
 }
 
 input CompanyWhereUniqueInput {
@@ -438,6 +451,19 @@ input CompanyWhereInput {
   users: UserManyRelationFilter
   establishments: EstablishmentManyRelationFilter
   accountancy: AccountancyWhereInput
+  emailUser: StringFilter
+  emailPassword: StringFilter
+  emailHost: StringFilter
+  emailPort: StringFilter
+  emailSec: StringFilter
+  stripeSecretKey: StringFilter
+  stripePublishableKey: StringFilter
+  bolClientID: StringFilter
+  bolClientSecret: StringFilter
+  amazonClientID: StringFilter
+  amazonClientSecret: StringFilter
+  accountantEmail: StringFilter
+  monthlyReports: BooleanFilter
 }
 
 input EstablishmentManyRelationFilter {
@@ -451,6 +477,19 @@ input CompanyOrderByInput {
   name: OrderDirection
   isActive: OrderDirection
   pincode: OrderDirection
+  emailUser: OrderDirection
+  emailPassword: OrderDirection
+  emailHost: OrderDirection
+  emailPort: OrderDirection
+  emailSec: OrderDirection
+  stripeSecretKey: OrderDirection
+  stripePublishableKey: OrderDirection
+  bolClientID: OrderDirection
+  bolClientSecret: OrderDirection
+  amazonClientID: OrderDirection
+  amazonClientSecret: OrderDirection
+  accountantEmail: OrderDirection
+  monthlyReports: OrderDirection
 }
 
 input CompanyUpdateInput {
@@ -463,6 +502,19 @@ input CompanyUpdateInput {
   establishments: EstablishmentRelateToManyForUpdateInput
   accountancy: AccountancyRelateToOneForUpdateInput
   extraFields: JSON
+  emailUser: String
+  emailPassword: String
+  emailHost: String
+  emailPort: String
+  emailSec: String
+  stripeSecretKey: String
+  stripePublishableKey: String
+  bolClientID: String
+  bolClientSecret: String
+  amazonClientID: String
+  amazonClientSecret: String
+  accountantEmail: String
+  monthlyReports: Boolean
 }
 
 input EstablishmentRelateToManyForUpdateInput {
@@ -493,6 +545,19 @@ input CompanyCreateInput {
   establishments: EstablishmentRelateToManyForCreateInput
   accountancy: AccountancyRelateToOneForCreateInput
   extraFields: JSON
+  emailUser: String
+  emailPassword: String
+  emailHost: String
+  emailPort: String
+  emailSec: String
+  stripeSecretKey: String
+  stripePublishableKey: String
+  bolClientID: String
+  bolClientSecret: String
+  amazonClientID: String
+  amazonClientSecret: String
+  accountantEmail: String
+  monthlyReports: Boolean
 }
 
 input EstablishmentRelateToManyForCreateInput {
@@ -508,10 +573,12 @@ input AccountancyRelateToOneForCreateInput {
 type Document {
   id: ID!
   date: DateTime
+  deliveryDate: DateTime
   createdAt: DateTime
   total: Float
   totalWithTax: Float
   type: String
+  currency: String
   creator: User
   supplier: Supplier
   customer: User
@@ -525,9 +592,16 @@ type Document {
   productsCount(where: DocumentProductWhereInput! = {}): Int
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
+  prefix: String
+  phase: Int
   number: String
   totalPaid: Float
+  comments: String
+  references: String
+  managerNotes: String
+  establishment: Establishment
   company: Company
+  taxIncluded: Boolean
   extraFields: JSON
 }
 
@@ -543,8 +617,10 @@ input DocumentWhereInput {
   NOT: [DocumentWhereInput!]
   id: IDFilter
   date: DateTimeNullableFilter
+  deliveryDate: DateTimeNullableFilter
   createdAt: DateTimeNullableFilter
   type: StringFilter
+  currency: StringFilter
   creator: UserWhereInput
   supplier: SupplierWhereInput
   customer: UserWhereInput
@@ -556,8 +632,15 @@ input DocumentWhereInput {
   toDocument: DocumentWhereInput
   products: DocumentProductManyRelationFilter
   payments: PaymentManyRelationFilter
+  prefix: StringFilter
+  phase: IntNullableFilter
   number: StringFilter
+  comments: StringFilter
+  references: StringFilter
+  managerNotes: StringFilter
+  establishment: EstablishmentWhereInput
   company: CompanyWhereInput
+  taxIncluded: BooleanFilter
 }
 
 input DateTimeNullableFilter {
@@ -597,17 +680,27 @@ input PaymentManyRelationFilter {
 input DocumentOrderByInput {
   id: OrderDirection
   date: OrderDirection
+  deliveryDate: OrderDirection
   createdAt: OrderDirection
   type: OrderDirection
+  currency: OrderDirection
   reduction: OrderDirection
   isDeleted: OrderDirection
+  prefix: OrderDirection
+  phase: OrderDirection
   number: OrderDirection
+  comments: OrderDirection
+  references: OrderDirection
+  managerNotes: OrderDirection
+  taxIncluded: OrderDirection
 }
 
 input DocumentUpdateInput {
   date: DateTime
+  deliveryDate: DateTime
   createdAt: DateTime
   type: String
+  currency: String
   creator: UserRelateToOneForUpdateInput
   supplier: SupplierRelateToOneForUpdateInput
   customer: UserRelateToOneForUpdateInput
@@ -619,8 +712,15 @@ input DocumentUpdateInput {
   toDocument: DocumentRelateToOneForUpdateInput
   products: DocumentProductRelateToManyForUpdateInput
   payments: PaymentRelateToManyForUpdateInput
+  prefix: String
+  phase: Int
   number: String
+  comments: String
+  references: String
+  managerNotes: String
+  establishment: EstablishmentRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
+  taxIncluded: Boolean
   extraFields: JSON
 }
 
@@ -656,6 +756,12 @@ input PaymentRelateToManyForUpdateInput {
   connect: [PaymentWhereUniqueInput!]
 }
 
+input EstablishmentRelateToOneForUpdateInput {
+  create: EstablishmentCreateInput
+  connect: EstablishmentWhereUniqueInput
+  disconnect: Boolean
+}
+
 input DocumentUpdateArgs {
   where: DocumentWhereUniqueInput!
   data: DocumentUpdateInput!
@@ -663,8 +769,10 @@ input DocumentUpdateArgs {
 
 input DocumentCreateInput {
   date: DateTime
+  deliveryDate: DateTime
   createdAt: DateTime
   type: String
+  currency: String
   creator: UserRelateToOneForCreateInput
   supplier: SupplierRelateToOneForCreateInput
   customer: UserRelateToOneForCreateInput
@@ -676,8 +784,15 @@ input DocumentCreateInput {
   toDocument: DocumentRelateToOneForCreateInput
   products: DocumentProductRelateToManyForCreateInput
   payments: PaymentRelateToManyForCreateInput
+  prefix: String
+  phase: Int
   number: String
+  comments: String
+  references: String
+  managerNotes: String
+  establishment: EstablishmentRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
+  taxIncluded: Boolean
   extraFields: JSON
 }
 
@@ -704,6 +819,11 @@ input DocumentProductRelateToManyForCreateInput {
 input PaymentRelateToManyForCreateInput {
   create: [PaymentCreateInput!]
   connect: [PaymentWhereUniqueInput!]
+}
+
+input EstablishmentRelateToOneForCreateInput {
+  create: EstablishmentCreateInput
+  connect: EstablishmentWhereUniqueInput
 }
 
 type DocumentProduct {
@@ -817,12 +937,20 @@ type Establishment {
   name: String
   defaultCurrency: String
   logo: File
+  phone: String
+  phone2: String
+  taxID: String
+  bankAccount1: String
+  bankAccount2: String
+  bankAccount3: String
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
-  company: Company
   users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
   usersCount(where: UserWhereInput! = {}): Int
   address: Address
+  documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
+  documentsCount(where: DocumentWhereInput! = {}): Int
+  company: Company
   extraFields: JSON
 }
 
@@ -838,27 +966,60 @@ input EstablishmentWhereInput {
   name: StringFilter
   defaultCurrency: StringFilter
   logo: FileWhereInput
+  phone: StringFilter
+  phone2: StringFilter
+  taxID: StringFilter
+  bankAccount1: StringFilter
+  bankAccount2: StringFilter
+  bankAccount3: StringFilter
   stockMovements: StockMovementManyRelationFilter
-  company: CompanyWhereInput
   users: UserManyRelationFilter
   address: AddressWhereInput
+  documents: DocumentManyRelationFilter
+  company: CompanyWhereInput
+}
+
+input DocumentManyRelationFilter {
+  every: DocumentWhereInput
+  some: DocumentWhereInput
+  none: DocumentWhereInput
 }
 
 input EstablishmentOrderByInput {
   id: OrderDirection
   name: OrderDirection
   defaultCurrency: OrderDirection
+  phone: OrderDirection
+  phone2: OrderDirection
+  taxID: OrderDirection
+  bankAccount1: OrderDirection
+  bankAccount2: OrderDirection
+  bankAccount3: OrderDirection
 }
 
 input EstablishmentUpdateInput {
   name: String
   defaultCurrency: String
   logo: FileRelateToOneForUpdateInput
+  phone: String
+  phone2: String
+  taxID: String
+  bankAccount1: String
+  bankAccount2: String
+  bankAccount3: String
   stockMovements: StockMovementRelateToManyForUpdateInput
-  company: CompanyRelateToOneForUpdateInput
   users: UserRelateToManyForUpdateInput
   address: AddressRelateToOneForUpdateInput
+  documents: DocumentRelateToManyForUpdateInput
+  company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
+}
+
+input DocumentRelateToManyForUpdateInput {
+  disconnect: [DocumentWhereUniqueInput!]
+  set: [DocumentWhereUniqueInput!]
+  create: [DocumentCreateInput!]
+  connect: [DocumentWhereUniqueInput!]
 }
 
 input EstablishmentUpdateArgs {
@@ -870,11 +1031,23 @@ input EstablishmentCreateInput {
   name: String
   defaultCurrency: String
   logo: FileRelateToOneForCreateInput
+  phone: String
+  phone2: String
+  taxID: String
+  bankAccount1: String
+  bankAccount2: String
+  bankAccount3: String
   stockMovements: StockMovementRelateToManyForCreateInput
-  company: CompanyRelateToOneForCreateInput
   users: UserRelateToManyForCreateInput
   address: AddressRelateToOneForCreateInput
+  documents: DocumentRelateToManyForCreateInput
+  company: CompanyRelateToOneForCreateInput
   extraFields: JSON
+}
+
+input DocumentRelateToManyForCreateInput {
+  create: [DocumentCreateInput!]
+  connect: [DocumentWhereUniqueInput!]
 }
 
 type File {
@@ -1401,12 +1574,6 @@ input PaymentWhereInput {
   company: CompanyWhereInput
 }
 
-input DocumentManyRelationFilter {
-  every: DocumentWhereInput
-  some: DocumentWhereInput
-  none: DocumentWhereInput
-}
-
 input PaymentOrderByInput {
   id: OrderDirection
   value: OrderDirection
@@ -1428,13 +1595,6 @@ input PaymentUpdateInput {
   extraFields: JSON
 }
 
-input DocumentRelateToManyForUpdateInput {
-  disconnect: [DocumentWhereUniqueInput!]
-  set: [DocumentWhereUniqueInput!]
-  create: [DocumentCreateInput!]
-  connect: [DocumentWhereUniqueInput!]
-}
-
 input PaymentUpdateArgs {
   where: PaymentWhereUniqueInput!
   data: PaymentUpdateInput!
@@ -1450,11 +1610,6 @@ input PaymentCreateInput {
   timestamp: DateTime
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
-}
-
-input DocumentRelateToManyForCreateInput {
-  create: [DocumentCreateInput!]
-  connect: [DocumentWhereUniqueInput!]
 }
 
 type SoftwareVersion {
@@ -1592,12 +1747,6 @@ input StockMovementUpdateInput {
   extraFields: JSON
 }
 
-input EstablishmentRelateToOneForUpdateInput {
-  create: EstablishmentCreateInput
-  connect: EstablishmentWhereUniqueInput
-  disconnect: Boolean
-}
-
 input DocumentProductRelateToOneForUpdateInput {
   create: DocumentProductCreateInput
   connect: DocumentProductWhereUniqueInput
@@ -1621,11 +1770,6 @@ input StockMovementCreateInput {
   createdAt: DateTime
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
-}
-
-input EstablishmentRelateToOneForCreateInput {
-  create: EstablishmentCreateInput
-  connect: EstablishmentWhereUniqueInput
 }
 
 input DocumentProductRelateToOneForCreateInput {
