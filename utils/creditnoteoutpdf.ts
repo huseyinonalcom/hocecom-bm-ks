@@ -1,4 +1,3 @@
-import { Address, Document, DocumentProduct, Establishment, Logo, Payment, User } from "payload/generated-types";
 import { dateFormatBe } from "./formatters/dateformatters";
 import { Buffer } from "buffer";
 import { formatCurrency } from "./formatters/formatcurrency";
@@ -11,10 +10,10 @@ export async function generateCreditNoteOut({
   logoBuffer?: Buffer;
 }): Promise<{ filename: string; content: Buffer; contentType: string }> {
   const creditNoteDoc = document;
-  const establishment = creditNoteDoc.establishment as Establishment;
-  const establishmentAddress = establishment.address as Address;
-  const customer = creditNoteDoc.customer as User;
-  const documentProducts = creditNoteDoc.documentProducts as DocumentProduct[];
+  const establishment = creditNoteDoc.establishment;
+  const establishmentAddress = establishment.address;
+  const customer = creditNoteDoc.customer;
+  const documentProducts = creditNoteDoc.documentProducts;
 
   return new Promise(async (resolve, reject) => {
     const pageLeft = 20;

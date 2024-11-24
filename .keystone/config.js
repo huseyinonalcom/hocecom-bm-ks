@@ -1358,6 +1358,29 @@ var lists = {
 
 // keystone.ts
 var import_config2 = require("dotenv/config");
+
+// utils/bol-offer-sync.ts
+var companiesToSync = [];
+var createDocumentsFromBolOrders = async (context) => {
+  companiesToSync = [];
+  await context.sudo().query.Company.findMany({
+    take: 1e3,
+    query: "id bolClientID bolClientSecret",
+    where: {
+      isActive: {
+        equals: true
+      }
+    }
+  }).then((res) => {
+    console.log(res);
+    res.forEach((company) => companiesToSync.push(company));
+  }).then(async () => {
+    console.log(companiesToSync);
+  });
+  console.log("Finished Cron Job for Bol Orders");
+};
+
+// keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
@@ -1378,6 +1401,7 @@ var keystone_default = withAuth(
         credentials: true
       },
       extendExpressApp: (app, context) => {
+        var cron = require("node-cron");
         const multer = require("multer");
         const upload = multer({
           storage: multer.memoryStorage(),
@@ -1394,7 +1418,7 @@ var keystone_default = withAuth(
               return res.status(400).json({ message: "No valid file provided" });
             }
             const result = await fileUpload(req.file);
-            const addFile = await context.query.File.createOne({
+            await context.query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
@@ -1432,6 +1456,45 @@ var keystone_default = withAuth(
             console.error("Pin check error:", error);
             res.status(500).json({ error: "Pin check failed" });
             return;
+          }
+        });
+        cron.schedule("*/5 * * * *", async () => {
+          try {
+            console.log("Running Cron Job for Bol Orders");
+            createDocumentsFromBolOrders(context);
+          } catch (error) {
+            console.error("Error running cron job", error);
+          }
+        });
+        const sendDocumentsToAccountant = async () => {
+          try {
+            let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
+              where: {
+                monthlyReports: {
+                  equals: true
+                }
+              }
+            });
+            console.log(companiesWithMonthlyReportsActive);
+            let currentYear = (/* @__PURE__ */ new Date()).getFullYear();
+          } catch (error) {
+            console.error("Error starting bulk document sender", error);
+          }
+        };
+        createDocumentsFromBolOrders(context);
+        cron.schedule("0 0 2 * *", async () => {
+          try {
+            let companiesWithMonthlyReportsActive = await context.sudo().query.companies.findMany({
+              where: {
+                monthlyReports: {
+                  equals: true
+                }
+              }
+            });
+            console.log(companiesWithMonthlyReportsActive);
+            let currentYear = (/* @__PURE__ */ new Date()).getFullYear();
+          } catch (error) {
+            console.error("Error starting bulk document sender", error);
           }
         });
       }

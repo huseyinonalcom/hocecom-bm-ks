@@ -3,6 +3,7 @@ import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
+import { createDocumentsFromBolOrders } from "./utils/bol-offer-sync";
 
 export default withAuth(
   config({
@@ -24,6 +25,7 @@ export default withAuth(
         credentials: true,
       },
       extendExpressApp: (app, context) => {
+        var cron = require("node-cron");
         const multer = require("multer");
 
         const upload = multer({
@@ -46,7 +48,7 @@ export default withAuth(
             // @ts-ignore
             const result = await fileUpload(req.file);
 
-            const addFile = await context.query.File.createOne({
+            await context.query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
@@ -86,6 +88,70 @@ export default withAuth(
             console.error("Pin check error:", error);
             res.status(500).json({ error: "Pin check failed" });
             return;
+          }
+        });
+
+        // cron.schedule("*/5 * * * *", async () => {
+        //   try {
+        //     console.log("Running Cron Job for Bol Orders");
+        //     createDocumentsFromBolOrders(context);
+        //   } catch (error) {
+        //     console.error("Error running cron job", error);
+        //   }
+        // });
+
+        // const sendDocumentsToAccountant = async () => {
+        //   try {
+        //     let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
+        //       where: {
+        //         monthlyReports: {
+        //           equals: true,
+        //         },
+        //       },
+        //     });
+
+        //     console.log(companiesWithMonthlyReportsActive);
+
+        //     let currentYear = new Date().getFullYear();
+        //     // for (let company of companiesWithMonthlyReportsActive) {
+        //     //   bulkSendDocuments({
+        //     //     companyID: (company as unknown as Company).id,
+        //     //     docTypes: ["invoice", "credit_note", "purchase"],
+        //     //     month: new Date().getMonth(), // last month
+        //     //     year: currentYear, // Current year
+        //     //   });
+        //     // }
+        //   } catch (error) {
+        //     console.error("Error starting bulk document sender", error);
+        //   }
+        // };
+
+        createDocumentsFromBolOrders(context);
+        // sendDocumentsToAccountant();
+
+        cron.schedule("0 0 2 * *", async () => {
+          try {
+            let companiesWithMonthlyReportsActive = await context.sudo().query.companies.findMany({
+              where: {
+                monthlyReports: {
+                  equals: true,
+                },
+              },
+            });
+
+            console.log(companiesWithMonthlyReportsActive);
+
+            let currentYear = new Date().getFullYear();
+            // for (let company of companiesWithMonthlyReportsActive) {
+            //   bulkSendDocuments({
+            //     companyID: (company as unknown as Company).id,
+            //     docTypes: ["invoice", "credit_note", "purchase"],
+            //     month: new Date().getMonth(), // last month
+            //     year: currentYear, // Current year
+            //   });
+            // }
+          } catch (error) {
+            console.error("Error starting bulk document sender", error);
           }
         });
       },

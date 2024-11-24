@@ -1,3 +1,5 @@
+import keystone from "../keystone";
+
 const bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 
 const bolApiUrl = "https://api.bol.com/retailer";
@@ -62,31 +64,28 @@ async function authenticateBolCom(clientId, clientSecret) {
   }
 }
 
-export const createDocumentsFromBolOrders = async () => {
+export const createDocumentsFromBolOrders = async (context) => {
   companiesToSync = [];
-  await payload
-    .find({
-      overrideAccess: true,
-      collection: "companies",
-      depth: 2,
-      limit: 1000,
+  await context
+    .sudo()
+    .query.Company.findMany({
+      query: "id bolClientID bolClientSecret",
       where: {
-        and: [{ bolClientID: { exists: true } }, { bolClientSecret: { exists: true } }],
+        isActive: {
+          equals: true,
+        },
       },
     })
-    .then((companies) => {
-      companies.docs.forEach((company) => companiesToSync.push(company as unknown as Company));
-    })
-    .then(async () => {
-      for (let i = 0; i < companiesToSync.length; i++) {
-        const currCompany = companiesToSync[i];
+    .then(async (res) => {
+      for (let i = 0; i < res.length; i++) {
+        const currCompany = res[i];
         getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
           if (orders && orders.length > 0) {
             const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
             for (let i = 0; i < orders.length; i++) {
               try {
                 await getBolComOrder(sortedOrders[i].orderId, currCompany.bolClientID, currCompany.bolClientSecret).then(async (orderDetails) => {
-                  orderDetails && (await saveDocument(orderDetails, currCompany));
+                  orderDetails && (await saveDocument(orderDetails, currCompany, context));
                 });
               } catch (error) {
                 console.error(error);
@@ -154,7 +153,7 @@ async function getBolComOrder(orderId, bolClientID, bolClientSecret) {
   }
 }
 
-const saveDocument = async (bolDoc, company) => {
+const saveDocument = async (bolDoc, company, context) => {
   try {
     const creator = await payload.find({
       overrideAccess: true,
@@ -356,7 +355,7 @@ const saveDocument = async (bolDoc, company) => {
       },
     });
 
-    const DPs = document.documentProducts as DocumentProduct[];
+    const DPs = document.products;
 
     const payment = await payload.create({
       user: creator.docs[0],

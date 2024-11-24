@@ -1,5 +1,4 @@
 import path from "path";
-import payload from "payload";
 import { Worker } from "worker_threads";
 
 export interface BulkDocumentSenderParameters {
