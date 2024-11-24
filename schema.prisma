@@ -136,7 +136,6 @@ model Document {
   supplierId      String?           @map("supplier")
   customer        User?             @relation("Document_customer", fields: [customerId], references: [id])
   customerId      String?           @map("customer")
-  reduction       Float?            @default(0)
   isDeleted       Boolean           @default(false)
   fromDocument    Document?         @relation("Document_fromDocument", fields: [fromDocumentId], references: [id])
   fromDocumentId  String?           @unique @map("fromDocument")

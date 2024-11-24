@@ -582,7 +582,6 @@ type Document {
   creator: User
   supplier: Supplier
   customer: User
-  reduction: Float
   isDeleted: Boolean
   fromDocument: Document
   delAddress: Address
@@ -624,7 +623,6 @@ input DocumentWhereInput {
   creator: UserWhereInput
   supplier: SupplierWhereInput
   customer: UserWhereInput
-  reduction: FloatNullableFilter
   isDeleted: BooleanFilter
   fromDocument: DocumentWhereInput
   delAddress: AddressWhereInput
@@ -654,17 +652,6 @@ input DateTimeNullableFilter {
   not: DateTimeNullableFilter
 }
 
-input FloatNullableFilter {
-  equals: Float
-  in: [Float!]
-  notIn: [Float!]
-  lt: Float
-  lte: Float
-  gt: Float
-  gte: Float
-  not: FloatNullableFilter
-}
-
 input DocumentProductManyRelationFilter {
   every: DocumentProductWhereInput
   some: DocumentProductWhereInput
@@ -684,7 +671,6 @@ input DocumentOrderByInput {
   createdAt: OrderDirection
   type: OrderDirection
   currency: OrderDirection
-  reduction: OrderDirection
   isDeleted: OrderDirection
   prefix: OrderDirection
   phase: OrderDirection
@@ -704,7 +690,6 @@ input DocumentUpdateInput {
   creator: UserRelateToOneForUpdateInput
   supplier: SupplierRelateToOneForUpdateInput
   customer: UserRelateToOneForUpdateInput
-  reduction: Float
   isDeleted: Boolean
   fromDocument: DocumentRelateToOneForUpdateInput
   delAddress: AddressRelateToOneForUpdateInput
@@ -776,7 +761,6 @@ input DocumentCreateInput {
   creator: UserRelateToOneForCreateInput
   supplier: SupplierRelateToOneForCreateInput
   customer: UserRelateToOneForCreateInput
-  reduction: Float
   isDeleted: Boolean
   fromDocument: DocumentRelateToOneForCreateInput
   delAddress: AddressRelateToOneForCreateInput
@@ -836,8 +820,12 @@ type DocumentProduct {
   tax: Float
   price: Float
   reduction: Float
-  total: Float
+  totalWithoutTaxBeforeReduction: Float
+  totalWithoutTaxAfterReduction: Float
+  totalWithTaxBeforeReduction: Float
+  totalWithTaxAfterReduction: Float
   totalTax: Float
+  totalReduction: Float
   document: Document
   company: Company
   extraFields: JSON
@@ -878,6 +866,17 @@ input StockMovementManyRelationFilter {
   every: StockMovementWhereInput
   some: StockMovementWhereInput
   none: StockMovementWhereInput
+}
+
+input FloatNullableFilter {
+  equals: Float
+  in: [Float!]
+  notIn: [Float!]
+  lt: Float
+  lte: Float
+  gt: Float
+  gte: Float
+  not: FloatNullableFilter
 }
 
 input DocumentProductOrderByInput {

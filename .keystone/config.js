@@ -167,6 +167,53 @@ var isUser = ({ session: session2 }) => {
   return !session2.data.isBlocked;
 };
 
+// utils/calculations/documentproducts.ts
+var calculateBaseTotal = ({
+  price,
+  amount,
+  isTaxIncluded,
+  tax = 0
+  // optional for when we need to calculate base from tax-included price
+}) => {
+  if (isTaxIncluded) {
+    return Number((price * amount / (1 + tax / 100)).toFixed(2));
+  }
+  return Number((price * amount).toFixed(2));
+};
+var calculateTotalWithoutTaxBeforeReduction = ({ price, amount, isTaxIncluded, tax = 0 }) => {
+  return calculateBaseTotal({ price, amount, isTaxIncluded, tax });
+};
+var calculateReductionAmount = ({ price, amount, isTaxIncluded, reduction, tax }) => {
+  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, isTaxIncluded, tax });
+  return Number((total * (reduction / 100)).toFixed(2));
+};
+var calculateTotalWithoutTaxAfterReduction = ({ price, amount, isTaxIncluded, reduction, tax }) => {
+  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, isTaxIncluded, tax });
+  const reductionAmount = calculateReductionAmount({ price, amount, isTaxIncluded, reduction, tax });
+  return Number((total - reductionAmount).toFixed(2));
+};
+var calculateTotalWithTaxBeforeReduction = ({ price, amount, isTaxIncluded, tax }) => {
+  if (isTaxIncluded) {
+    return Number((price * amount).toFixed(2));
+  }
+  const totalBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
+    price,
+    amount,
+    isTaxIncluded
+  });
+  return Number((totalBeforeReduction * (1 + tax / 100)).toFixed(2));
+};
+var calculateTotalWithTaxAfterReduction = ({ price, amount, isTaxIncluded, reduction, tax }) => {
+  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
+    price,
+    amount,
+    isTaxIncluded,
+    reduction,
+    tax
+  });
+  return Number((totalAfterReduction * (1 + tax / 100)).toFixed(2));
+};
+
 // schema.ts
 var companyFilter = ({ session: session2 }) => {
   if (isGlobalAdmin({ session: session2 })) {
@@ -367,22 +414,26 @@ var lists = {
             });
           }
           if (operation === "create") {
-            const docs = await context.query.Document.findMany({
-              orderBy: { number: "desc" },
-              where: { type: { equals: inputData.type } },
-              query: "id number"
-            });
-            const lastDocument = docs.at(0);
-            if (lastDocument) {
-              const lastNumber = lastDocument.number.split("-")[1];
-              const lastYear = lastDocument.number.split("-")[0];
-              if (lastYear == (/* @__PURE__ */ new Date()).getFullYear()) {
-                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(7, "0")}`;
+            if (inputData.type == "purchase" && inputData.number) {
+              return;
+            } else {
+              const docs = await context.query.Document.findMany({
+                orderBy: { number: "desc" },
+                where: { type: { equals: inputData.type } },
+                query: "id number"
+              });
+              const lastDocument = docs.at(0);
+              if (lastDocument) {
+                const lastNumber = lastDocument.number.split("-")[1];
+                const lastYear = lastDocument.number.split("-")[0];
+                if (lastYear == (/* @__PURE__ */ new Date()).getFullYear()) {
+                  resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(7, "0")}`;
+                } else {
+                  resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(7, "0")}`;
+                }
               } else {
                 resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(7, "0")}`;
               }
-            } else {
-              resolvedData.number = `${(/* @__PURE__ */ new Date()).getFullYear()}-${1 .toFixed(0).padStart(7, "0")}`;
             }
           }
         } catch (error) {
@@ -419,13 +470,13 @@ var lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "total"
+                query: "totalWithTaxAfterReduction"
               });
               let total = 0;
               materials.forEach((docProd) => {
-                total += docProd.total;
+                total += docProd.totalWithTaxAfterReduction;
               });
-              return total - total * (item.reduction ?? 0) / 100;
+              return total;
             } catch (e) {
               return 0;
             }
@@ -484,7 +535,6 @@ var lists = {
           update: import_access.denyAll
         }
       }),
-      reduction: (0, import_fields.float)({ defaultValue: 0 }),
       isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
       fromDocument: (0, import_fields.relationship)({
         ref: "Document.toDocument",
@@ -594,18 +644,89 @@ var lists = {
       tax: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
       reduction: (0, import_fields.float)({ defaultValue: 0 }),
-      total: (0, import_fields.virtual)({
+      totalWithoutTaxBeforeReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({
           type: import_core.graphql.Float,
           async resolve(item, args, context) {
             try {
-              const document = await context.query.Document.findOne({
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "reduction"
+                query: "isTaxIncluded"
+              }).then((res) => isTaxIncluded = res.isTaxIncluded);
+              return calculateTotalWithoutTaxBeforeReduction({
+                price: item.price,
+                amount: item.amount,
+                isTaxIncluded
               });
-              let total = item.price * item.amount - item.price * item.amount * (item.reduction ?? 0) / 100;
-              total -= total * (document.reduction ?? 0) / 100;
-              return total;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      totalWithoutTaxAfterReduction: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded"
+              }).then((res) => isTaxIncluded = res.isTaxIncluded);
+              return calculateTotalWithoutTaxAfterReduction({
+                price: item.price,
+                amount: item.amount,
+                reduction: item.reduction ?? 0,
+                isTaxIncluded,
+                tax: item.tax
+              });
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      totalWithTaxBeforeReduction: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded"
+              }).then((res) => isTaxIncluded = res.isTaxIncluded);
+              return calculateTotalWithTaxBeforeReduction({
+                price: item.price,
+                amount: item.amount,
+                tax: item.tax,
+                isTaxIncluded
+              });
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      totalWithTaxAfterReduction: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded"
+              }).then((res) => isTaxIncluded = res.isTaxIncluded);
+              return calculateTotalWithTaxAfterReduction({
+                price: item.price,
+                amount: item.amount,
+                reduction: item.reduction ?? 0,
+                tax: item.tax,
+                isTaxIncluded
+              });
             } catch (e) {
               return 0;
             }
@@ -617,12 +738,40 @@ var lists = {
           type: import_core.graphql.Float,
           async resolve(item, args, context) {
             try {
-              const document = await context.query.Document.findOne({
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "tax"
+                query: "isTaxIncluded"
+              }).then((res) => isTaxIncluded = res.isTaxIncluded);
+              return calculateTotalWithoutTaxAfterReduction({
+                price: item.price,
+                amount: item.amount,
+                reduction: item.reduction ?? 0,
+                tax: item.tax,
+                isTaxIncluded
               });
-              let total = item.price * item.amount - item.price * item.amount * (item.reduction ?? 0) / 100;
-              return total * document.tax;
+            } catch (e) {
+              return 0;
+            }
+          }
+        })
+      }),
+      totalReduction: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded"
+              }).then((res) => isTaxIncluded = res.isTaxIncluded);
+              return calculateTotalWithoutTaxBeforeReduction({
+                price: item.price,
+                amount: item.amount,
+                tax: item.tax,
+                isTaxIncluded
+              });
             } catch (e) {
               return 0;
             }
@@ -1133,8 +1282,8 @@ var lists = {
         try {
           if (operation === "create") {
             let mail = inputData.email;
-            let mailPart1 = mail.split("@")[0];
-            let mailPart2 = mail.split("@")[1];
+            let mailPart12 = mail.split("@")[0];
+            let mailPart22 = mail.split("@")[1];
             console.log(context.session);
           }
         } catch (error) {
@@ -1359,25 +1508,930 @@ var lists = {
 // keystone.ts
 var import_config2 = require("dotenv/config");
 
+// utils/invoiceoutpdf.ts
+var import_buffer = require("buffer");
+
+// utils/formatters/formatcurrency.ts
+var formatCurrency = (value) => {
+  return new Intl.NumberFormat("nl-BE", {
+    style: "currency",
+    currency: "EUR"
+  }).format(value);
+};
+
+// utils/formatters/dateformatters.ts
+var dateFormatBe = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("fr-FR");
+};
+
+// utils/addtodate.ts
+function addDaysToDate(dateStr, daysToAdd) {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + daysToAdd);
+  return date;
+}
+
+// utils/invoiceoutpdf.ts
+async function generateInvoiceOut({
+  document,
+  logoBuffer
+}) {
+  const invoiceDoc = document;
+  const establishment = invoiceDoc.establishment;
+  const establishmentAddress = establishment.address;
+  const customer = invoiceDoc.customer;
+  const documentProducts = invoiceDoc.documentProducts;
+  const payments = invoiceDoc.payments;
+  return new Promise(async (resolve, reject) => {
+    const pageLeft = 20;
+    const pageTop = 40;
+    try {
+      const PDFDocument = require("pdfkit");
+      const doc = new PDFDocument({ size: "A4", margin: 20 });
+      const buffers = [];
+      doc.on("data", buffers.push.bind(buffers));
+      if (logoBuffer) {
+        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
+      } else {
+        const response = await fetch(establishment.logo.url);
+        logoBuffer = await import_buffer.Buffer.from(await response.arrayBuffer());
+        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
+      }
+      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+      const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
+        if (isHeader) {
+          doc2.lineWidth(25);
+          const bgY = y2 + 5;
+          doc2.lineCap("butt").moveTo(30, bgY).lineTo(550, bgY).stroke("black");
+          doc2.fontSize(10).fillColor("white").text(name, columns[0], y2).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        } else {
+          doc2.fontSize(10).fillColor("black").text(name, columns[0], y2, { width: columns[3] - columns[0] }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7] + 20, y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        }
+      };
+      const generateInvoiceTable = (doc2, documentProducts2, y2) => {
+        let invoiceTableTop = y2;
+        generateTableRow(doc2, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
+        for (let i = 1; i <= documentProducts2.length; i++) {
+          const item = documentProducts2[i - 1];
+          const position = invoiceTableTop + i * 40;
+          generateTableRow(
+            doc2,
+            position,
+            item.name,
+            item.description,
+            formatCurrency(item.value.toFixed(2)),
+            item.amount,
+            formatCurrency(Number(item.subTotalTax).toFixed(2)),
+            formatCurrency(Number(item.subTotal).toFixed(2))
+          );
+        }
+        return invoiceTableTop + (documentProducts2.length + 1) * 40;
+      };
+      const bankDetails = ({ doc: doc2, x, y: y2, establishment: establishment2 }) => {
+        let strings = [];
+        if (establishment2.bankAccount1) {
+          strings.push(establishment2.bankAccount1);
+        }
+        if (establishment2.bankAccount2 !== null) {
+          strings.push(establishment2.bankAccount2);
+        }
+        if (establishment2.bankAccount3 !== null) {
+          strings.push(establishment2.bankAccount3);
+        }
+        strings.map((string, index) => {
+          doc2.text(string, x, y2 + index * 15);
+        });
+      };
+      const customerDetails = ({ doc: doc2, x, y: y2, invoiceDoc: invoiceDoc2 }) => {
+        let strings = [];
+        const docAddress = invoiceDoc2.delAddress;
+        if (customer.customerCompany) {
+          strings.push(customer.customerCompany);
+        }
+        if (customer.customerTaxNumber) {
+          strings.push(customer.customerTaxNumber);
+        }
+        if (customer.phone) {
+          strings.push(customer.phone);
+        }
+        strings.push(docAddress.street + " " + docAddress.door);
+        if (docAddress.floor) {
+          strings.push("floor: " + docAddress.floor);
+        }
+        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
+        strings.map((string, index) => {
+          doc2.text(string, x, y2 + index * 15);
+        });
+        return y2 + strings.length * 15;
+      };
+      const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
+        doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
+        doc2.fillColor("white").text("Payment History:", x + 10, y2 - 5);
+        doc2.fillColor("black");
+        payments2.forEach((payment, i) => {
+          doc2.text(dateFormatBe(payment.date), x + 10, y2 + 20 * (i + 1));
+          doc2.text(payment.type, x + 85, y2 + 20 * (i + 1));
+          doc2.text(formatCurrency(payment.value.toFixed(2)), x + 150, y2 + 20 * (i + 1), {
+            width: 80,
+            align: "right"
+          });
+        });
+      };
+      const taxTable = ({ doc: doc2, x, y: y2, documentProducts: documentProducts2 }) => {
+        let taxRates = [];
+        documentProducts2.forEach((docProd, i) => {
+          if (!taxRates.includes(docProd.tax)) {
+            taxRates.push(docProd.tax);
+          }
+        });
+        taxRates = taxRates.sort((a, b) => a - b);
+        doc2.fontSize(10).text("Total Tax:", x, y2 + 50);
+        doc2.text(formatCurrency(documentProducts2.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)), x + 80, y2 + 50);
+        taxRates.map((taxRate, index) => {
+          doc2.text("Total Tax " + taxRate + "%:", x, y2 + 50 + (index + 1) * 15).text(
+            formatCurrency(documentProducts2.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)),
+            x + 80,
+            y2 + 50 + (index + 1) * 15
+          );
+        });
+        return y2 + taxRates.length * 15 + 50;
+      };
+      doc.fontSize(20).text("INVOICE", 455, pageTop);
+      doc.fontSize(10).text("Invoice:", 380, 80);
+      doc.text(invoiceDoc.number, 450, 80);
+      doc.text("Date:", 380, 95);
+      doc.text(dateFormatBe(invoiceDoc.date), 450, 95);
+      doc.text("Valid Until:", 380, 110);
+      doc.text(dateFormatBe(addDaysToDate(invoiceDoc.date, 15).toISOString()), 450, 110);
+      doc.text("Delivery Date:", 380, 125);
+      if (invoiceDoc.deliveryDate) {
+        doc.text(dateFormatBe(invoiceDoc.deliveryDate), 450, 125);
+      }
+      let y = 140;
+      doc.text(establishment.name, 50, y);
+      doc.text(establishment.taxID, 50, y + 15);
+      bankDetails({
+        doc,
+        x: 50,
+        y: y + 30,
+        establishment
+      });
+      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
+      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
+      doc.text(establishment.phone, 200, y + 30);
+      doc.text(establishment.phone2, 200, y + 45);
+      doc.text("Order: " + invoiceDoc.references, 380, y);
+      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
+      y = customerDetails({
+        doc,
+        x: 380,
+        y: y + 30,
+        invoiceDoc
+      });
+      y += 60;
+      y = generateInvoiceTable(doc, documentProducts, y);
+      if (y < 500) {
+        y = 500;
+      }
+      taxTable({
+        doc,
+        x: 30,
+        y,
+        documentProducts
+      });
+      paymentsTable({ doc, x: 170, y: y + 30, payments });
+      let totalsX = 410;
+      doc.text("Total Excl. Tax:", totalsX, y + 50);
+      doc.text(
+        formatCurrency(
+          documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0) - documentProducts.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)
+        ),
+        totalsX + 70,
+        y + 50
+      );
+      doc.text("Total:", totalsX, y + 65);
+      doc.text(formatCurrency(documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0)), totalsX + 70, y + 65);
+      doc.text("Already Paid:", totalsX, y + 80);
+      doc.text(formatCurrency(payments.filter((p) => p.isVerified && !p.isDeleted).reduce((acc, dp) => acc + Number(dp.value), 0)), totalsX + 70, y + 80);
+      doc.text("To Pay:", totalsX, y + 95);
+      doc.text(
+        formatCurrency(
+          documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0) - payments.filter((p) => p.isVerified && !p.isDeleted).reduce((acc, dp) => acc + Number(dp.value), 0)
+        ),
+        totalsX + 70,
+        y + 95
+      );
+      doc.end();
+      doc.on("end", () => {
+        const pdfData = import_buffer.Buffer.concat(buffers);
+        resolve({
+          filename: `invoice_${document.number}.pdf`,
+          content: pdfData,
+          contentType: "application/pdf"
+        });
+      });
+    } catch (error) {
+      console.error("error on pdf generation (invoice): ", error);
+      reject(`Error generating invoice: ${error.message}`);
+    }
+  });
+}
+
+// utils/sendmail.ts
+var sendMail = async ({
+  recipient,
+  bcc,
+  company,
+  subject,
+  html,
+  attachments
+}) => {
+  try {
+    const nodemailer = require("nodemailer");
+    let transporter = nodemailer.createTransport({
+      host: company.emailHost,
+      port: company.emailPort,
+      secure: false,
+      auth: {
+        user: company.emailUser,
+        pass: company.emailPassword
+      }
+    });
+    let mailOptionsClient = {
+      from: `"${company.emailUser}" <${company.emailUser}>`,
+      to: recipient,
+      bcc,
+      attachments,
+      subject,
+      html: templatedMail({
+        content: html,
+        img64: company.logo.url
+      })
+    };
+    transporter.sendMail(mailOptionsClient, (error) => {
+      if (error) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+  } catch (e) {
+    return false;
+  }
+};
+function templatedMail({ content, img64 }) {
+  return mailPart1({ img64 }) + content + mailPart2;
+}
+var mailPart1 = ({ img64 }) => {
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <!-- Compiled with Bootstrap Email version: 1.5.1 -->
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+      body,
+      table,
+      td {
+        font-family: Helvetica, Arial, sans-serif !important;
+      }
+      .ExternalClass {
+        width: 100%;
+      }
+      .ExternalClass,
+      .ExternalClass p,
+      .ExternalClass span,
+      .ExternalClass font,
+      .ExternalClass td,
+      .ExternalClass div {
+        line-height: 150%;
+      }
+      a {
+        text-decoration: none;
+      }
+      * {
+        color: inherit;
+      }
+      a[x-apple-data-detectors],
+      u + #body a,
+      #MessageViewBody a {
+        color: inherit;
+        text-decoration: none;
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+      }
+      table:not([class^="s-"]) {
+        font-family: Helvetica, Arial, sans-serif;
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+        border-spacing: 0px;
+        border-collapse: collapse;
+      }
+      table:not([class^="s-"]) td {
+        border-spacing: 0px;
+        border-collapse: collapse;
+      }
+      @media screen and (max-width: 600px) {
+        .w-full,
+        .w-full > tbody > tr > td {
+          width: 100% !important;
+        }
+        .w-8,
+        .w-8 > tbody > tr > td {
+          width: 32px !important;
+        }
+        .h-16,
+        .h-16 > tbody > tr > td {
+          height: 64px !important;
+        }
+        .p-lg-10:not(table),
+        .p-lg-10:not(.btn) > tbody > tr > td,
+        .p-lg-10.btn td a {
+          padding: 0 !important;
+        }
+        .pr-4:not(table),
+        .pr-4:not(.btn) > tbody > tr > td,
+        .pr-4.btn td a,
+        .px-4:not(table),
+        .px-4:not(.btn) > tbody > tr > td,
+        .px-4.btn td a {
+          padding-right: 16px !important;
+        }
+        .pl-4:not(table),
+        .pl-4:not(.btn) > tbody > tr > td,
+        .pl-4.btn td a,
+        .px-4:not(table),
+        .px-4:not(.btn) > tbody > tr > td,
+        .px-4.btn td a {
+          padding-left: 16px !important;
+        }
+        .pb-6:not(table),
+        .pb-6:not(.btn) > tbody > tr > td,
+        .pb-6.btn td a,
+        .py-6:not(table),
+        .py-6:not(.btn) > tbody > tr > td,
+        .py-6.btn td a {
+          padding-bottom: 24px !important;
+        }
+        .pt-8:not(table),
+        .pt-8:not(.btn) > tbody > tr > td,
+        .pt-8.btn td a,
+        .py-8:not(table),
+        .py-8:not(.btn) > tbody > tr > td,
+        .py-8.btn td a {
+          padding-top: 32px !important;
+        }
+        .pb-8:not(table),
+        .pb-8:not(.btn) > tbody > tr > td,
+        .pb-8.btn td a,
+        .py-8:not(table),
+        .py-8:not(.btn) > tbody > tr > td,
+        .py-8.btn td a {
+          padding-bottom: 32px !important;
+        }
+        *[class*="s-lg-"] > tbody > tr > td {
+          font-size: 0 !important;
+          line-height: 0 !important;
+          height: 0 !important;
+        }
+        .s-6 > tbody > tr > td {
+          font-size: 24px !important;
+          line-height: 24px !important;
+          height: 24px !important;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-blue-100"
+    style="
+      outline: 0;
+      width: 100%;
+      min-width: 100%;
+      height: 100%;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      font-family: Helvetica, Arial, sans-serif;
+      line-height: 24px;
+      font-weight: normal;
+      font-size: 16px;
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      color: #000000;
+      margin: 0;
+      padding: 0;
+      border-width: 0;
+    "
+    bgcolor="#cfe2ff"
+  >
+    <table
+      class="bg-blue-100 body"
+      valign="top"
+      role="presentation"
+      border="0"
+      cellpadding="0"
+      cellspacing="0"
+      style="
+        outline: 0;
+        width: 100%;
+        min-width: 100%;
+        height: 100%;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        font-family: Helvetica, Arial, sans-serif;
+        line-height: 24px;
+        font-weight: normal;
+        font-size: 16px;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        color: #000000;
+        margin: 0;
+        padding: 0;
+        border-width: 0;
+      "
+      bgcolor="#cfe2ff"
+    >
+      <tbody>
+        <tr>
+          <td valign="top" style="line-height: 24px; font-size: 16px; margin: 0" align="left" bgcolor="#cfe2ff">
+            <table class="container" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%">
+              <tbody>
+                <tr>
+                  <td align="center" style="line-height: 24px; font-size: 16px; margin: 0; padding: 0 16px">
+                    <!--[if (gte mso 9)|(IE)]>
+                                          <table align="center" role="presentation">
+                                            <tbody>
+                                              <tr>
+                                                <td width="600">
+                                        <![endif]-->
+                    <table align="center" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px; margin: 0 auto">
+                      <tbody>
+                        <tr>
+                          <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="ax-center" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
+                                    <img
+                                      class="h-16"
+                                      src="${img64}"
+                                      style="
+                                        height: 64px;
+                                        line-height: 100%;
+                                        outline: none;
+                                        text-decoration: none;
+                                        display: block;
+                                        border-style: none;
+                                        border-width: 0;
+                                      "
+                                      height="64"
+                                    />
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              class="card rounded-3xl px-4 py-8 p-lg-10"
+                              role="presentation"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              style="border-radius: 24px; border-collapse: separate !important; width: 100%; overflow: hidden; border: 1px solid #e2e8f0"
+                              bgcolor="#ffffff"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="line-height: 24px; font-size: 16px; width: 100%; border-radius: 24px; margin: 0; padding: 40px"
+                                    align="left"
+                                    bgcolor="#ffffff"
+                                  >`;
+};
+var mailPart2 = `</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <!--[if (gte mso 9)|(IE)]>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                        <![endif]-->
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
+`;
+
 // utils/bol-offer-sync.ts
+var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
+var bolApiUrl = "https://api.bol.com/retailer";
+var bolTokens = [];
 var companiesToSync = [];
+function bolHeaders(headersType, clientId) {
+  const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  if (!tokenEntry) {
+    return;
+  }
+  const contentType = headersType === "json" ? "application/vnd.retailer.v10+json" : "application/vnd.retailer.v10+csv";
+  return {
+    "Content-Type": contentType,
+    Accept: contentType,
+    Authorization: `Bearer ${tokenEntry.token}`
+  };
+}
+async function authenticateBolCom(clientId, clientSecret) {
+  const existingTokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  if (existingTokenEntry && /* @__PURE__ */ new Date() < existingTokenEntry.expiration) {
+    return existingTokenEntry.token;
+  }
+  const authHeader = `Basic ${btoa(`${clientId}:${clientSecret}`)}`;
+  try {
+    const response = await fetch(bolAuthUrl, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader
+      }
+    });
+    if (!response.ok) {
+      console.error(await response.text());
+      return false;
+    }
+    const data = await response.json();
+    const newToken = {
+      clientId,
+      token: data["access_token"],
+      expiration: new Date((/* @__PURE__ */ new Date()).getTime() + data["expires_in"] * 1e3)
+    };
+    if (existingTokenEntry) {
+      existingTokenEntry.token = newToken.token;
+      existingTokenEntry.expiration = newToken.expiration;
+    } else {
+      bolTokens.push(newToken);
+    }
+    return newToken.token;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
 var createDocumentsFromBolOrders = async (context) => {
   companiesToSync = [];
   await context.sudo().query.Company.findMany({
-    take: 1e3,
     query: "id bolClientID bolClientSecret",
     where: {
       isActive: {
         equals: true
       }
     }
-  }).then((res) => {
-    console.log(res);
-    res.forEach((company) => companiesToSync.push(company));
-  }).then(async () => {
-    console.log(companiesToSync);
+  }).then(async (res) => {
+    let companiesToSync2 = res.filter(
+      (company) => company.bolClientID && company.bolClientSecret
+    );
+    console.log(companiesToSync2);
+    for (let i = 0; i < companiesToSync2.length; i++) {
+      const currCompany = res[i];
+      getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
+        if (orders && orders.length > 0) {
+          const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
+          for (let i2 = 0; i2 < orders.length; i2++) {
+            try {
+              await getBolComOrder(sortedOrders[i2].orderId, currCompany.bolClientID, currCompany.bolClientSecret).then(async (orderDetails) => {
+                orderDetails && await saveDocument(orderDetails, currCompany, context);
+              });
+            } catch (error) {
+              console.error(error);
+              console.error("Error fetching order details for orderId: ", sortedOrders[i2]);
+            }
+          }
+        }
+      });
+    }
   });
   console.log("Finished Cron Job for Bol Orders");
+};
+async function getBolComOrders(bolClientID, bolClientSecret) {
+  await authenticateBolCom(bolClientID, bolClientSecret);
+  const dateString = (date) => date.toISOString().split("T")[0];
+  try {
+    let orders = [];
+    let today = /* @__PURE__ */ new Date();
+    today.setDate(today.getDate() - 7);
+    for (let i = 0; i < 7; i++) {
+      today.setDate(today.getDate() + 1);
+      const response = await fetch(`${bolApiUrl}/orders?fulfilment-method=ALL&status=ALL&latest-change-date=${dateString(today)}&page=1`, {
+        method: "GET",
+        headers: bolHeaders("json", bolClientID)
+      });
+      if (!response.ok) {
+        console.error(await response.text());
+      } else {
+        const answer = await response.json();
+        orders = orders.concat(answer.orders);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1e3));
+    }
+    return orders;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+async function getBolComOrder(orderId, bolClientID, bolClientSecret) {
+  await authenticateBolCom(bolClientID, bolClientSecret);
+  try {
+    const response = await fetch(`${bolApiUrl}/orders/${orderId}`, {
+      method: "GET",
+      headers: bolHeaders("json", bolClientID)
+    });
+    if (!response.ok) {
+      console.error(await response.text());
+      return null;
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+var saveDocument = async (bolDoc, company, context) => {
+  try {
+    const creator = await payload.find({
+      overrideAccess: true,
+      collection: "users",
+      where: {
+        company: {
+          equals: company.id
+        },
+        role: {
+          equals: "admin"
+        }
+      }
+    });
+    const existingDoc = await payload.find({
+      user: creator.docs[0],
+      collection: "documents",
+      where: {
+        references: {
+          equals: bolDoc.orderId
+        }
+      }
+    });
+    if (existingDoc.docs.length > 0) {
+      return;
+    }
+    const establishment = await payload.find({
+      user: creator.docs[0],
+      collection: "establishments",
+      where: {
+        company: {
+          equals: company.id
+        }
+      }
+    });
+    let docAddress = null;
+    let delAddress = null;
+    const transformEmail = (email) => {
+      let parts = email.split("@");
+      let localPart = parts[0].split("+")[0];
+      let domainPart = parts[1];
+      return localPart + "+" + company.id + "@" + domainPart;
+    };
+    const existingCustomer = await payload.find({
+      user: creator.docs[0],
+      depth: 3,
+      collection: "users",
+      where: {
+        email: {
+          equals: transformEmail(bolDoc.billingDetails.email)
+        }
+      }
+    });
+    let user;
+    if (existingCustomer.docs.length > 0) {
+      user = existingCustomer.docs[0];
+      if (user.customerAddresses && user.customerAddresses.length > 0) {
+        for (let i = 0; i < user.customerAddresses.length; i++) {
+          if (user.customerAddresses[i].street === bolDoc.shipmentDetails.streetName && user.customerAddresses[i].door === bolDoc.shipmentDetails.houseNumber && user.customerAddresses[i].zip === bolDoc.shipmentDetails.zipCode && user.customerAddresses[i].city === bolDoc.shipmentDetails.city && user.customerAddresses[i].country === bolDoc.shipmentDetails.countryCode) {
+            delAddress = user.customerAddresses[i];
+          }
+          if (user.customerAddresses[i].street === bolDoc.billingDetails.streetName && user.customerAddresses[i].door === bolDoc.billingDetails.houseNumber && user.customerAddresses[i].zip === bolDoc.billingDetails.zipCode && user.customerAddresses[i].city === bolDoc.billingDetails.city && user.customerAddresses[i].country === bolDoc.billingDetails.countryCode) {
+            docAddress = user.customerAddresses[i];
+          }
+        }
+      }
+    } else {
+      delAddress = await payload.create({
+        user: creator.docs[0],
+        collection: "addresses",
+        data: {
+          street: bolDoc.shipmentDetails.streetName,
+          door: bolDoc.shipmentDetails.houseNumber,
+          zip: bolDoc.shipmentDetails.zipCode,
+          city: bolDoc.shipmentDetails.city,
+          country: bolDoc.shipmentDetails.countryCode,
+          company: company.id
+        }
+      });
+      if (bolDoc.shipmentDetails.streetName !== bolDoc.billingDetails.streetName) {
+        docAddress = await payload.create({
+          user: creator.docs[0],
+          collection: "addresses",
+          data: {
+            street: bolDoc.billingDetails.streetName,
+            door: bolDoc.billingDetails.houseNumber,
+            zip: bolDoc.billingDetails.zipCode,
+            city: bolDoc.billingDetails.city,
+            country: bolDoc.billingDetails.countryCode,
+            company: company.id
+          }
+        });
+      } else {
+        docAddress = delAddress;
+      }
+      const newUser = await payload.create({
+        user: creator.docs[0],
+        collection: "users",
+        data: {
+          email: bolDoc.billingDetails.email,
+          preferredLanguage: bolDoc.shipmentDetails.language,
+          phone: bolDoc.shipmentDetails.phone,
+          customerAddresses: [docAddress.id, delAddress.id],
+          password: generateRandomString(24),
+          role: "customer",
+          firstName: bolDoc.billingDetails.firstName,
+          lastName: bolDoc.billingDetails.surname,
+          company: company.id
+        }
+      });
+      user = newUser;
+    }
+    if (!delAddress) {
+      delAddress = await payload.create({
+        user: creator.docs[0],
+        collection: "addresses",
+        data: {
+          street: bolDoc.shipmentDetails.streetName,
+          door: bolDoc.shipmentDetails.houseNumber,
+          zip: bolDoc.shipmentDetails.zipCode,
+          city: bolDoc.shipmentDetails.city,
+          country: bolDoc.shipmentDetails.countryCode,
+          company: company.id
+        }
+      });
+    }
+    if (!docAddress) {
+      docAddress = await payload.create({
+        user: creator.docs[0],
+        collection: "addresses",
+        data: {
+          street: bolDoc.billingDetails.streetName,
+          door: bolDoc.billingDetails.houseNumber,
+          zip: bolDoc.billingDetails.zipCode,
+          city: bolDoc.billingDetails.city,
+          country: bolDoc.billingDetails.countryCode,
+          company: company.id
+        }
+      });
+    }
+    let documentProducts = [];
+    for (let i = 0; i < bolDoc.orderItems.length; i++) {
+      const products = await payload.find({
+        user: creator.docs[0],
+        collection: "products",
+        where: {
+          EAN: {
+            equals: bolDoc.orderItems[i].product.ean
+          }
+        }
+      });
+      documentProducts.push(
+        await payload.create({
+          user: creator.docs[0],
+          collection: "document-products",
+          data: {
+            value: bolDoc.orderItems[i].unitPrice,
+            company: company.id,
+            product: products && products.docs.length > 0 ? products.docs[0].id : null,
+            amount: bolDoc.orderItems[i].quantity,
+            tax: eutaxes.find((t) => t.code == docAddress.country).standard,
+            name: products && products.docs.length > 0 ? products.docs[0].name : bolDoc.orderItems[i].product.title
+          }
+        })
+      );
+    }
+    const document = await payload.create({
+      user: creator.docs[0],
+      collection: "documents",
+      data: {
+        number: bolDoc.orderId,
+        date: bolDoc.orderPlacedDateTime.split("T"),
+        time: bolDoc.orderPlacedDateTime.split("T")[1].split("+")[0],
+        documentProducts: documentProducts.map((dp) => dp.id),
+        customer: user.id,
+        company: company.id,
+        references: bolDoc.orderId,
+        delAddress: delAddress.id,
+        docAddress: docAddress.id,
+        creator: creator.docs[0].id,
+        establishment: establishment.docs[0].id,
+        type: "invoice"
+      }
+    });
+    const DPs = document.products;
+    const payment = await payload.create({
+      user: creator.docs[0],
+      collection: "payments",
+      data: {
+        value: DPs.reduce((acc, dp) => acc + dp.subTotal, 0),
+        type: "online",
+        isVerified: true,
+        document: document.id,
+        date: bolDoc.orderPlacedDateTime.split("T"),
+        creator: creator.docs[0].id,
+        company: company.id,
+        establishment: establishment.docs[0].id
+      }
+    });
+    await payload.update({
+      user: creator.docs[0],
+      collection: "documents",
+      id: document.id,
+      data: {
+        payments: [payment.id]
+      }
+    });
+    await payload.update({
+      user: creator.docs[0],
+      collection: "users",
+      id: user.id,
+      data: {
+        documents: [...user.documents.map((doc) => doc.id), document.id]
+      }
+    });
+    try {
+      const customer = document.customer;
+      sendMail({
+        recipient: "huseyin-_-onal@hotmail.com",
+        subject: `Bestelling ${document.prefix ?? ""}${document.number}`,
+        company,
+        attachments: [await generateInvoiceOut({ document })],
+        html: `<p>Beste ${customer.firstName + " " + customer.lastName},</p><p>In bijlage vindt u het factuur voor uw laatste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${company.name}</p>`
+      });
+    } catch (error) {
+    }
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 // keystone.ts
@@ -1458,29 +2512,6 @@ var keystone_default = withAuth(
             return;
           }
         });
-        cron.schedule("*/5 * * * *", async () => {
-          try {
-            console.log("Running Cron Job for Bol Orders");
-            createDocumentsFromBolOrders(context);
-          } catch (error) {
-            console.error("Error running cron job", error);
-          }
-        });
-        const sendDocumentsToAccountant = async () => {
-          try {
-            let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
-              where: {
-                monthlyReports: {
-                  equals: true
-                }
-              }
-            });
-            console.log(companiesWithMonthlyReportsActive);
-            let currentYear = (/* @__PURE__ */ new Date()).getFullYear();
-          } catch (error) {
-            console.error("Error starting bulk document sender", error);
-          }
-        };
         createDocumentsFromBolOrders(context);
         cron.schedule("0 0 2 * *", async () => {
           try {

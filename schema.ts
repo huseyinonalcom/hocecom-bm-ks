@@ -13,6 +13,12 @@ import {
   isSuperAdmin,
   isAdminAccountantIntern,
 } from "./functions";
+import {
+  calculateTotalWithoutTaxAfterReduction,
+  calculateTotalWithoutTaxBeforeReduction,
+  calculateTotalWithTaxAfterReduction,
+  calculateTotalWithTaxBeforeReduction,
+} from "./utils/calculations/documentproducts";
 
 const companyFilter = ({ session }: { session?: any }) => {
   if (isGlobalAdmin({ session })) {
@@ -214,22 +220,26 @@ export const lists: Lists = {
             });
           }
           if (operation === "create") {
-            const docs = await context.query.Document.findMany({
-              orderBy: { number: "desc" },
-              where: { type: { equals: inputData.type } },
-              query: "id number",
-            });
-            const lastDocument = docs.at(0);
-            if (lastDocument) {
-              const lastNumber = lastDocument.number.split("-")[1];
-              const lastYear = lastDocument.number.split("-")[0];
-              if (lastYear == new Date().getFullYear()) {
-                resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(7, "0")}`;
+            if (inputData.type == "purchase" && inputData.number) {
+              return;
+            } else {
+              const docs = await context.query.Document.findMany({
+                orderBy: { number: "desc" },
+                where: { type: { equals: inputData.type } },
+                query: "id number",
+              });
+              const lastDocument = docs.at(0);
+              if (lastDocument) {
+                const lastNumber = lastDocument.number.split("-")[1];
+                const lastYear = lastDocument.number.split("-")[0];
+                if (lastYear == new Date().getFullYear()) {
+                  resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(7, "0")}`;
+                } else {
+                  resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(7, "0")}`;
+                }
               } else {
                 resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(7, "0")}`;
               }
-            } else {
-              resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(7, "0")}`;
             }
           }
         } catch (error) {
@@ -266,13 +276,13 @@ export const lists: Lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "total",
+                query: "totalWithTaxAfterReduction",
               });
               let total = 0;
               materials.forEach((docProd) => {
-                total += docProd.total;
+                total += docProd.totalWithTaxAfterReduction;
               });
-              return total - (total * (item.reduction ?? 0)) / 100;
+              return total;
             } catch (e) {
               return 0;
             }
@@ -331,7 +341,6 @@ export const lists: Lists = {
           update: denyAll,
         },
       }),
-      reduction: float({ defaultValue: 0 }),
       isDeleted: checkbox({ defaultValue: false }),
       fromDocument: relationship({
         ref: "Document.toDocument",
@@ -456,19 +465,89 @@ export const lists: Lists = {
       tax: float({ validation: { isRequired: true, min: 0 } }),
       price: float({ validation: { isRequired: true, min: 0 } }),
       reduction: float({ defaultValue: 0 }),
-      total: virtual({
+      totalWithoutTaxBeforeReduction: virtual({
         field: graphql.field({
           type: graphql.Float,
           async resolve(item, args, context) {
             try {
-              const document = await context.query.Document.findOne({
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "reduction",
+                query: "isTaxIncluded",
+              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+              return calculateTotalWithoutTaxBeforeReduction({
+                price: item.price,
+                amount: item.amount,
+                isTaxIncluded,
               });
-              let total = item.price * item.amount - (item.price * item.amount * (item.reduction ?? 0)) / 100;
-
-              total -= (total * (document.reduction ?? 0)) / 100;
-              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      totalWithoutTaxAfterReduction: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded",
+              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+              return calculateTotalWithoutTaxAfterReduction({
+                price: item.price,
+                amount: item.amount,
+                reduction: item.reduction ?? 0,
+                isTaxIncluded,
+                tax: item.tax,
+              });
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      totalWithTaxBeforeReduction: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded",
+              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+              return calculateTotalWithTaxBeforeReduction({
+                price: item.price,
+                amount: item.amount,
+                tax: item.tax,
+                isTaxIncluded,
+              });
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      totalWithTaxAfterReduction: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded",
+              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+              return calculateTotalWithTaxAfterReduction({
+                price: item.price,
+                amount: item.amount,
+                reduction: item.reduction ?? 0,
+                tax: item.tax,
+                isTaxIncluded,
+              });
             } catch (e) {
               return 0;
             }
@@ -480,13 +559,40 @@ export const lists: Lists = {
           type: graphql.Float,
           async resolve(item, args, context) {
             try {
-              const document = await context.query.Document.findOne({
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "tax",
+                query: "isTaxIncluded",
+              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+              return calculateTotalWithoutTaxAfterReduction({
+                price: item.price,
+                amount: item.amount,
+                reduction: item.reduction ?? 0,
+                tax: item.tax,
+                isTaxIncluded,
               });
-              let total = item.price * item.amount - (item.price * item.amount * (item.reduction ?? 0)) / 100;
-
-              return total * document.tax;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      totalReduction: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              let isTaxIncluded = true;
+              await context.query.Document.findOne({
+                where: { id: item.documentId },
+                query: "isTaxIncluded",
+              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+              return calculateTotalWithoutTaxBeforeReduction({
+                price: item.price,
+                amount: item.amount,
+                tax: item.tax,
+                isTaxIncluded,
+              });
             } catch (e) {
               return 0;
             }

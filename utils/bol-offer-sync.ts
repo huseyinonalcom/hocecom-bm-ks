@@ -1,4 +1,5 @@
-import keystone from "../keystone";
+import { generateInvoiceOut } from "./invoiceoutpdf";
+import { sendMail } from "./sendmail";
 
 const bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 
@@ -77,7 +78,11 @@ export const createDocumentsFromBolOrders = async (context) => {
       },
     })
     .then(async (res) => {
-      for (let i = 0; i < res.length; i++) {
+      let companiesToSync = res.filter(
+        (company: { id: string; bolClientID: string; bolClientSecret: string }) => company.bolClientID && company.bolClientSecret
+      );
+      console.log(companiesToSync);
+      for (let i = 0; i < companiesToSync.length; i++) {
         const currCompany = res[i];
         getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
           if (orders && orders.length > 0) {
@@ -391,12 +396,12 @@ const saveDocument = async (bolDoc, company, context) => {
     });
 
     try {
-      const customer = document.customer as unknown as User;
+      const customer = document.customer;
       sendMail({
         recipient: "huseyin-_-onal@hotmail.com",
         subject: `Bestelling ${document.prefix ?? ""}${document.number}`,
         company: company,
-        attachments: [await generateInvoiceOut({ document: document as unknown as Document })],
+        attachments: [await generateInvoiceOut({ document: document })],
         html: `<p>Beste ${
           customer.firstName + " " + customer.lastName
         },</p><p>In bijlage vindt u het factuur voor uw laatste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${company.name}</p>`,
