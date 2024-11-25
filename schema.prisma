@@ -314,6 +314,7 @@ model Payment {
   value       Float
   document    Document[] @relation("Document_payments")
   isDeleted   Boolean    @default(false)
+  isVerified  Boolean    @default(false)
   creator     User?      @relation("Payment_creator", fields: [creatorId], references: [id])
   creatorId   String?    @map("creator")
   reference   String     @default("")
@@ -401,7 +402,10 @@ model User {
   documents         Document[]      @relation("Document_creator")
   customerDocuments Document[]      @relation("Document_customer")
   customerMovements StockMovement[] @relation("StockMovement_customer")
+  preferredLanguage String          @default("")
   customerCompany   String          @default("")
+  firstName         String          @default("")
+  lastName          String          @default("")
   customerTaxNumber String          @default("")
   customerTaxCenter String          @default("")
   payments          Payment[]       @relation("Payment_creator")

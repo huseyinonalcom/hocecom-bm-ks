@@ -30,18 +30,22 @@ async function authenticateBolCom(clientId: string, clientSecret: string) {
     return existingTokenEntry.token;
   }
 
-  const authHeader = `Basic ${btoa(`${clientId}:${clientSecret}`)}`;
+  let auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+  const authHeader = `Basic ${auth}`;
 
   try {
     const response = await fetch(bolAuthUrl, {
       method: "POST",
       headers: {
         Authorization: authHeader,
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
     });
 
     if (!response.ok) {
-      console.error(await response.text());
+      console.error("bol auth error:", await response.text());
       return false;
     }
 
@@ -61,7 +65,7 @@ async function authenticateBolCom(clientId: string, clientSecret: string) {
 
     return newToken.token;
   } catch (error) {
-    console.error(error);
+    console.error("bol token error:", error);
     return false;
   }
 }
@@ -70,7 +74,7 @@ export const createDocumentsFromBolOrders = async (context) => {
   await context
     .sudo()
     .query.Company.findMany({
-      query: "id bolClientID bolClientSecret owner { id } establishments { id }",
+      query: "id bolClientID bolClientSecret name owner { id } establishments { id }",
       where: {
         isActive: {
           equals: true,
@@ -81,9 +85,8 @@ export const createDocumentsFromBolOrders = async (context) => {
       let companiesToSync = res.filter(
         (company: { id: string; bolClientID: string; bolClientSecret: string }) => company.bolClientID && company.bolClientSecret
       );
-      console.log(companiesToSync);
       for (let i = 0; i < companiesToSync.length; i++) {
-        const currCompany = res[i];
+        const currCompany = companiesToSync[i];
         getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
           if (orders && orders.length > 0) {
             const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
@@ -93,8 +96,7 @@ export const createDocumentsFromBolOrders = async (context) => {
                   orderDetails && (await saveDocument(orderDetails, currCompany, context));
                 });
               } catch (error) {
-                console.error(error);
-                console.error("Error fetching order details for orderId: ", sortedOrders[i]);
+                console.error("Error fetching order details for orderId: ", sortedOrders[i], error);
               }
             }
           }
@@ -160,16 +162,20 @@ async function getBolComOrder(orderId: string, bolClientID: string, bolClientSec
 
 const saveDocument = async (bolDoc, company, context) => {
   try {
-    const existingDoc = await payload.find({
-      user: creator.docs[0],
-      collection: "documents",
+    const existingDoc = await context.sudo().query.Document.findMany({
+      query: "references id",
       where: {
+        company: {
+          id: {
+            equals: company.id,
+          },
+        },
         references: {
           equals: bolDoc.orderId,
         },
       },
     });
-    if (existingDoc.docs.length > 0) {
+    if (existingDoc.length > 0) {
       return;
     }
 
@@ -183,19 +189,28 @@ const saveDocument = async (bolDoc, company, context) => {
       return localPart + "+" + company.id + "@" + domainPart;
     };
 
-    const existingCustomer = await payload.find({
-      user: creator.docs[0],
-      depth: 3,
-      collection: "users",
+    const existingCustomer = await context.sudo().query.User.findMany({
+      query: "id email customerAddresses { id street door zip city country } firstName lastName",
       where: {
+        company: {
+          id: {
+            equals: company.id,
+          },
+        },
+        role: {
+          equals: "customer",
+        },
         email: {
           equals: transformEmail(bolDoc.billingDetails.email),
         },
       },
     });
+
+    console.log(existingCustomer);
+
     let user;
-    if (existingCustomer.docs.length > 0) {
-      user = existingCustomer.docs[0];
+    if (existingCustomer.length > 0) {
+      user = existingCustomer.at(0);
 
       if (user.customerAddresses && user.customerAddresses.length > 0) {
         for (let i = 0; i < user.customerAddresses.length; i++) {
@@ -220,146 +235,225 @@ const saveDocument = async (bolDoc, company, context) => {
         }
       }
     } else {
-      delAddress = await payload.create({
-        user: creator.docs[0],
-        collection: "addresses",
+      const newUser = await context.sudo().query.User.createOne({
+        data: {
+          email: bolDoc.billingDetails.email,
+          preferredLanguage: bolDoc.shipmentDetails.language,
+          phone: bolDoc.shipmentDetails.phone,
+          password: generateRandomString(24),
+          role: "customer",
+          firstName: bolDoc.billingDetails.firstName,
+          lastName: bolDoc.billingDetails.surname,
+          name: bolDoc.billingDetails.firstName + " " + bolDoc.billingDetails.surname,
+          company: {
+            connect: {
+              id: company.id,
+            },
+          },
+        },
+      });
+      user = newUser;
+      console.log("new user created", newUser);
+      delAddress = await context.sudo().query.Address.createOne({
+        query: "id street door zip city country",
         data: {
           street: bolDoc.shipmentDetails.streetName,
           door: bolDoc.shipmentDetails.houseNumber,
           zip: bolDoc.shipmentDetails.zipCode,
           city: bolDoc.shipmentDetails.city,
           country: bolDoc.shipmentDetails.countryCode,
-          company: company.id,
+          company: {
+            connect: {
+              id: company.id,
+            },
+          },
+          customer: {
+            connect: {
+              id: user.id,
+            },
+          },
         },
       });
       if (bolDoc.shipmentDetails.streetName !== bolDoc.billingDetails.streetName) {
-        docAddress = await payload.create({
-          user: creator.docs[0],
-          collection: "addresses",
+        docAddress = await context.sudo().query.Address.createOne({
+          query: "id street door zip city country",
           data: {
             street: bolDoc.billingDetails.streetName,
             door: bolDoc.billingDetails.houseNumber,
             zip: bolDoc.billingDetails.zipCode,
             city: bolDoc.billingDetails.city,
             country: bolDoc.billingDetails.countryCode,
-            company: company.id,
+            company: {
+              connect: {
+                id: company.id,
+              },
+            },
+            customer: {
+              connect: {
+                id: user.id,
+              },
+            },
           },
         });
       } else {
         docAddress = delAddress;
       }
-      const newUser = await payload.create({
-        user: creator.docs[0],
-        collection: "users",
-        data: {
-          email: bolDoc.billingDetails.email,
-          preferredLanguage: bolDoc.shipmentDetails.language,
-          phone: bolDoc.shipmentDetails.phone,
-          customerAddresses: [docAddress.id, delAddress.id],
-          password: generateRandomString(24),
-          role: "customer",
-          firstName: bolDoc.billingDetails.firstName,
-          lastName: bolDoc.billingDetails.surname,
-          company: company.id,
-        },
-      });
-      user = newUser;
     }
     if (!delAddress) {
-      delAddress = await payload.create({
-        user: creator.docs[0],
-        collection: "addresses",
+      delAddress = await context.sudo().query.Address.createOne({
+        query: "id street door zip city country",
         data: {
           street: bolDoc.shipmentDetails.streetName,
           door: bolDoc.shipmentDetails.houseNumber,
           zip: bolDoc.shipmentDetails.zipCode,
           city: bolDoc.shipmentDetails.city,
           country: bolDoc.shipmentDetails.countryCode,
-          company: company.id,
+          customer: {
+            connect: {
+              id: user.id,
+            },
+          },
+          company: {
+            connect: {
+              id: company.id,
+            },
+          },
         },
       });
     }
     if (!docAddress) {
-      docAddress = await payload.create({
-        user: creator.docs[0],
-        collection: "addresses",
+      docAddress = await context.sudo().query.Address.createOne({
+        query: "id street door zip city country",
         data: {
           street: bolDoc.billingDetails.streetName,
           door: bolDoc.billingDetails.houseNumber,
           zip: bolDoc.billingDetails.zipCode,
           city: bolDoc.billingDetails.city,
           country: bolDoc.billingDetails.countryCode,
-          company: company.id,
+          customer: {
+            connect: {
+              id: user.id,
+            },
+          },
+          company: {
+            connect: {
+              id: company.id,
+            },
+          },
         },
       });
     }
 
-    let documentProducts = [];
-    for (let i = 0; i < bolDoc.orderItems.length; i++) {
-      const products = await payload.find({
-        user: creator.docs[0],
-        collection: "products",
-        where: {
-          EAN: {
-            equals: bolDoc.orderItems[i].product.ean,
-          },
-        },
-      });
-      documentProducts.push(
-        await payload.create({
-          user: creator.docs[0],
-          collection: "document-products",
-          data: {
-            value: bolDoc.orderItems[i].unitPrice,
-            company: company.id,
-            product: products && products.docs.length > 0 ? (products.docs[0].id as number) : null,
-            amount: bolDoc.orderItems[i].quantity,
-            tax: eutaxes.find((t) => t.code == docAddress.country)?.standard ?? "21",
-            name: products && products.docs.length > 0 ? products.docs[0].name : bolDoc.orderItems[i].product.title,
-          },
-        })
-      );
-    }
-    const document = await payload.create({
-      user: creator.docs[0],
-      collection: "documents",
+    const document = await context.sudo().query.Document.createOne({
       data: {
         number: bolDoc.orderId,
-        date: bolDoc.orderPlacedDateTime.split("T"),
-        time: bolDoc.orderPlacedDateTime.split("T")[1].split("+")[0],
-        documentProducts: documentProducts.map((dp) => dp.id),
-        customer: user.id,
-        company: company.id,
+        date: bolDoc.orderPlacedDateTime,
+        customer: {
+          connect: {
+            id: user.id,
+          },
+        },
+        company: {
+          connect: {
+            id: company.id,
+          },
+        },
         references: bolDoc.orderId,
-        delAddress: delAddress.id,
-        docAddress: docAddress.id,
-        creator: creator.docs[0].id as number,
-        establishment: establishment.docs[0].id as number,
+        delAddress: {
+          connect: {
+            id: delAddress.id,
+          },
+        },
+        docAddress: {
+          connect: {
+            id: docAddress.id,
+          },
+        },
+        creator: {
+          connect: {
+            id: company.owner.id as number,
+          },
+        },
+
+        establishment: {
+          connect: {
+            id: company.establishments.at(0).id as number,
+          },
+        },
         type: "invoice",
       },
     });
 
-    const DPs = document.products;
+    for (let i = 0; i < bolDoc.orderItems.length; i++) {
+      const products = await context.sudo().query.Material.findMany({
+        query: "ean id",
+        where: {
+          ean: {
+            equals: bolDoc.orderItems[i].product.ean,
+          },
+          company: {
+            id: {
+              equals: company.id,
+            },
+          },
+        },
+      });
+      await context.sudo().query.DocumentProduct.createOne({
+        data: {
+          price: bolDoc.orderItems[i].unitPrice,
+          company: {
+            connect: {
+              id: company.id,
+            },
+          },
+          document: {
+            connect: {
+              id: document.id as number,
+            },
+          },
+          product:
+            products && products.length > 0
+              ? {
+                  connect: {
+                    id: products[0].id as number,
+                  },
+                }
+              : null,
+          amount: bolDoc.orderItems[i].quantity,
+          tax: eutaxes.find((t) => t.code == docAddress.country)?.standard ?? 21,
+          name: products && products.length > 0 ? products[0].name : bolDoc.orderItems[i].product.title,
+        },
+      });
+    }
 
-    await payload.create({
-      user: creator.docs[0],
-      collection: "payments",
+    await context.sudo().query.Payment.createOne({
       data: {
-        value: DPs.reduce((acc: number, dp: { subTotal: number }) => acc + dp.subTotal, 0),
+        value: bolDoc.orderItems.reduce((acc: number, dp) => acc + dp.unitPrice, 0),
         type: "online",
         isVerified: true,
-        document: document.id as number,
-        date: bolDoc.orderPlacedDateTime.split("T"),
-        creator: creator.docs[0].id as number,
-        company: company.id,
-        establishment: establishment.docs[0].id as number,
+        document: {
+          connect: {
+            id: document.id as number,
+          },
+        },
+        timestamp: bolDoc.orderPlacedDateTime,
+        company: {
+          connect: {
+            id: company.id,
+          },
+        },
+        creator: {
+          connect: {
+            id: company.owner.id as number,
+          },
+        },
       },
     });
 
     try {
-      const customer = document.customer;
+      const customer = user;
       sendMail({
-        recipient: "huseyin-_-onal@hotmail.com",
+        recipient: "contact@huseyinonal.com",
         subject: `Bestelling ${document.prefix ?? ""}${document.number}`,
         company: company,
         attachments: [await generateInvoiceOut({ document: document })],

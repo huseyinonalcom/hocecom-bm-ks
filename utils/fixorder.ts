@@ -1,5 +1,3 @@
-import payload from "payload";
-
 export const fixOrder = async ({ firstOrderID, lastOrderID, company, type }: { firstOrderID: string; lastOrderID: string; company: string; type: string }) => {
   try {
     const ordersToSort = await payload.find({

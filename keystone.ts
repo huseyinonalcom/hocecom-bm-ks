@@ -139,7 +139,6 @@ export default withAuth(
               },
             });
 
-            console.log(companiesWithMonthlyReportsActive);
 
             let currentYear = new Date().getFullYear();
             // for (let company of companiesWithMonthlyReportsActive) {

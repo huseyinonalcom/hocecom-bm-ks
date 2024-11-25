@@ -1546,6 +1546,7 @@ type Payment {
   documentCount(where: DocumentWhereInput! = {}): Int
   out: Boolean
   isDeleted: Boolean
+  isVerified: Boolean
   creator: User
   reference: String
   type: String
@@ -1566,6 +1567,7 @@ input PaymentWhereInput {
   value: FloatFilter
   document: DocumentManyRelationFilter
   isDeleted: BooleanFilter
+  isVerified: BooleanFilter
   creator: UserWhereInput
   reference: StringFilter
   type: StringFilter
@@ -1577,6 +1579,7 @@ input PaymentOrderByInput {
   id: OrderDirection
   value: OrderDirection
   isDeleted: OrderDirection
+  isVerified: OrderDirection
   reference: OrderDirection
   type: OrderDirection
   timestamp: OrderDirection
@@ -1586,6 +1589,7 @@ input PaymentUpdateInput {
   value: Float
   document: DocumentRelateToManyForUpdateInput
   isDeleted: Boolean
+  isVerified: Boolean
   creator: UserRelateToOneForUpdateInput
   reference: String
   type: String
@@ -1603,6 +1607,7 @@ input PaymentCreateInput {
   value: Float
   document: DocumentRelateToManyForCreateInput
   isDeleted: Boolean
+  isVerified: Boolean
   creator: UserRelateToOneForCreateInput
   reference: String
   type: String
@@ -1890,7 +1895,10 @@ type User {
   customerDocumentsCount(where: DocumentWhereInput! = {}): Int
   customerMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   customerMovementsCount(where: StockMovementWhereInput! = {}): Int
+  preferredLanguage: String
   customerCompany: String
+  firstName: String
+  lastName: String
   customerTaxNumber: String
   customerTaxCenter: String
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
@@ -1936,7 +1944,10 @@ input UserWhereInput {
   documents: DocumentManyRelationFilter
   customerDocuments: DocumentManyRelationFilter
   customerMovements: StockMovementManyRelationFilter
+  preferredLanguage: StringFilter
   customerCompany: StringFilter
+  firstName: StringFilter
+  lastName: StringFilter
   customerTaxNumber: StringFilter
   customerTaxCenter: StringFilter
   payments: PaymentManyRelationFilter
@@ -1968,7 +1979,10 @@ input UserOrderByInput {
   phone: OrderDirection
   role: OrderDirection
   ssid: OrderDirection
+  preferredLanguage: OrderDirection
   customerCompany: OrderDirection
+  firstName: OrderDirection
+  lastName: OrderDirection
   customerTaxNumber: OrderDirection
   customerTaxCenter: OrderDirection
 }
@@ -1987,7 +2001,10 @@ input UserUpdateInput {
   documents: DocumentRelateToManyForUpdateInput
   customerDocuments: DocumentRelateToManyForUpdateInput
   customerMovements: StockMovementRelateToManyForUpdateInput
+  preferredLanguage: String
   customerCompany: String
+  firstName: String
+  lastName: String
   customerTaxNumber: String
   customerTaxCenter: String
   payments: PaymentRelateToManyForUpdateInput
@@ -2033,7 +2050,10 @@ input UserCreateInput {
   documents: DocumentRelateToManyForCreateInput
   customerDocuments: DocumentRelateToManyForCreateInput
   customerMovements: StockMovementRelateToManyForCreateInput
+  preferredLanguage: String
   customerCompany: String
+  firstName: String
+  lastName: String
   customerTaxNumber: String
   customerTaxCenter: String
   payments: PaymentRelateToManyForCreateInput

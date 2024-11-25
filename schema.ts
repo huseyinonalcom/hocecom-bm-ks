@@ -64,13 +64,12 @@ export const lists: Lists = {
         create: isUser,
         query: isUser,
         update: isEmployee,
-        delete: denyAll,
+        delete: isSuperAdmin,
       },
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context }) => {
         try {
-          console.log(context.session);
           if (operation === "create") {
             if (!inputData.company) {
               throw new Error("Company is required");
@@ -942,6 +941,7 @@ export const lists: Lists = {
         }),
       }),
       isDeleted: checkbox({ defaultValue: false }),
+      isVerified: checkbox({ defaultValue: false }),
       creator: relationship({
         ref: "User.payments",
         many: false,
@@ -1102,12 +1102,14 @@ export const lists: Lists = {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
           if (operation === "create") {
+            if (!inputData.company) {
+              throw new Error("Company is required");
+            }
             let mail = inputData.email!;
 
             let mailPart1 = mail.split("@")[0];
             let mailPart2 = mail.split("@")[1];
-
-            console.log(context.session);
+            resolvedData.email = mailPart1 + "+" + resolvedData.company?.connect?.id + "@" + mailPart2;
           }
         } catch (error) {
           console.error(error);
@@ -1171,7 +1173,10 @@ export const lists: Lists = {
         ref: "StockMovement.customer",
         many: true,
       }),
+      preferredLanguage: text(),
       customerCompany: text(),
+      firstName: text(),
+      lastName: text(),
       customerTaxNumber: text(),
       customerTaxCenter: text(),
       payments: relationship({ ref: "Payment.creator", many: true }),
