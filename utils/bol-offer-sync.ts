@@ -1,14 +1,15 @@
+import { eutaxes } from "./eutaxes";
 import { generateInvoiceOut } from "./invoiceoutpdf";
+import { generateRandomString } from "./random";
 import { sendMail } from "./sendmail";
 
 const bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 
 const bolApiUrl = "https://api.bol.com/retailer";
 
-let bolTokens = [];
-let companiesToSync = [];
+let bolTokens: { clientId: string; token: string; expiration: Date }[] = [];
 
-function bolHeaders(headersType, clientId) {
+function bolHeaders(headersType: string, clientId: string) {
   const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
   if (!tokenEntry) {
     return;
@@ -22,7 +23,7 @@ function bolHeaders(headersType, clientId) {
   };
 }
 
-async function authenticateBolCom(clientId, clientSecret) {
+async function authenticateBolCom(clientId: string, clientSecret: string) {
   const existingTokenEntry = bolTokens.find((t) => t.clientId === clientId);
 
   if (existingTokenEntry && new Date() < existingTokenEntry.expiration) {
@@ -66,11 +67,10 @@ async function authenticateBolCom(clientId, clientSecret) {
 }
 
 export const createDocumentsFromBolOrders = async (context) => {
-  companiesToSync = [];
   await context
     .sudo()
     .query.Company.findMany({
-      query: "id bolClientID bolClientSecret",
+      query: "id bolClientID bolClientSecret owner { id } establishments { id }",
       where: {
         isActive: {
           equals: true,
@@ -104,10 +104,10 @@ export const createDocumentsFromBolOrders = async (context) => {
   console.log("Finished Cron Job for Bol Orders");
 };
 
-async function getBolComOrders(bolClientID, bolClientSecret) {
+async function getBolComOrders(bolClientID: string, bolClientSecret: string) {
   await authenticateBolCom(bolClientID, bolClientSecret);
 
-  const dateString = (date) => date.toISOString().split("T")[0];
+  const dateString = (date: Date) => date.toISOString().split("T")[0];
 
   try {
     let orders = [];
@@ -136,7 +136,7 @@ async function getBolComOrders(bolClientID, bolClientSecret) {
   }
 }
 
-async function getBolComOrder(orderId, bolClientID, bolClientSecret) {
+async function getBolComOrder(orderId: string, bolClientID: string, bolClientSecret: string) {
   await authenticateBolCom(bolClientID, bolClientSecret);
 
   try {
@@ -160,18 +160,6 @@ async function getBolComOrder(orderId, bolClientID, bolClientSecret) {
 
 const saveDocument = async (bolDoc, company, context) => {
   try {
-    const creator = await payload.find({
-      overrideAccess: true,
-      collection: "users",
-      where: {
-        company: {
-          equals: company.id,
-        },
-        role: {
-          equals: "admin",
-        },
-      },
-    });
     const existingDoc = await payload.find({
       user: creator.docs[0],
       collection: "documents",
@@ -184,20 +172,11 @@ const saveDocument = async (bolDoc, company, context) => {
     if (existingDoc.docs.length > 0) {
       return;
     }
-    const establishment = await payload.find({
-      user: creator.docs[0],
-      collection: "establishments",
-      where: {
-        company: {
-          equals: company.id,
-        },
-      },
-    });
 
     let docAddress = null;
     let delAddress = null;
 
-    const transformEmail = (email) => {
+    const transformEmail = (email: string) => {
       let parts = email.split("@");
       let localPart = parts[0].split("+")[0];
       let domainPart = parts[1];
@@ -335,7 +314,7 @@ const saveDocument = async (bolDoc, company, context) => {
             company: company.id,
             product: products && products.docs.length > 0 ? (products.docs[0].id as number) : null,
             amount: bolDoc.orderItems[i].quantity,
-            tax: eutaxes.find((t) => t.code == docAddress.country).standard,
+            tax: eutaxes.find((t) => t.code == docAddress.country)?.standard ?? "21",
             name: products && products.docs.length > 0 ? products.docs[0].name : bolDoc.orderItems[i].product.title,
           },
         })
@@ -362,11 +341,11 @@ const saveDocument = async (bolDoc, company, context) => {
 
     const DPs = document.products;
 
-    const payment = await payload.create({
+    await payload.create({
       user: creator.docs[0],
       collection: "payments",
       data: {
-        value: DPs.reduce((acc, dp) => acc + dp.subTotal, 0),
+        value: DPs.reduce((acc: number, dp: { subTotal: number }) => acc + dp.subTotal, 0),
         type: "online",
         isVerified: true,
         document: document.id as number,
@@ -374,24 +353,6 @@ const saveDocument = async (bolDoc, company, context) => {
         creator: creator.docs[0].id as number,
         company: company.id,
         establishment: establishment.docs[0].id as number,
-      },
-    });
-
-    await payload.update({
-      user: creator.docs[0],
-      collection: "documents",
-      id: document.id,
-      data: {
-        payments: [payment.id as number],
-      },
-    });
-
-    await payload.update({
-      user: creator.docs[0],
-      collection: "users",
-      id: user.id,
-      data: {
-        documents: [...user.documents.map((doc) => doc.id), document.id],
       },
     });
 

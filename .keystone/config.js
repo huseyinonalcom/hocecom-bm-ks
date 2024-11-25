@@ -1508,6 +1508,226 @@ var lists = {
 // keystone.ts
 var import_config2 = require("dotenv/config");
 
+// utils/eutaxes.ts
+var eutaxes = [
+  {
+    code: "AT",
+    country: "Oostenrijk",
+    standard: 20,
+    low: 13,
+    low2: 10,
+    low3: null
+  },
+  {
+    code: "BE",
+    country: "Belgi\xEB",
+    standard: 21,
+    low: 12,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "BG",
+    country: "Bulgarije",
+    standard: 20,
+    low: 9,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "CY",
+    country: "Cyprus",
+    standard: 19,
+    low: 9,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "CZ",
+    country: "Tsjechi\xEB",
+    standard: 21,
+    low: 15,
+    low2: 12,
+    low3: null
+  },
+  {
+    code: "DE",
+    country: "Duitsland",
+    standard: 19,
+    low: 7,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "DK",
+    country: "Denemarken",
+    standard: 25,
+    low: 0,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "EE",
+    country: "Estland",
+    standard: 22,
+    low: 9,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "EL",
+    country: "Griekenland",
+    standard: 24,
+    low: 13,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "ES",
+    country: "Spanje",
+    standard: 21,
+    low: 10,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "FI",
+    country: "Finland",
+    standard: 24,
+    low: 14,
+    low2: 10,
+    low3: null
+  },
+  {
+    code: "FR",
+    country: "Frankrijk",
+    standard: 20,
+    low: 10,
+    low2: 5.5,
+    low3: 2.1
+  },
+  {
+    code: "HR",
+    country: "Kroati\xEB",
+    standard: 25,
+    low: 13,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "HU",
+    country: "Hongarije",
+    standard: 27,
+    low: 18,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "IE",
+    country: "Ierland",
+    standard: 23,
+    low: 13.5,
+    low2: 9,
+    low3: null
+  },
+  {
+    code: "IT",
+    country: "Itali\xEB",
+    standard: 22,
+    low: 10,
+    low2: 5,
+    low3: 4
+  },
+  {
+    code: "LT",
+    country: "Litouwen",
+    standard: 21,
+    low: 9,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "LU",
+    country: "Luxemburg",
+    standard: 17,
+    low: 14,
+    low2: 8,
+    low3: 3
+  },
+  {
+    code: "LV",
+    country: "Letland",
+    standard: 21,
+    low: 12,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "MT",
+    country: "Malta",
+    standard: 18,
+    low: 12,
+    low2: 7,
+    low3: 5
+  },
+  {
+    code: "NL",
+    country: "Nederland",
+    standard: 21,
+    low: 9,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "PL",
+    country: "Polen",
+    standard: 23,
+    low: 8,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "PT",
+    country: "Portugal",
+    standard: 23,
+    low: 13,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "RO",
+    country: "Roemeni\xEB",
+    standard: 19,
+    low: 9,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "SE",
+    country: "Zweden",
+    standard: 25,
+    low: 12,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "SI",
+    country: "Sloveni\xEB",
+    standard: 22,
+    low: 9.5,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "SK",
+    country: "Slowakije",
+    standard: 20,
+    low: 10,
+    low2: null,
+    low3: null
+  }
+];
+
 // utils/invoiceoutpdf.ts
 var import_buffer = require("buffer");
 
@@ -1736,6 +1956,17 @@ async function generateInvoiceOut({
       reject(`Error generating invoice: ${error.message}`);
     }
   });
+}
+
+// utils/random.ts
+function generateRandomString(length) {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
 }
 
 // utils/sendmail.ts
@@ -2075,7 +2306,6 @@ var mailPart2 = `</td>
 var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 var bolApiUrl = "https://api.bol.com/retailer";
 var bolTokens = [];
-var companiesToSync = [];
 function bolHeaders(headersType, clientId) {
   const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
   if (!tokenEntry) {
@@ -2124,20 +2354,19 @@ async function authenticateBolCom(clientId, clientSecret) {
   }
 }
 var createDocumentsFromBolOrders = async (context) => {
-  companiesToSync = [];
   await context.sudo().query.Company.findMany({
-    query: "id bolClientID bolClientSecret",
+    query: "id bolClientID bolClientSecret owner { id } establishments { id }",
     where: {
       isActive: {
         equals: true
       }
     }
   }).then(async (res) => {
-    let companiesToSync2 = res.filter(
+    let companiesToSync = res.filter(
       (company) => company.bolClientID && company.bolClientSecret
     );
-    console.log(companiesToSync2);
-    for (let i = 0; i < companiesToSync2.length; i++) {
+    console.log(companiesToSync);
+    for (let i = 0; i < companiesToSync.length; i++) {
       const currCompany = res[i];
       getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
         if (orders && orders.length > 0) {
@@ -2205,15 +2434,13 @@ async function getBolComOrder(orderId, bolClientID, bolClientSecret) {
 }
 var saveDocument = async (bolDoc, company, context) => {
   try {
-    const creator = await payload.find({
-      overrideAccess: true,
-      collection: "users",
+    const creator = await context.sudo().query.User.findMany({
       where: {
         company: {
           equals: company.id
         },
         role: {
-          equals: "admin"
+          equals: "owner"
         }
       }
     });
@@ -2363,7 +2590,7 @@ var saveDocument = async (bolDoc, company, context) => {
             company: company.id,
             product: products && products.docs.length > 0 ? products.docs[0].id : null,
             amount: bolDoc.orderItems[i].quantity,
-            tax: eutaxes.find((t) => t.code == docAddress.country).standard,
+            tax: eutaxes.find((t) => t.code == docAddress.country)?.standard ?? "21",
             name: products && products.docs.length > 0 ? products.docs[0].name : bolDoc.orderItems[i].product.title
           }
         })
@@ -2388,7 +2615,7 @@ var saveDocument = async (bolDoc, company, context) => {
       }
     });
     const DPs = document.products;
-    const payment = await payload.create({
+    await payload.create({
       user: creator.docs[0],
       collection: "payments",
       data: {
@@ -2400,22 +2627,6 @@ var saveDocument = async (bolDoc, company, context) => {
         creator: creator.docs[0].id,
         company: company.id,
         establishment: establishment.docs[0].id
-      }
-    });
-    await payload.update({
-      user: creator.docs[0],
-      collection: "documents",
-      id: document.id,
-      data: {
-        payments: [payment.id]
-      }
-    });
-    await payload.update({
-      user: creator.docs[0],
-      collection: "users",
-      id: user.id,
-      data: {
-        documents: [...user.documents.map((doc) => doc.id), document.id]
       }
     });
     try {
