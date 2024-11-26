@@ -268,46 +268,6 @@ export const lists: Lists = {
           update: denyAll,
         },
       }),
-      total: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const materials = await context.query.DocumentProduct.findMany({
-                where: { document: { id: { equals: item.id } } },
-                query: "totalWithTaxAfterReduction",
-              });
-              let total = 0;
-              materials.forEach((docProd) => {
-                total += docProd.totalWithTaxAfterReduction;
-              });
-              return total;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
-      totalWithTax: virtual({
-        field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
-            try {
-              const materials = await context.query.DocumentProduct.findMany({
-                where: { document: { id: { equals: item.id } } },
-                query: "total tax",
-              });
-              let total = 0;
-              materials.forEach((docProd) => {
-                total += docProd.total * (1 + docProd.tax / 100);
-              });
-              return total - (total * (item.reduction ?? 0)) / 100;
-            } catch (e) {
-              return 0;
-            }
-          },
-        }),
-      }),
       type: select({
         type: "string",
         options: ["quote", "sale", "dispatch", "invoice", "credit_note", "debit_note", "purchase"],
@@ -368,6 +328,32 @@ export const lists: Lists = {
       prefix: text(),
       phase: integer(),
       number: text({ validation: { isRequired: true } }),
+      total: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "price amount reduction tax",
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += calculateTotalWithTaxAfterReduction({
+                  price: docProd.price,
+                  amount: docProd.amount,
+                  reduction: docProd.reduction ?? 0,
+                  tax: docProd.tax,
+                  isTaxIncluded: item.taxIncluded,
+                });
+              });
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
       totalPaid: virtual({
         field: graphql.field({
           type: graphql.Float,
@@ -381,6 +367,44 @@ export const lists: Lists = {
               payments.forEach((payment) => {
                 total += payment.value;
               });
+              return total;
+            } catch (e) {
+              return 0;
+            }
+          },
+        }),
+      }),
+      totalToPay: virtual({
+        field: graphql.field({
+          type: graphql.Float,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "price amount reduction tax",
+              });
+              let totalValue = 0;
+              materials.forEach((docProd) => {
+                totalValue += calculateTotalWithTaxAfterReduction({
+                  price: docProd.price,
+                  amount: docProd.amount,
+                  reduction: docProd.reduction ?? 0,
+                  tax: docProd.tax,
+                  isTaxIncluded: item.taxIncluded,
+                });
+              });
+              const payments = await context.query.Payment.findMany({
+                where: { document: { some: { id: { equals: item.id } } }, isDeleted: { equals: false } },
+                query: "value",
+              });
+              let totalPaid = 0;
+              payments.forEach((payment) => {
+                totalPaid += payment.value;
+              });
+              let total = totalValue - totalPaid;
+              if (total < 0.02 && total > -0.02) {
+                total = 0;
+              }
               return total;
             } catch (e) {
               return 0;
@@ -461,6 +485,7 @@ export const lists: Lists = {
         many: false,
       }),
       name: text({ validation: { isRequired: true } }),
+      description: text(),
       tax: float({ validation: { isRequired: true, min: 0 } }),
       price: float({ validation: { isRequired: true, min: 0 } }),
       reduction: float({ defaultValue: 0 }),

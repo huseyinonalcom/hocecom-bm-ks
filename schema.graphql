@@ -575,8 +575,6 @@ type Document {
   date: DateTime
   deliveryDate: DateTime
   createdAt: DateTime
-  total: Float
-  totalWithTax: Float
   type: String
   currency: String
   creator: User
@@ -594,7 +592,9 @@ type Document {
   prefix: String
   phase: Int
   number: String
+  total: Float
   totalPaid: Float
+  totalToPay: Float
   comments: String
   references: String
   managerNotes: String
@@ -817,6 +817,7 @@ type DocumentProduct {
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   product: Material
   name: String
+  description: String
   tax: Float
   price: Float
   reduction: Float
@@ -844,6 +845,7 @@ input DocumentProductWhereInput {
   stockMovements: StockMovementManyRelationFilter
   product: MaterialWhereInput
   name: StringFilter
+  description: StringFilter
   tax: FloatFilter
   price: FloatFilter
   reduction: FloatNullableFilter
@@ -883,6 +885,7 @@ input DocumentProductOrderByInput {
   id: OrderDirection
   amount: OrderDirection
   name: OrderDirection
+  description: OrderDirection
   tax: OrderDirection
   price: OrderDirection
   reduction: OrderDirection
@@ -893,6 +896,7 @@ input DocumentProductUpdateInput {
   stockMovements: StockMovementRelateToManyForUpdateInput
   product: MaterialRelateToOneForUpdateInput
   name: String
+  description: String
   tax: Float
   price: Float
   reduction: Float
@@ -918,6 +922,7 @@ input DocumentProductCreateInput {
   stockMovements: StockMovementRelateToManyForCreateInput
   product: MaterialRelateToOneForCreateInput
   name: String
+  description: String
   tax: Float
   price: Float
   reduction: Float

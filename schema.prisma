@@ -175,6 +175,7 @@ model DocumentProduct {
   product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
   productId      String?         @map("product")
   name           String          @default("")
+  description    String          @default("")
   tax            Float
   price          Float
   reduction      Float?          @default(0)
