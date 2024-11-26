@@ -90,6 +90,53 @@ var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
 
+// utils/calculations/documentproducts.ts
+var calculateBaseTotal = ({
+  price,
+  amount,
+  isTaxIncluded,
+  tax = 0
+  // optional for when we need to calculate base from tax-included price
+}) => {
+  if (isTaxIncluded) {
+    return Number((price * amount / (1 + tax / 100)).toFixed(2));
+  }
+  return Number((price * amount).toFixed(2));
+};
+var calculateTotalWithoutTaxBeforeReduction = ({ price, amount, isTaxIncluded, tax = 0 }) => {
+  return calculateBaseTotal({ price, amount, isTaxIncluded, tax });
+};
+var calculateReductionAmount = ({ price, amount, isTaxIncluded, reduction, tax }) => {
+  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, isTaxIncluded, tax });
+  return Number((total * (reduction / 100)).toFixed(2));
+};
+var calculateTotalWithoutTaxAfterReduction = ({ price, amount, isTaxIncluded, reduction, tax }) => {
+  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, isTaxIncluded, tax });
+  const reductionAmount = calculateReductionAmount({ price, amount, isTaxIncluded, reduction, tax });
+  return Number((total - reductionAmount).toFixed(2));
+};
+var calculateTotalWithTaxBeforeReduction = ({ price, amount, isTaxIncluded, tax }) => {
+  if (isTaxIncluded) {
+    return Number((price * amount).toFixed(2));
+  }
+  const totalBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
+    price,
+    amount,
+    isTaxIncluded
+  });
+  return Number((totalBeforeReduction * (1 + tax / 100)).toFixed(2));
+};
+var calculateTotalWithTaxAfterReduction = ({ price, amount, isTaxIncluded, reduction, tax }) => {
+  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
+    price,
+    amount,
+    isTaxIncluded,
+    reduction,
+    tax
+  });
+  return Number((totalAfterReduction * (1 + tax / 100)).toFixed(2));
+};
+
 // functions.ts
 var isSuperAdmin = ({ session: session2 }) => {
   if (!session2) return false;
@@ -165,53 +212,6 @@ var isUser = ({ session: session2 }) => {
   if (!session2) return false;
   if (isWorker({ session: session2 }) || session2.data.role == "customer") return true;
   return !session2.data.isBlocked;
-};
-
-// utils/calculations/documentproducts.ts
-var calculateBaseTotal = ({
-  price,
-  amount,
-  isTaxIncluded,
-  tax = 0
-  // optional for when we need to calculate base from tax-included price
-}) => {
-  if (isTaxIncluded) {
-    return Number((price * amount / (1 + tax / 100)).toFixed(2));
-  }
-  return Number((price * amount).toFixed(2));
-};
-var calculateTotalWithoutTaxBeforeReduction = ({ price, amount, isTaxIncluded, tax = 0 }) => {
-  return calculateBaseTotal({ price, amount, isTaxIncluded, tax });
-};
-var calculateReductionAmount = ({ price, amount, isTaxIncluded, reduction, tax }) => {
-  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, isTaxIncluded, tax });
-  return Number((total * (reduction / 100)).toFixed(2));
-};
-var calculateTotalWithoutTaxAfterReduction = ({ price, amount, isTaxIncluded, reduction, tax }) => {
-  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, isTaxIncluded, tax });
-  const reductionAmount = calculateReductionAmount({ price, amount, isTaxIncluded, reduction, tax });
-  return Number((total - reductionAmount).toFixed(2));
-};
-var calculateTotalWithTaxBeforeReduction = ({ price, amount, isTaxIncluded, tax }) => {
-  if (isTaxIncluded) {
-    return Number((price * amount).toFixed(2));
-  }
-  const totalBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
-    price,
-    amount,
-    isTaxIncluded
-  });
-  return Number((totalBeforeReduction * (1 + tax / 100)).toFixed(2));
-};
-var calculateTotalWithTaxAfterReduction = ({ price, amount, isTaxIncluded, reduction, tax }) => {
-  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
-    price,
-    amount,
-    isTaxIncluded,
-    reduction,
-    tax
-  });
-  return Number((totalAfterReduction * (1 + tax / 100)).toFixed(2));
 };
 
 // schema.ts
@@ -833,8 +833,8 @@ var lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: import_access.denyAll,
-        delete: import_access.denyAll
+        update: isSuperAdmin,
+        delete: isSuperAdmin
       }
     },
     fields: {

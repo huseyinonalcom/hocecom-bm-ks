@@ -3,6 +3,12 @@ import { allowAll, denyAll } from "@keystone-6/core/access";
 import { graphql, list } from "@keystone-6/core";
 import type { Lists } from ".keystone/types";
 import {
+  calculateTotalWithoutTaxAfterReduction,
+  calculateTotalWithoutTaxBeforeReduction,
+  calculateTotalWithTaxAfterReduction,
+  calculateTotalWithTaxBeforeReduction,
+} from "./utils/calculations/documentproducts";
+import {
   isAdminAccountantManager,
   isWorker,
   isCompanyAdmin,
@@ -13,12 +19,6 @@ import {
   isSuperAdmin,
   isAdminAccountantIntern,
 } from "./functions";
-import {
-  calculateTotalWithoutTaxAfterReduction,
-  calculateTotalWithoutTaxBeforeReduction,
-  calculateTotalWithTaxAfterReduction,
-  calculateTotalWithTaxBeforeReduction,
-} from "./utils/calculations/documentproducts";
 
 const companyFilter = ({ session }: { session?: any }) => {
   if (isGlobalAdmin({ session })) {
@@ -654,8 +654,8 @@ export const lists: Lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: denyAll,
-        delete: denyAll,
+        update: isSuperAdmin,
+        delete: isSuperAdmin,
       },
     },
     fields: {
