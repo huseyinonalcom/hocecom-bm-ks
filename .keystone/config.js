@@ -1285,6 +1285,8 @@ var lists = {
       materials: (0, import_fields.relationship)({ ref: "Material.suppliers", many: true }),
       documents: (0, import_fields.relationship)({ ref: "Document.supplier", many: true }),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      address: (0, import_fields.relationship)({ ref: "Address", many: false }),
+      taxId: (0, import_fields.text)(),
       extraFields: (0, import_fields.json)()
     }
   }),

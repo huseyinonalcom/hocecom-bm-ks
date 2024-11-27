@@ -1836,6 +1836,8 @@ type Supplier {
   documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
   documentsCount(where: DocumentWhereInput! = {}): Int
   company: Company
+  address: Address
+  taxId: String
   extraFields: JSON
 }
 
@@ -1852,11 +1854,14 @@ input SupplierWhereInput {
   materials: MaterialManyRelationFilter
   documents: DocumentManyRelationFilter
   company: CompanyWhereInput
+  address: AddressWhereInput
+  taxId: StringFilter
 }
 
 input SupplierOrderByInput {
   id: OrderDirection
   name: OrderDirection
+  taxId: OrderDirection
 }
 
 input SupplierUpdateInput {
@@ -1864,6 +1869,8 @@ input SupplierUpdateInput {
   materials: MaterialRelateToManyForUpdateInput
   documents: DocumentRelateToManyForUpdateInput
   company: CompanyRelateToOneForUpdateInput
+  address: AddressRelateToOneForUpdateInput
+  taxId: String
   extraFields: JSON
 }
 
@@ -1877,6 +1884,8 @@ input SupplierCreateInput {
   materials: MaterialRelateToManyForCreateInput
   documents: DocumentRelateToManyForCreateInput
   company: CompanyRelateToOneForCreateInput
+  address: AddressRelateToOneForCreateInput
+  taxId: String
   extraFields: JSON
 }
 

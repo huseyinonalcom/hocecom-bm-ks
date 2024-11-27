@@ -1106,6 +1106,8 @@ export const lists: Lists = {
       materials: relationship({ ref: "Material.suppliers", many: true }),
       documents: relationship({ ref: "Document.supplier", many: true }),
       company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
+      address: relationship({ ref: "Address", many: false }),
+      taxId: text(),
       extraFields: json(),
     },
   }),

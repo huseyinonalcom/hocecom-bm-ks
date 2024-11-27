@@ -41,6 +41,7 @@ model Address {
   from_Document_delAddress   Document[]      @relation("Document_delAddress")
   from_Document_docAddress   Document[]      @relation("Document_docAddress")
   from_Establishment_address Establishment[] @relation("Establishment_address")
+  from_Supplier_address      Supplier[]      @relation("Supplier_address")
 
   @@index([customerId])
   @@index([companyId])
@@ -383,9 +384,13 @@ model Supplier {
   documents   Document[] @relation("Document_supplier")
   company     Company?   @relation("Supplier_company", fields: [companyId], references: [id])
   companyId   String?    @map("company")
+  address     Address?   @relation("Supplier_address", fields: [addressId], references: [id])
+  addressId   String?    @map("address")
+  taxId       String     @default("")
   extraFields Json?
 
   @@index([companyId])
+  @@index([addressId])
 }
 
 model User {
