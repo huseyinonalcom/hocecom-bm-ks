@@ -2774,13 +2774,7 @@ var keystone_default = withAuth(
     server: {
       port: 3399,
       cors: {
-        origin: [
-          "http://localhost:8081",
-          "http://localhost:3000",
-          "http://localhost:5173",
-          "https://serce.mdi-muhasebe.com",
-          "https://serceapi.mdi-muhasebe.com"
-        ],
+        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173", "https://dfatest.huseyinonal.com", "https://huseyinonal.com"],
         credentials: true
       },
       extendExpressApp: (app, context) => {
