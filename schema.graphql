@@ -580,6 +580,8 @@ type Document {
   creator: User
   supplier: Supplier
   customer: User
+  files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
+  filesCount(where: FileWhereInput! = {}): Int
   isDeleted: Boolean
   fromDocument: Document
   delAddress: Address
@@ -625,6 +627,7 @@ input DocumentWhereInput {
   creator: UserWhereInput
   supplier: SupplierWhereInput
   customer: UserWhereInput
+  files: FileManyRelationFilter
   isDeleted: BooleanFilter
   fromDocument: DocumentWhereInput
   delAddress: AddressWhereInput
@@ -652,6 +655,12 @@ input DateTimeNullableFilter {
   gt: DateTime
   gte: DateTime
   not: DateTimeNullableFilter
+}
+
+input FileManyRelationFilter {
+  every: FileWhereInput
+  some: FileWhereInput
+  none: FileWhereInput
 }
 
 input DocumentProductManyRelationFilter {
@@ -692,6 +701,7 @@ input DocumentUpdateInput {
   creator: UserRelateToOneForUpdateInput
   supplier: SupplierRelateToOneForUpdateInput
   customer: UserRelateToOneForUpdateInput
+  files: FileRelateToManyForUpdateInput
   isDeleted: Boolean
   fromDocument: DocumentRelateToOneForUpdateInput
   delAddress: AddressRelateToOneForUpdateInput
@@ -715,6 +725,13 @@ input SupplierRelateToOneForUpdateInput {
   create: SupplierCreateInput
   connect: SupplierWhereUniqueInput
   disconnect: Boolean
+}
+
+input FileRelateToManyForUpdateInput {
+  disconnect: [FileWhereUniqueInput!]
+  set: [FileWhereUniqueInput!]
+  create: [FileCreateInput!]
+  connect: [FileWhereUniqueInput!]
 }
 
 input DocumentRelateToOneForUpdateInput {
@@ -763,6 +780,7 @@ input DocumentCreateInput {
   creator: UserRelateToOneForCreateInput
   supplier: SupplierRelateToOneForCreateInput
   customer: UserRelateToOneForCreateInput
+  files: FileRelateToManyForCreateInput
   isDeleted: Boolean
   fromDocument: DocumentRelateToOneForCreateInput
   delAddress: AddressRelateToOneForCreateInput
@@ -785,6 +803,11 @@ input DocumentCreateInput {
 input SupplierRelateToOneForCreateInput {
   create: SupplierCreateInput
   connect: SupplierWhereUniqueInput
+}
+
+input FileRelateToManyForCreateInput {
+  create: [FileCreateInput!]
+  connect: [FileWhereUniqueInput!]
 }
 
 input DocumentRelateToOneForCreateInput {
@@ -1172,12 +1195,6 @@ input AssemblyComponentManyRelationFilter {
   none: AssemblyComponentWhereInput
 }
 
-input FileManyRelationFilter {
-  every: FileWhereInput
-  some: FileWhereInput
-  none: FileWhereInput
-}
-
 input WorkOrderManyRelationFilter {
   every: WorkOrderWhereInput
   some: WorkOrderWhereInput
@@ -1239,13 +1256,6 @@ input AssemblyComponentRelateToManyForUpdateInput {
   connect: [AssemblyComponentWhereUniqueInput!]
 }
 
-input FileRelateToManyForUpdateInput {
-  disconnect: [FileWhereUniqueInput!]
-  set: [FileWhereUniqueInput!]
-  create: [FileCreateInput!]
-  connect: [FileWhereUniqueInput!]
-}
-
 input WorkOrderRelateToManyForUpdateInput {
   disconnect: [WorkOrderWhereUniqueInput!]
   set: [WorkOrderWhereUniqueInput!]
@@ -1304,11 +1314,6 @@ input MaterialCreateInput {
 input AssemblyComponentRelateToManyForCreateInput {
   create: [AssemblyComponentCreateInput!]
   connect: [AssemblyComponentWhereUniqueInput!]
-}
-
-input FileRelateToManyForCreateInput {
-  create: [FileCreateInput!]
-  connect: [FileWhereUniqueInput!]
 }
 
 input WorkOrderRelateToManyForCreateInput {

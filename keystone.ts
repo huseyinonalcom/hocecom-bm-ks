@@ -37,9 +37,6 @@ export default withAuth(
 
         app.post("/rest/upload", upload.single("file"), async (req, res) => {
           try {
-            if (!context.session) {
-              return res.status(401).json({ message: "Unauthorized" });
-            }
             // @ts-ignore
             if (!req.file) {
               return res.status(400).json({ message: "No valid file provided" });
@@ -48,7 +45,7 @@ export default withAuth(
             // @ts-ignore
             const result = await fileUpload(req.file);
 
-            await context.query.File.createOne({
+            const file = await context.sudo().query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
@@ -57,7 +54,7 @@ export default withAuth(
             });
             res.status(200).json({
               fileUpload: {
-                id: "somtin",
+                id: file.id,
               },
             });
           } catch (error) {
@@ -138,7 +135,6 @@ export default withAuth(
                 },
               },
             });
-
 
             let currentYear = new Date().getFullYear();
             // for (let company of companiesWithMonthlyReportsActive) {

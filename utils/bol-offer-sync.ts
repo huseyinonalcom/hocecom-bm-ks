@@ -400,7 +400,7 @@ const saveDocument = async (bolDoc, company, context) => {
       });
       await context.sudo().query.DocumentProduct.createOne({
         data: {
-          price: bolDoc.orderItems[i].unitPrice,
+          price: bolDoc.orderItems[i].unitPrice.toFixed(4),
           company: {
             connect: {
               id: company.id,
@@ -419,8 +419,8 @@ const saveDocument = async (bolDoc, company, context) => {
                   },
                 }
               : null,
-          amount: bolDoc.orderItems[i].quantity,
-          tax: eutaxes.find((t) => t.code == docAddress.country)?.standard ?? 21,
+          amount: bolDoc.orderItems[i].quantity.toFixed(4),
+          tax: eutaxes.find((t) => t.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
           name: products && products.length > 0 ? products[0].name : bolDoc.orderItems[i].product.title,
         },
       });
@@ -428,7 +428,7 @@ const saveDocument = async (bolDoc, company, context) => {
 
     await context.sudo().query.Payment.createOne({
       data: {
-        value: bolDoc.orderItems.reduce((acc: number, dp) => acc + dp.unitPrice, 0),
+        value: bolDoc.orderItems.reduce((acc: number, dp) => acc + dp.unitPrice, 0).toFixed(4),
         type: "online",
         isVerified: true,
         document: {

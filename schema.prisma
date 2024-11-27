@@ -137,6 +137,7 @@ model Document {
   supplierId      String?           @map("supplier")
   customer        User?             @relation("Document_customer", fields: [customerId], references: [id])
   customerId      String?           @map("customer")
+  files           File[]            @relation("Document_files")
   isDeleted       Boolean           @default(false)
   fromDocument    Document?         @relation("Document_fromDocument", fields: [fromDocumentId], references: [id])
   fromDocumentId  String?           @unique @map("fromDocument")
@@ -226,6 +227,7 @@ model File {
   extraFields                   Json?
   from_Accountancy_logo         Accountancy[]        @relation("Accountancy_logo")
   from_Company_logo             Company[]            @relation("Company_logo")
+  from_Document_files           Document[]           @relation("Document_files")
   from_Establishment_logo       Establishment[]      @relation("Establishment_logo")
   from_Material_files           Material[]           @relation("Material_files")
   from_Operation_files          Operation[]          @relation("Operation_files")

@@ -495,6 +495,10 @@ var lists = {
           update: import_access.denyAll
         }
       }),
+      files: (0, import_fields.relationship)({
+        ref: "File",
+        many: true
+      }),
       isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
       fromDocument: (0, import_fields.relationship)({
         ref: "Document.toDocument",
@@ -2698,7 +2702,7 @@ var saveDocument = async (bolDoc, company, context) => {
       });
       await context.sudo().query.DocumentProduct.createOne({
         data: {
-          price: bolDoc.orderItems[i].unitPrice,
+          price: bolDoc.orderItems[i].unitPrice.toFixed(4),
           company: {
             connect: {
               id: company.id
@@ -2714,15 +2718,15 @@ var saveDocument = async (bolDoc, company, context) => {
               id: products[0].id
             }
           } : null,
-          amount: bolDoc.orderItems[i].quantity,
-          tax: eutaxes.find((t) => t.code == docAddress.country)?.standard ?? 21,
+          amount: bolDoc.orderItems[i].quantity.toFixed(4),
+          tax: eutaxes.find((t) => t.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
           name: products && products.length > 0 ? products[0].name : bolDoc.orderItems[i].product.title
         }
       });
     }
     await context.sudo().query.Payment.createOne({
       data: {
-        value: bolDoc.orderItems.reduce((acc, dp) => acc + dp.unitPrice, 0),
+        value: bolDoc.orderItems.reduce((acc, dp) => acc + dp.unitPrice, 0).toFixed(4),
         type: "online",
         isVerified: true,
         document: {
@@ -2790,14 +2794,11 @@ var keystone_default = withAuth(
         });
         app.post("/rest/upload", upload.single("file"), async (req, res) => {
           try {
-            if (!context.session) {
-              return res.status(401).json({ message: "Unauthorized" });
-            }
             if (!req.file) {
               return res.status(400).json({ message: "No valid file provided" });
             }
             const result = await fileUpload(req.file);
-            await context.query.File.createOne({
+            const file = await context.sudo().query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
@@ -2806,7 +2807,7 @@ var keystone_default = withAuth(
             });
             res.status(200).json({
               fileUpload: {
-                id: "somtin"
+                id: file.id
               }
             });
           } catch (error) {

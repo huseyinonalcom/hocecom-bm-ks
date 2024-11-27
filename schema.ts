@@ -301,6 +301,10 @@ export const lists: Lists = {
           update: denyAll,
         },
       }),
+      files: relationship({
+        ref: "File",
+        many: true,
+      }),
       isDeleted: checkbox({ defaultValue: false }),
       fromDocument: relationship({
         ref: "Document.toDocument",
