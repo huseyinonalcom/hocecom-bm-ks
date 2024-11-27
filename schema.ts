@@ -345,7 +345,7 @@ export const lists: Lists = {
                   amount: docProd.amount,
                   reduction: docProd.reduction ?? 0,
                   tax: docProd.tax,
-                  isTaxIncluded: item.taxIncluded,
+                  taxIncluded: item.taxIncluded,
                 });
               });
               return new Decimal(total);
@@ -391,7 +391,7 @@ export const lists: Lists = {
                   amount: docProd.amount,
                   reduction: docProd.reduction ?? 0,
                   tax: docProd.tax,
-                  isTaxIncluded: item.taxIncluded,
+                  taxIncluded: item.taxIncluded,
                 });
               });
               const payments = await context.query.Payment.findMany({
@@ -495,16 +495,16 @@ export const lists: Lists = {
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
             try {
-              let isTaxIncluded = true;
+              let taxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "isTaxIncluded",
-              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+                query: "taxIncluded",
+              }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxBeforeReduction({
                   price: item.price,
                   amount: item.amount,
-                  isTaxIncluded,
+                  taxIncluded,
                 })
               );
             } catch (e) {
@@ -518,17 +518,17 @@ export const lists: Lists = {
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
             try {
-              let isTaxIncluded = true;
+              let taxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "isTaxIncluded",
-              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+                query: "taxIncluded",
+              }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxAfterReduction({
                   price: item.price,
                   amount: item.amount,
                   reduction: item.reduction ?? 0,
-                  isTaxIncluded,
+                  taxIncluded,
                   tax: item.tax,
                 })
               );
@@ -543,17 +543,17 @@ export const lists: Lists = {
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
             try {
-              let isTaxIncluded = true;
+              let taxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "isTaxIncluded",
-              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+                query: "taxIncluded",
+              }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithTaxBeforeReduction({
                   price: item.price,
                   amount: item.amount,
                   tax: item.tax,
-                  isTaxIncluded,
+                  taxIncluded,
                 })
               );
             } catch (e) {
@@ -567,18 +567,18 @@ export const lists: Lists = {
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
             try {
-              let isTaxIncluded = true;
+              let taxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "isTaxIncluded",
-              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+                query: "taxIncluded",
+              }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithTaxAfterReduction({
                   price: item.price,
                   amount: item.amount,
                   reduction: item.reduction ?? 0,
                   tax: item.tax,
-                  isTaxIncluded,
+                  taxIncluded,
                 })
               );
             } catch (e) {
@@ -592,18 +592,18 @@ export const lists: Lists = {
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
             try {
-              let isTaxIncluded = true;
+              let taxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "isTaxIncluded",
-              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+                query: "taxIncluded",
+              }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxAfterReduction({
                   price: item.price,
                   amount: item.amount,
                   reduction: item.reduction ?? 0,
                   tax: item.tax,
-                  isTaxIncluded,
+                  taxIncluded,
                 })
               );
             } catch (e) {
@@ -617,17 +617,17 @@ export const lists: Lists = {
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
             try {
-              let isTaxIncluded = true;
+              let taxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
-                query: "isTaxIncluded",
-              }).then((res) => (isTaxIncluded = res.isTaxIncluded));
+                query: "taxIncluded",
+              }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxBeforeReduction({
                   price: item.price,
                   amount: item.amount,
                   tax: item.tax,
-                  isTaxIncluded,
+                  taxIncluded,
                 })
               );
             } catch (e) {
