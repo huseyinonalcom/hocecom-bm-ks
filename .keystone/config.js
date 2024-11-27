@@ -50,7 +50,7 @@ var fileUpload = async (file) => {
     await s3Client.send(command);
     return {
       success: true,
-      fileUrl: `${process.env.STORAGE_PUBLIC_URL}${params.Key}`,
+      fileUrl: `${process.env.STORAGE_PUBLIC_URL}/${params.Key}`,
       fileName: newFileName
     };
   } catch (error) {

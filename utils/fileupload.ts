@@ -27,7 +27,7 @@ export const fileUpload = async (file: { originalname: any; buffer: any; mimetyp
 
     return {
       success: true,
-      fileUrl: `${process.env.STORAGE_PUBLIC_URL}${params.Key}`,
+      fileUrl: `${process.env.STORAGE_PUBLIC_URL}/${params.Key}`,
       fileName: newFileName,
     };
   } catch (error) {
