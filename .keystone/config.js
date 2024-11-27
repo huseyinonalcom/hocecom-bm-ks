@@ -215,6 +215,7 @@ var isUser = ({ session: session2 }) => {
 };
 
 // schema.ts
+var import_types = require("@keystone-6/core/types");
 var companyFilter = ({ session: session2 }) => {
   if (isGlobalAdmin({ session: session2 })) {
     return {};
@@ -524,7 +525,7 @@ var lists = {
       number: (0, import_fields.text)({ validation: { isRequired: true } }),
       total: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               const materials = await context.query.DocumentProduct.findMany({
@@ -541,16 +542,16 @@ var lists = {
                   isTaxIncluded: item.taxIncluded
                 });
               });
-              return total;
+              return new import_types.Decimal(total);
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
       totalPaid: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               const payments = await context.query.Payment.findMany({
@@ -561,16 +562,16 @@ var lists = {
               payments.forEach((payment) => {
                 total += payment.value;
               });
-              return total;
+              return new import_types.Decimal(total);
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
       totalToPay: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               const materials = await context.query.DocumentProduct.findMany({
@@ -599,9 +600,9 @@ var lists = {
               if (total < 0.02 && total > -0.02) {
                 total = 0;
               }
-              return total;
+              return new import_types.Decimal(total);
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
@@ -654,7 +655,7 @@ var lists = {
       }
     },
     fields: {
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 1 } }),
+      amount: (0, import_fields.decimal)({ validation: { isRequired: true, min: "1" } }),
       stockMovements: (0, import_fields.relationship)({
         ref: "StockMovement.documentProduct",
         many: true
@@ -665,12 +666,12 @@ var lists = {
       }),
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       description: (0, import_fields.text)(),
-      tax: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
-      reduction: (0, import_fields.float)({ defaultValue: 0 }),
+      tax: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
+      price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
+      reduction: (0, import_fields.decimal)({ defaultValue: "0" }),
       totalWithoutTaxBeforeReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               let isTaxIncluded = true;
@@ -678,20 +679,22 @@ var lists = {
                 where: { id: item.documentId },
                 query: "isTaxIncluded"
               }).then((res) => isTaxIncluded = res.isTaxIncluded);
-              return calculateTotalWithoutTaxBeforeReduction({
-                price: item.price,
-                amount: item.amount,
-                isTaxIncluded
-              });
+              return new import_types.Decimal(
+                calculateTotalWithoutTaxBeforeReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  isTaxIncluded
+                })
+              );
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
       totalWithoutTaxAfterReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               let isTaxIncluded = true;
@@ -699,22 +702,24 @@ var lists = {
                 where: { id: item.documentId },
                 query: "isTaxIncluded"
               }).then((res) => isTaxIncluded = res.isTaxIncluded);
-              return calculateTotalWithoutTaxAfterReduction({
-                price: item.price,
-                amount: item.amount,
-                reduction: item.reduction ?? 0,
-                isTaxIncluded,
-                tax: item.tax
-              });
+              return new import_types.Decimal(
+                calculateTotalWithoutTaxAfterReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  reduction: item.reduction ?? 0,
+                  isTaxIncluded,
+                  tax: item.tax
+                })
+              );
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
       totalWithTaxBeforeReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               let isTaxIncluded = true;
@@ -722,21 +727,23 @@ var lists = {
                 where: { id: item.documentId },
                 query: "isTaxIncluded"
               }).then((res) => isTaxIncluded = res.isTaxIncluded);
-              return calculateTotalWithTaxBeforeReduction({
-                price: item.price,
-                amount: item.amount,
-                tax: item.tax,
-                isTaxIncluded
-              });
+              return new import_types.Decimal(
+                calculateTotalWithTaxBeforeReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  tax: item.tax,
+                  isTaxIncluded
+                })
+              );
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
       totalWithTaxAfterReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               let isTaxIncluded = true;
@@ -744,22 +751,24 @@ var lists = {
                 where: { id: item.documentId },
                 query: "isTaxIncluded"
               }).then((res) => isTaxIncluded = res.isTaxIncluded);
-              return calculateTotalWithTaxAfterReduction({
-                price: item.price,
-                amount: item.amount,
-                reduction: item.reduction ?? 0,
-                tax: item.tax,
-                isTaxIncluded
-              });
+              return new import_types.Decimal(
+                calculateTotalWithTaxAfterReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  reduction: item.reduction ?? 0,
+                  tax: item.tax,
+                  isTaxIncluded
+                })
+              );
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
       totalTax: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               let isTaxIncluded = true;
@@ -767,22 +776,24 @@ var lists = {
                 where: { id: item.documentId },
                 query: "isTaxIncluded"
               }).then((res) => isTaxIncluded = res.isTaxIncluded);
-              return calculateTotalWithoutTaxAfterReduction({
-                price: item.price,
-                amount: item.amount,
-                reduction: item.reduction ?? 0,
-                tax: item.tax,
-                isTaxIncluded
-              });
+              return new import_types.Decimal(
+                calculateTotalWithoutTaxAfterReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  reduction: item.reduction ?? 0,
+                  tax: item.tax,
+                  isTaxIncluded
+                })
+              );
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
       totalReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               let isTaxIncluded = true;
@@ -790,14 +801,16 @@ var lists = {
                 where: { id: item.documentId },
                 query: "isTaxIncluded"
               }).then((res) => isTaxIncluded = res.isTaxIncluded);
-              return calculateTotalWithoutTaxBeforeReduction({
-                price: item.price,
-                amount: item.amount,
-                tax: item.tax,
-                isTaxIncluded
-              });
+              return new import_types.Decimal(
+                calculateTotalWithoutTaxBeforeReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  tax: item.tax,
+                  isTaxIncluded
+                })
+              );
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
@@ -894,7 +907,7 @@ var lists = {
         many: true
       }),
       description: (0, import_fields.text)(),
-      price: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       currentStock: (0, import_fields.virtual)({
         field: import_core.graphql.field({
           type: import_core.graphql.Int,
@@ -937,7 +950,7 @@ var lists = {
       }),
       code: (0, import_fields.text)(),
       ean: (0, import_fields.text)(),
-      tax: (0, import_fields.float)({ defaultValue: 20, validation: { isRequired: true, min: 0 } }),
+      tax: (0, import_fields.decimal)({ defaultValue: "21", validation: { isRequired: true, min: "0" } }),
       brand: (0, import_fields.relationship)({
         ref: "Brand.materials",
         many: false
@@ -1074,8 +1087,8 @@ var lists = {
         many: true
       }),
       user: (0, import_fields.relationship)({ ref: "User.operations", many: false }),
-      cost: (0, import_fields.float)(),
-      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      cost: (0, import_fields.decimal)(),
+      value: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       duration: (0, import_fields.integer)(),
       description: (0, import_fields.text)(),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
@@ -1100,7 +1113,7 @@ var lists = {
       }
     },
     fields: {
-      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      value: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       document: (0, import_fields.relationship)({
         ref: "Document.payments",
         many: true
@@ -1214,7 +1227,7 @@ var lists = {
         ref: "Establishment.stockMovements",
         many: false
       }),
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      amount: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       movementType: (0, import_fields.select)({
         type: "string",
         options: ["in", "out"],
@@ -1481,10 +1494,10 @@ var lists = {
       finishedAt: (0, import_fields.timestamp)(),
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       description: (0, import_fields.text)(),
-      value: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      value: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       price: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               const workOrder = await context.query.WorkOrder.findOne({
@@ -1493,18 +1506,18 @@ var lists = {
               });
               let total = item.value;
               total -= total * (workOrder.reduction ?? 0) / 100;
-              return total;
+              return new import_types.Decimal(total);
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
-      reduction: (0, import_fields.float)({ defaultValue: 0 }),
-      amount: (0, import_fields.float)({ validation: { isRequired: true, min: 0 } }),
+      reduction: (0, import_fields.decimal)({ defaultValue: "0" }),
+      amount: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       total: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Float,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               const workOrder = await context.query.WorkOrder.findOne({
@@ -1513,16 +1526,16 @@ var lists = {
               });
               let total = item.value * item.amount - item.value * item.amount * (item.reduction ?? 0) / 100;
               total -= total * (workOrder.reduction ?? 0) / 100;
-              return total;
+              return new import_types.Decimal(total);
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
       }),
-      wastage: (0, import_fields.float)({
-        validation: { min: 0 },
-        defaultValue: 0
+      wastage: (0, import_fields.decimal)({
+        validation: { min: "0" },
+        defaultValue: "0"
       }),
       workOrder: (0, import_fields.relationship)({
         ref: "WorkOrder.operations",

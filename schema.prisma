@@ -171,15 +171,15 @@ model Document {
 
 model DocumentProduct {
   id             String          @id @default(cuid())
-  amount         Float
+  amount         Decimal         @postgresql.Decimal(18, 4)
   stockMovements StockMovement[] @relation("StockMovement_documentProduct")
   product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
   productId      String?         @map("product")
   name           String          @default("")
   description    String          @default("")
-  tax            Float
-  price          Float
-  reduction      Float?          @default(0)
+  tax            Decimal         @postgresql.Decimal(18, 4)
+  price          Decimal         @postgresql.Decimal(18, 4)
+  reduction      Decimal?        @default("0") @postgresql.Decimal(18, 4)
   document       Document?       @relation("DocumentProduct_document", fields: [documentId], references: [id])
   documentId     String?         @map("document")
   company        Company?        @relation("DocumentProduct_company", fields: [companyId], references: [id])
@@ -240,13 +240,13 @@ model Material {
   components         AssemblyComponent[] @relation("AssemblyComponent_assembly")
   assemblyComponents AssemblyComponent[] @relation("AssemblyComponent_material")
   description        String              @default("")
-  price              Float
+  price              Decimal             @postgresql.Decimal(18, 4)
   status             String              @default("active")
   files              File[]              @relation("Material_files")
   workOrders         WorkOrder[]         @relation("Material_workOrders")
   code               String              @default("")
   ean                String              @default("")
-  tax                Float               @default(20)
+  tax                Decimal             @default("21") @postgresql.Decimal(18, 4)
   brand              Brand?              @relation("Material_brand", fields: [brandId], references: [id])
   brandId            String?             @map("brand")
   suppliers          Supplier[]          @relation("Material_suppliers")
@@ -298,8 +298,8 @@ model Operation {
   workOrderOperations WorkOrderOperation[] @relation("WorkOrderOperation_operation")
   user                User?                @relation("Operation_user", fields: [userId], references: [id])
   userId              String?              @map("user")
-  cost                Float?
-  value               Float
+  cost                Decimal?             @postgresql.Decimal(18, 4)
+  value               Decimal              @postgresql.Decimal(18, 4)
   duration            Int?
   description         String               @default("")
   company             Company?             @relation("Operation_company", fields: [companyId], references: [id])
@@ -313,7 +313,7 @@ model Operation {
 
 model Payment {
   id          String     @id @default(cuid())
-  value       Float
+  value       Decimal    @postgresql.Decimal(18, 4)
   document    Document[] @relation("Document_payments")
   isDeleted   Boolean    @default(false)
   isVerified  Boolean    @default(false)
@@ -347,7 +347,7 @@ model StockMovement {
   materialId        String?          @map("material")
   establishment     Establishment?   @relation("StockMovement_establishment", fields: [establishmentId], references: [id])
   establishmentId   String?          @map("establishment")
-  amount            Float
+  amount            Decimal          @postgresql.Decimal(18, 4)
   movementType      String           @default("in")
   documentProduct   DocumentProduct? @relation("StockMovement_documentProduct", fields: [documentProductId], references: [id])
   documentProductId String?          @map("documentProduct")
@@ -457,10 +457,10 @@ model WorkOrderOperation {
   finishedAt  DateTime?
   name        String     @default("")
   description String     @default("")
-  value       Float
-  reduction   Float?     @default(0)
-  amount      Float
-  wastage     Float?     @default(0)
+  value       Decimal    @postgresql.Decimal(18, 4)
+  reduction   Decimal?   @default("0") @postgresql.Decimal(18, 4)
+  amount      Decimal    @postgresql.Decimal(18, 4)
+  wastage     Decimal?   @default("0") @postgresql.Decimal(18, 4)
   workOrder   WorkOrder? @relation("WorkOrderOperation_workOrder", fields: [workOrderId], references: [id])
   workOrderId String?    @map("workOrder")
   operation   Operation? @relation("WorkOrderOperation_operation", fields: [operationId], references: [id])

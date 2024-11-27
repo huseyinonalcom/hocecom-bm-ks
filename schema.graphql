@@ -592,9 +592,9 @@ type Document {
   prefix: String
   phase: Int
   number: String
-  total: Float
-  totalPaid: Float
-  totalToPay: Float
+  total: Decimal
+  totalPaid: Decimal
+  totalToPay: Decimal
   comments: String
   references: String
   managerNotes: String
@@ -605,6 +605,8 @@ type Document {
 }
 
 scalar DateTime @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc3339#section-5.6")
+
+scalar Decimal
 
 input DocumentWhereUniqueInput {
   id: ID
@@ -812,21 +814,21 @@ input EstablishmentRelateToOneForCreateInput {
 
 type DocumentProduct {
   id: ID!
-  amount: Float
+  amount: Decimal
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   product: Material
   name: String
   description: String
-  tax: Float
-  price: Float
-  reduction: Float
-  totalWithoutTaxBeforeReduction: Float
-  totalWithoutTaxAfterReduction: Float
-  totalWithTaxBeforeReduction: Float
-  totalWithTaxAfterReduction: Float
-  totalTax: Float
-  totalReduction: Float
+  tax: Decimal
+  price: Decimal
+  reduction: Decimal
+  totalWithoutTaxBeforeReduction: Decimal
+  totalWithoutTaxAfterReduction: Decimal
+  totalWithTaxBeforeReduction: Decimal
+  totalWithTaxAfterReduction: Decimal
+  totalTax: Decimal
+  totalReduction: Decimal
   document: Document
   company: Company
   extraFields: JSON
@@ -841,27 +843,27 @@ input DocumentProductWhereInput {
   OR: [DocumentProductWhereInput!]
   NOT: [DocumentProductWhereInput!]
   id: IDFilter
-  amount: FloatFilter
+  amount: DecimalFilter
   stockMovements: StockMovementManyRelationFilter
   product: MaterialWhereInput
   name: StringFilter
   description: StringFilter
-  tax: FloatFilter
-  price: FloatFilter
-  reduction: FloatNullableFilter
+  tax: DecimalFilter
+  price: DecimalFilter
+  reduction: DecimalNullableFilter
   document: DocumentWhereInput
   company: CompanyWhereInput
 }
 
-input FloatFilter {
-  equals: Float
-  in: [Float!]
-  notIn: [Float!]
-  lt: Float
-  lte: Float
-  gt: Float
-  gte: Float
-  not: FloatFilter
+input DecimalFilter {
+  equals: Decimal
+  in: [Decimal!]
+  notIn: [Decimal!]
+  lt: Decimal
+  lte: Decimal
+  gt: Decimal
+  gte: Decimal
+  not: DecimalFilter
 }
 
 input StockMovementManyRelationFilter {
@@ -870,15 +872,15 @@ input StockMovementManyRelationFilter {
   none: StockMovementWhereInput
 }
 
-input FloatNullableFilter {
-  equals: Float
-  in: [Float!]
-  notIn: [Float!]
-  lt: Float
-  lte: Float
-  gt: Float
-  gte: Float
-  not: FloatNullableFilter
+input DecimalNullableFilter {
+  equals: Decimal
+  in: [Decimal!]
+  notIn: [Decimal!]
+  lt: Decimal
+  lte: Decimal
+  gt: Decimal
+  gte: Decimal
+  not: DecimalNullableFilter
 }
 
 input DocumentProductOrderByInput {
@@ -892,14 +894,14 @@ input DocumentProductOrderByInput {
 }
 
 input DocumentProductUpdateInput {
-  amount: Float
+  amount: Decimal
   stockMovements: StockMovementRelateToManyForUpdateInput
   product: MaterialRelateToOneForUpdateInput
   name: String
   description: String
-  tax: Float
-  price: Float
-  reduction: Float
+  tax: Decimal
+  price: Decimal
+  reduction: Decimal
   document: DocumentRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
@@ -918,14 +920,14 @@ input DocumentProductUpdateArgs {
 }
 
 input DocumentProductCreateInput {
-  amount: Float
+  amount: Decimal
   stockMovements: StockMovementRelateToManyForCreateInput
   product: MaterialRelateToOneForCreateInput
   name: String
   description: String
-  tax: Float
-  price: Float
-  reduction: Float
+  tax: Decimal
+  price: Decimal
+  reduction: Decimal
   document: DocumentRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
@@ -1109,7 +1111,7 @@ type Material {
   assemblyComponents(where: AssemblyComponentWhereInput! = {}, orderBy: [AssemblyComponentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AssemblyComponentWhereUniqueInput): [AssemblyComponent!]
   assemblyComponentsCount(where: AssemblyComponentWhereInput! = {}): Int
   description: String
-  price: Float
+  price: Decimal
   currentStock: Int
   status: String
   files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
@@ -1118,7 +1120,7 @@ type Material {
   workOrdersCount(where: WorkOrderWhereInput! = {}): Int
   code: String
   ean: String
-  tax: Float
+  tax: Decimal
   brand: Brand
   suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
   suppliersCount(where: SupplierWhereInput! = {}): Int
@@ -1147,13 +1149,13 @@ input MaterialWhereInput {
   components: AssemblyComponentManyRelationFilter
   assemblyComponents: AssemblyComponentManyRelationFilter
   description: StringFilter
-  price: FloatFilter
+  price: DecimalFilter
   status: StringFilter
   files: FileManyRelationFilter
   workOrders: WorkOrderManyRelationFilter
   code: StringFilter
   ean: StringFilter
-  tax: FloatFilter
+  tax: DecimalFilter
   brand: BrandWhereInput
   suppliers: SupplierManyRelationFilter
   pricedBy: StringFilter
@@ -1212,13 +1214,13 @@ input MaterialUpdateInput {
   components: AssemblyComponentRelateToManyForUpdateInput
   assemblyComponents: AssemblyComponentRelateToManyForUpdateInput
   description: String
-  price: Float
+  price: Decimal
   status: String
   files: FileRelateToManyForUpdateInput
   workOrders: WorkOrderRelateToManyForUpdateInput
   code: String
   ean: String
-  tax: Float
+  tax: Decimal
   brand: BrandRelateToOneForUpdateInput
   suppliers: SupplierRelateToManyForUpdateInput
   pricedBy: String
@@ -1281,13 +1283,13 @@ input MaterialCreateInput {
   components: AssemblyComponentRelateToManyForCreateInput
   assemblyComponents: AssemblyComponentRelateToManyForCreateInput
   description: String
-  price: Float
+  price: Decimal
   status: String
   files: FileRelateToManyForCreateInput
   workOrders: WorkOrderRelateToManyForCreateInput
   code: String
   ean: String
-  tax: Float
+  tax: Decimal
   brand: BrandRelateToOneForCreateInput
   suppliers: SupplierRelateToManyForCreateInput
   pricedBy: String
@@ -1455,8 +1457,8 @@ type Operation {
   workOrderOperations(where: WorkOrderOperationWhereInput! = {}, orderBy: [WorkOrderOperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderOperationWhereUniqueInput): [WorkOrderOperation!]
   workOrderOperationsCount(where: WorkOrderOperationWhereInput! = {}): Int
   user: User
-  cost: Float
-  value: Float
+  cost: Decimal
+  value: Decimal
   duration: Int
   description: String
   company: Company
@@ -1477,8 +1479,8 @@ input OperationWhereInput {
   material: MaterialWhereInput
   workOrderOperations: WorkOrderOperationManyRelationFilter
   user: UserWhereInput
-  cost: FloatNullableFilter
-  value: FloatFilter
+  cost: DecimalNullableFilter
+  value: DecimalFilter
   duration: IntNullableFilter
   description: StringFilter
   company: CompanyWhereInput
@@ -1505,8 +1507,8 @@ input OperationUpdateInput {
   material: MaterialRelateToOneForUpdateInput
   workOrderOperations: WorkOrderOperationRelateToManyForUpdateInput
   user: UserRelateToOneForUpdateInput
-  cost: Float
-  value: Float
+  cost: Decimal
+  value: Decimal
   duration: Int
   description: String
   company: CompanyRelateToOneForUpdateInput
@@ -1531,8 +1533,8 @@ input OperationCreateInput {
   material: MaterialRelateToOneForCreateInput
   workOrderOperations: WorkOrderOperationRelateToManyForCreateInput
   user: UserRelateToOneForCreateInput
-  cost: Float
-  value: Float
+  cost: Decimal
+  value: Decimal
   duration: Int
   description: String
   company: CompanyRelateToOneForCreateInput
@@ -1546,7 +1548,7 @@ input WorkOrderOperationRelateToManyForCreateInput {
 
 type Payment {
   id: ID!
-  value: Float
+  value: Decimal
   document(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
   documentCount(where: DocumentWhereInput! = {}): Int
   out: Boolean
@@ -1569,7 +1571,7 @@ input PaymentWhereInput {
   OR: [PaymentWhereInput!]
   NOT: [PaymentWhereInput!]
   id: IDFilter
-  value: FloatFilter
+  value: DecimalFilter
   document: DocumentManyRelationFilter
   isDeleted: BooleanFilter
   isVerified: BooleanFilter
@@ -1591,7 +1593,7 @@ input PaymentOrderByInput {
 }
 
 input PaymentUpdateInput {
-  value: Float
+  value: Decimal
   document: DocumentRelateToManyForUpdateInput
   isDeleted: Boolean
   isVerified: Boolean
@@ -1609,7 +1611,7 @@ input PaymentUpdateArgs {
 }
 
 input PaymentCreateInput {
-  value: Float
+  value: Decimal
   document: DocumentRelateToManyForCreateInput
   isDeleted: Boolean
   isVerified: Boolean
@@ -1701,7 +1703,7 @@ type StockMovement {
   id: ID!
   material: Material
   establishment: Establishment
-  amount: Float
+  amount: Decimal
   movementType: String
   documentProduct: DocumentProduct
   note: String
@@ -1723,7 +1725,7 @@ input StockMovementWhereInput {
   id: IDFilter
   material: MaterialWhereInput
   establishment: EstablishmentWhereInput
-  amount: FloatFilter
+  amount: DecimalFilter
   movementType: StringFilter
   documentProduct: DocumentProductWhereInput
   note: StringFilter
@@ -1745,7 +1747,7 @@ input StockMovementOrderByInput {
 input StockMovementUpdateInput {
   material: MaterialRelateToOneForUpdateInput
   establishment: EstablishmentRelateToOneForUpdateInput
-  amount: Float
+  amount: Decimal
   movementType: String
   documentProduct: DocumentProductRelateToOneForUpdateInput
   note: String
@@ -1770,7 +1772,7 @@ input StockMovementUpdateArgs {
 input StockMovementCreateInput {
   material: MaterialRelateToOneForCreateInput
   establishment: EstablishmentRelateToOneForCreateInput
-  amount: Float
+  amount: Decimal
   movementType: String
   documentProduct: DocumentProductRelateToOneForCreateInput
   note: String
@@ -2169,12 +2171,12 @@ type WorkOrderOperation {
   finishedAt: DateTime
   name: String
   description: String
-  value: Float
-  price: Float
-  reduction: Float
-  amount: Float
-  total: Float
-  wastage: Float
+  value: Decimal
+  price: Decimal
+  reduction: Decimal
+  amount: Decimal
+  total: Decimal
+  wastage: Decimal
   workOrder: WorkOrder
   operation: Operation
   company: Company
@@ -2195,10 +2197,10 @@ input WorkOrderOperationWhereInput {
   finishedAt: DateTimeNullableFilter
   name: StringFilter
   description: StringFilter
-  value: FloatFilter
-  reduction: FloatNullableFilter
-  amount: FloatFilter
-  wastage: FloatNullableFilter
+  value: DecimalFilter
+  reduction: DecimalNullableFilter
+  amount: DecimalFilter
+  wastage: DecimalNullableFilter
   workOrder: WorkOrderWhereInput
   operation: OperationWhereInput
   company: CompanyWhereInput
@@ -2222,10 +2224,10 @@ input WorkOrderOperationUpdateInput {
   finishedAt: DateTime
   name: String
   description: String
-  value: Float
-  reduction: Float
-  amount: Float
-  wastage: Float
+  value: Decimal
+  reduction: Decimal
+  amount: Decimal
+  wastage: Decimal
   workOrder: WorkOrderRelateToOneForUpdateInput
   operation: OperationRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
@@ -2255,10 +2257,10 @@ input WorkOrderOperationCreateInput {
   finishedAt: DateTime
   name: String
   description: String
-  value: Float
-  reduction: Float
-  amount: Float
-  wastage: Float
+  value: Decimal
+  reduction: Decimal
+  amount: Decimal
+  wastage: Decimal
   workOrder: WorkOrderRelateToOneForCreateInput
   operation: OperationRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput

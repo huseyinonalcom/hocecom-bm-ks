@@ -1,4 +1,4 @@
-import { text, relationship, password, timestamp, select, float, multiselect, virtual, checkbox, integer, json } from "@keystone-6/core/fields";
+import { text, relationship, password, timestamp, select, multiselect, virtual, checkbox, integer, json, decimal } from "@keystone-6/core/fields";
 import { allowAll, denyAll } from "@keystone-6/core/access";
 import { graphql, list } from "@keystone-6/core";
 import type { Lists } from ".keystone/types";
@@ -19,6 +19,7 @@ import {
   isSuperAdmin,
   isAdminAccountantIntern,
 } from "./functions";
+import { Decimal } from "@keystone-6/core/types";
 
 const companyFilter = ({ session }: { session?: any }) => {
   if (isGlobalAdmin({ session })) {
@@ -330,8 +331,8 @@ export const lists: Lists = {
       number: text({ validation: { isRequired: true } }),
       total: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -347,17 +348,17 @@ export const lists: Lists = {
                   isTaxIncluded: item.taxIncluded,
                 });
               });
-              return total;
+              return new Decimal(total);
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
       totalPaid: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               const payments = await context.query.Payment.findMany({
                 where: { document: { some: { id: { equals: item.id } } }, isDeleted: { equals: false } },
@@ -367,17 +368,17 @@ export const lists: Lists = {
               payments.forEach((payment) => {
                 total += payment.value;
               });
-              return total;
+              return new Decimal(total);
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
       totalToPay: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -405,9 +406,9 @@ export const lists: Lists = {
               if (total < 0.02 && total > -0.02) {
                 total = 0;
               }
-              return total;
+              return new Decimal(total);
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
@@ -475,7 +476,7 @@ export const lists: Lists = {
       },
     },
     fields: {
-      amount: float({ validation: { isRequired: true, min: 1 } }),
+      amount: decimal({ validation: { isRequired: true, min: "1" } }),
       stockMovements: relationship({
         ref: "StockMovement.documentProduct",
         many: true,
@@ -486,139 +487,151 @@ export const lists: Lists = {
       }),
       name: text({ validation: { isRequired: true } }),
       description: text(),
-      tax: float({ validation: { isRequired: true, min: 0 } }),
-      price: float({ validation: { isRequired: true, min: 0 } }),
-      reduction: float({ defaultValue: 0 }),
+      tax: decimal({ validation: { isRequired: true, min: "0" } }),
+      price: decimal({ validation: { isRequired: true, min: "0" } }),
+      reduction: decimal({ defaultValue: "0" }),
       totalWithoutTaxBeforeReduction: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               let isTaxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
                 query: "isTaxIncluded",
               }).then((res) => (isTaxIncluded = res.isTaxIncluded));
-              return calculateTotalWithoutTaxBeforeReduction({
-                price: item.price,
-                amount: item.amount,
-                isTaxIncluded,
-              });
+              return new Decimal(
+                calculateTotalWithoutTaxBeforeReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  isTaxIncluded,
+                })
+              );
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
       totalWithoutTaxAfterReduction: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               let isTaxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
                 query: "isTaxIncluded",
               }).then((res) => (isTaxIncluded = res.isTaxIncluded));
-              return calculateTotalWithoutTaxAfterReduction({
-                price: item.price,
-                amount: item.amount,
-                reduction: item.reduction ?? 0,
-                isTaxIncluded,
-                tax: item.tax,
-              });
+              return new Decimal(
+                calculateTotalWithoutTaxAfterReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  reduction: item.reduction ?? 0,
+                  isTaxIncluded,
+                  tax: item.tax,
+                })
+              );
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
       totalWithTaxBeforeReduction: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               let isTaxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
                 query: "isTaxIncluded",
               }).then((res) => (isTaxIncluded = res.isTaxIncluded));
-              return calculateTotalWithTaxBeforeReduction({
-                price: item.price,
-                amount: item.amount,
-                tax: item.tax,
-                isTaxIncluded,
-              });
+              return new Decimal(
+                calculateTotalWithTaxBeforeReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  tax: item.tax,
+                  isTaxIncluded,
+                })
+              );
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
       totalWithTaxAfterReduction: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               let isTaxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
                 query: "isTaxIncluded",
               }).then((res) => (isTaxIncluded = res.isTaxIncluded));
-              return calculateTotalWithTaxAfterReduction({
-                price: item.price,
-                amount: item.amount,
-                reduction: item.reduction ?? 0,
-                tax: item.tax,
-                isTaxIncluded,
-              });
+              return new Decimal(
+                calculateTotalWithTaxAfterReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  reduction: item.reduction ?? 0,
+                  tax: item.tax,
+                  isTaxIncluded,
+                })
+              );
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
       totalTax: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               let isTaxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
                 query: "isTaxIncluded",
               }).then((res) => (isTaxIncluded = res.isTaxIncluded));
-              return calculateTotalWithoutTaxAfterReduction({
-                price: item.price,
-                amount: item.amount,
-                reduction: item.reduction ?? 0,
-                tax: item.tax,
-                isTaxIncluded,
-              });
+              return new Decimal(
+                calculateTotalWithoutTaxAfterReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  reduction: item.reduction ?? 0,
+                  tax: item.tax,
+                  isTaxIncluded,
+                })
+              );
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
       totalReduction: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               let isTaxIncluded = true;
               await context.query.Document.findOne({
                 where: { id: item.documentId },
                 query: "isTaxIncluded",
               }).then((res) => (isTaxIncluded = res.isTaxIncluded));
-              return calculateTotalWithoutTaxBeforeReduction({
-                price: item.price,
-                amount: item.amount,
-                tax: item.tax,
-                isTaxIncluded,
-              });
+              return new Decimal(
+                calculateTotalWithoutTaxBeforeReduction({
+                  price: item.price,
+                  amount: item.amount,
+                  tax: item.tax,
+                  isTaxIncluded,
+                })
+              );
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
@@ -715,7 +728,7 @@ export const lists: Lists = {
         many: true,
       }),
       description: text(),
-      price: float({ validation: { isRequired: true, min: 0 } }),
+      price: decimal({ validation: { isRequired: true, min: "0" } }),
       currentStock: virtual({
         field: graphql.field({
           type: graphql.Int,
@@ -758,7 +771,7 @@ export const lists: Lists = {
       }),
       code: text(),
       ean: text(),
-      tax: float({ defaultValue: 20, validation: { isRequired: true, min: 0 } }),
+      tax: decimal({ defaultValue: "21", validation: { isRequired: true, min: "0" } }),
       brand: relationship({
         ref: "Brand.materials",
         many: false,
@@ -895,8 +908,8 @@ export const lists: Lists = {
         many: true,
       }),
       user: relationship({ ref: "User.operations", many: false }),
-      cost: float(),
-      value: float({ validation: { isRequired: true, min: 0 } }),
+      cost: decimal(),
+      value: decimal({ validation: { isRequired: true, min: "0" } }),
       duration: integer(),
       description: text(),
       company: relationship({ ref: "Company", many: false, access: { update: denyAll } }),
@@ -921,7 +934,7 @@ export const lists: Lists = {
       },
     },
     fields: {
-      value: float({ validation: { isRequired: true, min: 0 } }),
+      value: decimal({ validation: { isRequired: true, min: "0" } }),
       document: relationship({
         ref: "Document.payments",
         many: true,
@@ -1035,7 +1048,7 @@ export const lists: Lists = {
         ref: "Establishment.stockMovements",
         many: false,
       }),
-      amount: float({ validation: { isRequired: true, min: 0 } }),
+      amount: decimal({ validation: { isRequired: true, min: "0" } }),
       movementType: select({
         type: "string",
         options: ["in", "out"],
@@ -1303,11 +1316,11 @@ export const lists: Lists = {
       finishedAt: timestamp(),
       name: text({ validation: { isRequired: true } }),
       description: text(),
-      value: float({ validation: { isRequired: true, min: 0 } }),
+      value: decimal({ validation: { isRequired: true, min: "0" } }),
       price: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               const workOrder = await context.query.WorkOrder.findOne({
                 where: { id: item.workOrderId },
@@ -1316,19 +1329,19 @@ export const lists: Lists = {
               let total = item.value;
 
               total -= (total * (workOrder.reduction ?? 0)) / 100;
-              return total;
+              return new Decimal(total);
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
-      reduction: float({ defaultValue: 0 }),
-      amount: float({ validation: { isRequired: true, min: 0 } }),
+      reduction: decimal({ defaultValue: "0" }),
+      amount: decimal({ validation: { isRequired: true, min: "0" } }),
       total: virtual({
         field: graphql.field({
-          type: graphql.Float,
-          async resolve(item, args, context) {
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
             try {
               const workOrder = await context.query.WorkOrder.findOne({
                 where: { id: item.workOrderId },
@@ -1337,16 +1350,16 @@ export const lists: Lists = {
               let total = item.value * item.amount - (item.value * item.amount * (item.reduction ?? 0)) / 100;
 
               total -= (total * (workOrder.reduction ?? 0)) / 100;
-              return total;
+              return new Decimal(total);
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
       }),
-      wastage: float({
-        validation: { min: 0 },
-        defaultValue: 0,
+      wastage: decimal({
+        validation: { min: "0" },
+        defaultValue: "0",
       }),
       workOrder: relationship({
         ref: "WorkOrder.operations",
