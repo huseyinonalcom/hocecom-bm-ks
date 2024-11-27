@@ -2772,7 +2772,7 @@ var keystone_default = withAuth(
       idField: { kind: "cuid" }
     },
     server: {
-      port: 3344,
+      port: 3399,
       cors: {
         origin: [
           "http://localhost:8081",
