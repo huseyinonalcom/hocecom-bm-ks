@@ -1764,7 +1764,6 @@ var keystone_default = withAuth(
             console.error("Error starting bulk document sender", error);
           }
         };
-        sendDocumentsToAccountant();
         cron.schedule("0 0 2 * *", async () => {
           try {
             let companiesWithMonthlyReportsActive = await context.sudo().query.companies.findMany({
