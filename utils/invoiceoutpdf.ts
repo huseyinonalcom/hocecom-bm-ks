@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Buffer } from "buffer";
 import { formatCurrency } from "./formatters/formatcurrency";
 import { dateFormatBe } from "./formatters/dateformatters";

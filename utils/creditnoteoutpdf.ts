@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { dateFormatBe } from "./formatters/dateformatters";
 import { Buffer } from "buffer";
 import { formatCurrency } from "./formatters/formatcurrency";
@@ -6,7 +7,7 @@ export async function generateCreditNoteOut({
   document,
   logoBuffer,
 }: {
-  document: Document;
+  document: any;
   logoBuffer?: Buffer;
 }): Promise<{ filename: string; content: Buffer; contentType: string }> {
   const creditNoteDoc = document;
@@ -28,7 +29,7 @@ export async function generateCreditNoteOut({
       if (logoBuffer) {
         doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
       } else {
-        const response = await fetch((establishment.logo as Logo).url);
+        const response = await fetch(establishment.logo.url);
         logoBuffer = await Buffer.from(await response.arrayBuffer());
         doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
       }

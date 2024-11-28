@@ -154,7 +154,7 @@ export default withAuth(
           }
         };
 
-        createDocumentsFromBolOrders(context);
+        // createDocumentsFromBolOrders(context);
         sendDocumentsToAccountant();
 
         cron.schedule("0 0 2 * *", async () => {

@@ -15,7 +15,7 @@ async function fetchCompany(companyID: number, context: KeystoneContext) {
   await context
     .sudo()
     .query.Company.findOne({
-      query: "id",
+      query: "id name accountantEmail",
       where: { id: companyID },
     })
     .then((res) => {
@@ -25,41 +25,27 @@ async function fetchCompany(companyID: number, context: KeystoneContext) {
   return company;
 }
 
-async function fetchDocuments(companyID: number, docTypes: string[], month: number, year: number, context: KeystoneContext): Promise<Document[]> {
-  let documents: Document[] = [];
-  let page = 1;
-  let limit = 400;
-  let allDocumentsFetched = false;
-
-  while (!allDocumentsFetched) {
-    const fetchedDocuments = (
-      await payload.find({
-        collection: "documents",
-        depth: 2,
-        sort: "date",
-        where: {
-          company: {
-            equals: companyID,
-          },
-          type: {
-            in: docTypes,
-          },
-          date: {
-            greater_than_equal: new Date(year, month - 1, 1),
-            less_than: new Date(year, month, 1),
-          },
+async function fetchDocuments(companyID: number, docTypes: string[], month: number, year: number, context: KeystoneContext): Promise<any[]> {
+  const fetchedDocuments = await context.sudo().query.Document.findMany({
+    orderBy: [{ date: "desc" }],
+    query:
+      "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name totalWithTaxAfterReduction tax }",
+    where: {
+      company: {
+        id: {
+          equals: companyID,
         },
-        overrideAccess: true,
-        limit: limit,
-        page: page,
-      })
-    ).docs;
-    documents = documents.concat(fetchedDocuments as unknown as Document[]);
-    page++;
-    allDocumentsFetched = fetchedDocuments.length < limit;
-  }
-
-  return documents;
+      },
+      type: {
+        in: docTypes,
+      },
+      date: {
+        gte: new Date(year, month - 1, 1),
+        lte: new Date(year, month, 1),
+      },
+    },
+  });
+  return Array.from(fetchedDocuments);
 }
 
 async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context }: BulkDocumentSenderParameters): Promise<void> {
@@ -71,7 +57,7 @@ async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year,
   const company = await fetchCompany(companyID, context);
   const workerData = { documents, company };
 
-  new Worker(path.resolve(__dirname, "./bulkdocumentsenderworker.ts"), {
+  new Worker(path.resolve("./utils/bulkdocumentsenderworker.ts"), {
     execArgv: ["-r", "ts-node/register"],
     workerData,
   });

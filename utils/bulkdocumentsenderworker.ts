@@ -1,7 +1,7 @@
 import { dateFormatBe, dateFormatOnlyDate } from "../utils/formatters/dateformatters";
 import { generateCreditNoteOut } from "../utils/creditnoteoutpdf";
 import { generateInvoiceOut } from "../utils/invoiceoutpdf";
-import { documentToXml } from "../utils/xml/ayfemaxml";
+import { invoiceToXml, purchaseToXml } from "../utils/xml/ayfemaxml";
 import { sendMail } from "../utils/sendmail";
 import { workerData } from "worker_threads";
 import archiver from "archiver";
@@ -20,51 +20,41 @@ async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): Promise
   const filePaths = await Promise.all(
     documents.map(async (doc) => {
       let pdf;
+      let xml;
 
       if (doc.type == "invoice") {
         pdf = await generateInvoiceOut({
           document: doc,
           logoBuffer: logoBuffer,
         });
+        xml = invoiceToXml(doc, pdf);
       } else if (doc.type == "credit_note") {
         pdf = await generateCreditNoteOut({
           document: doc,
           logoBuffer: logoBuffer,
         });
+        xml = invoiceToXml(doc, pdf);
       } else if (doc.type == "purchase") {
-        pdf = doc.files[0].url;
+        const response = await fetch(doc.files[0].url);
+        const buffer = await response.arrayBuffer();
+        pdf = {
+          filename: doc.files[0].name,
+          content: Buffer.from(buffer),
+          contentType: "application/pdf",
+        };
+        xml = purchaseToXml(doc, pdf);
       }
 
-      let xml = documentToXml(doc, pdf);
+      if (!xml) {
+        throw new Error(`xml failed: ${doc.type}`);
+      }
+
+      if (!pdf) {
+        throw new Error(`Unknown document type: ${doc.type}`);
+      }
+
       const filePath = path.join(tempDir, xml.filename);
       await fs.writeFile(filePath, xml.content);
-
-      return filePath;
-    })
-  );
-
-  return filePaths;
-}
-
-async function writeAllPdfsToTempDir(tempDir: string, documents: any[]): Promise<string[]> {
-  const response = await fetch(documents.at(0).establishmentlogo.url);
-  let logoBuffer = await Buffer.from(await response.arrayBuffer());
-  await fs.ensureDir(tempDir);
-
-  const filePaths = await Promise.all(
-    documents.map(async (doc) => {
-      const filePath = path.join(tempDir, `${doc.type}_${doc.prefix ?? ""}${doc.number}.pdf`);
-      let pdf;
-      try {
-        pdf = await generateInvoiceOut({
-          document: doc,
-          logoBuffer: logoBuffer,
-        });
-      } catch (error) {
-        pdf = null;
-        throw new Error(error);
-      }
-      await fs.writeFile(filePath, pdf.content);
 
       return filePath;
     })
@@ -89,7 +79,7 @@ async function createZip(tempDir: string, zipPath: string): Promise<void> {
 
     archive.on("end", () => {
       try {
-        fs.writeFileSync(zipPath, Buffer.concat(buffers));
+        fs.writeFileSync(zipPath, new Uint8Array(Buffer.concat(buffers as unknown as Uint8Array[])));
         resolve();
       } catch (error) {
         reject(error);
@@ -129,7 +119,6 @@ const run = async () => {
   try {
     const tempDir = path.join(os.tmpdir(), "pdf_temp" + company.id + dateFormatOnlyDate(documents.at(0).date));
     await fs.emptyDir(tempDir);
-    // await writeAllPdfsToTempDir(tempDir, documents);
     await writeAllXmlsToTempDir(tempDir, documents);
     const zipPath = path.join(
       tempDir,
