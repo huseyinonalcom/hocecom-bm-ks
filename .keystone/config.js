@@ -287,7 +287,7 @@ var lists = {
         ref: "User.customerAddresses",
         many: false
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -317,7 +317,7 @@ var lists = {
         ref: "Material.assemblyComponents",
         many: false
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -338,7 +338,7 @@ var lists = {
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       materials: (0, import_fields.relationship)({ ref: "Material.brand", many: true }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -615,7 +615,7 @@ var lists = {
       references: (0, import_fields.text)(),
       managerNotes: (0, import_fields.text)(),
       establishment: (0, import_fields.relationship)({ ref: "Establishment.documents", many: false }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       taxIncluded: (0, import_fields.checkbox)({ defaultValue: true }),
       extraFields: (0, import_fields.json)()
     }
@@ -823,7 +823,7 @@ var lists = {
         ref: "Document.products",
         many: false
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -882,7 +882,7 @@ var lists = {
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       url: (0, import_fields.text)(),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -987,7 +987,7 @@ var lists = {
         ref: "DocumentProduct.product",
         many: true
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1014,7 +1014,7 @@ var lists = {
         ref: "User.notes",
         many: false
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1059,7 +1059,7 @@ var lists = {
           "customer"
         ]
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } })
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } })
     }
   }),
   Operation: (0, import_core.list)({
@@ -1095,7 +1095,7 @@ var lists = {
       value: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       duration: (0, import_fields.integer)(),
       description: (0, import_fields.text)(),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1178,7 +1178,7 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1259,7 +1259,7 @@ var lists = {
           update: import_access.denyAll
         }
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1279,7 +1279,7 @@ var lists = {
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1301,7 +1301,7 @@ var lists = {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       materials: (0, import_fields.relationship)({ ref: "Material.suppliers", many: true }),
       documents: (0, import_fields.relationship)({ ref: "Document.supplier", many: true }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
       taxId: (0, import_fields.text)(),
       extraFields: (0, import_fields.json)()
@@ -1445,7 +1445,7 @@ var lists = {
         ref: "User.workOrders",
         many: false
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1549,7 +1549,7 @@ var lists = {
         ref: "Operation.workOrderOperations",
         many: false
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: import_access.denyAll } }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   })
