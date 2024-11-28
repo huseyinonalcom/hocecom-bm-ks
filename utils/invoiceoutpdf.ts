@@ -14,7 +14,7 @@ export async function generateInvoiceOut({
   const establishment = invoiceDoc.establishment;
   const establishmentAddress = establishment.address;
   const customer = invoiceDoc.customer;
-  const documentProducts = invoiceDoc.documentProducts;
+  const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
 
   return new Promise(async (resolve, reject) => {

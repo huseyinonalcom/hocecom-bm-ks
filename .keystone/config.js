@@ -1,7 +1,9 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -15,6 +17,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // keystone.ts
@@ -2763,6 +2773,72 @@ var saveDocument = async (bolDoc, company, context) => {
   }
 };
 
+// utils/bulkdocumentsenderstart.ts
+var import_worker_threads = require("worker_threads");
+var import_path = __toESM(require("path"));
+async function fetchCompany(companyID, context) {
+  let company;
+  await context.sudo().query.Company.findOne({
+    query: "id",
+    where: { id: companyID }
+  }).then((res) => {
+    company = res;
+  });
+  return company;
+}
+async function fetchDocuments(companyID, docTypes, month, year, context) {
+  let documents = [];
+  let page = 1;
+  let limit = 400;
+  let allDocumentsFetched = false;
+  while (!allDocumentsFetched) {
+    const fetchedDocuments = (await payload.find({
+      collection: "documents",
+      depth: 2,
+      sort: "date",
+      where: {
+        company: {
+          equals: companyID
+        },
+        type: {
+          in: docTypes
+        },
+        date: {
+          greater_than_equal: new Date(year, month - 1, 1),
+          less_than: new Date(year, month, 1)
+        }
+      },
+      overrideAccess: true,
+      limit,
+      page
+    })).docs;
+    documents = documents.concat(fetchedDocuments);
+    page++;
+    allDocumentsFetched = fetchedDocuments.length < limit;
+  }
+  return documents;
+}
+async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context }) {
+  const documents = await fetchDocuments(companyID, docTypes, month, year, context);
+  if (documents.length === 0) {
+    console.log("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
+    return;
+  }
+  const company = await fetchCompany(companyID, context);
+  const workerData = { documents, company };
+  new import_worker_threads.Worker(import_path.default.resolve(__dirname, "./bulkdocumentsenderworker.ts"), {
+    execArgv: ["-r", "ts-node/register"],
+    workerData
+  });
+}
+var bulkSendDocuments = ({ companyID, docTypes, month, year, context }) => {
+  try {
+    startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context });
+  } catch (error) {
+    console.error("Error occurred while starting bulkdocumentsender with params: ", companyID, docTypes, month, year, "error: ", error);
+  }
+};
+
 // keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
@@ -2832,7 +2908,79 @@ var keystone_default = withAuth(
             return;
           }
         });
+        const sendDocumentsToAccountant = async () => {
+          try {
+            let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
+              where: {
+                monthlyReports: {
+                  equals: true
+                }
+              }
+            });
+            console.log(companiesWithMonthlyReportsActive);
+            let currentYear = (/* @__PURE__ */ new Date()).getFullYear();
+            for (let company of companiesWithMonthlyReportsActive) {
+              bulkSendDocuments({
+                companyID: company.id,
+                docTypes: ["purchase"],
+                month: (/* @__PURE__ */ new Date()).getMonth() - 5,
+                // last month
+                year: currentYear,
+                // Current year
+                context
+              });
+              bulkSendDocuments({
+                companyID: company.id,
+                docTypes: ["purchase"],
+                month: (/* @__PURE__ */ new Date()).getMonth() - 4,
+                // last month
+                year: currentYear,
+                // Current year
+                context
+              });
+              bulkSendDocuments({
+                companyID: company.id,
+                docTypes: ["purchase"],
+                month: (/* @__PURE__ */ new Date()).getMonth() - 3,
+                // last month
+                year: currentYear,
+                // Current year
+                context
+              });
+              bulkSendDocuments({
+                companyID: company.id,
+                docTypes: ["purchase"],
+                month: (/* @__PURE__ */ new Date()).getMonth() - 2,
+                // last month
+                year: currentYear,
+                // Current year
+                context
+              });
+              bulkSendDocuments({
+                companyID: company.id,
+                docTypes: ["purchase"],
+                month: (/* @__PURE__ */ new Date()).getMonth() - 1,
+                // last month
+                year: currentYear,
+                // Current year
+                context
+              });
+              bulkSendDocuments({
+                companyID: company.id,
+                docTypes: ["purchase"],
+                month: (/* @__PURE__ */ new Date()).getMonth(),
+                // last month
+                year: currentYear,
+                // Current year
+                context
+              });
+            }
+          } catch (error) {
+            console.error("Error starting bulk document sender", error);
+          }
+        };
         createDocumentsFromBolOrders(context);
+        sendDocumentsToAccountant();
         cron.schedule("0 0 2 * *", async () => {
           try {
             let companiesWithMonthlyReportsActive = await context.sudo().query.companies.findMany({
