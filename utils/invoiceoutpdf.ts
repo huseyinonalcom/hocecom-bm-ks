@@ -7,7 +7,7 @@ export async function generateInvoiceOut({
   document,
   logoBuffer,
 }: {
-  document: Document;
+  document: any;
   logoBuffer?: Buffer;
 }): Promise<{ filename: string; content: Buffer; contentType: string }> {
   const invoiceDoc = document;
