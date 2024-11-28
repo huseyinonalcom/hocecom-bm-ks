@@ -19,48 +19,53 @@ async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): Promise
 
   const filePaths = await Promise.all(
     documents.map(async (doc) => {
-      let pdf;
-      let xml;
+      try {
+        let pdf;
+        let xml;
 
-      if (doc.type == "invoice") {
-        pdf = await generateInvoiceOut({
-          document: doc,
-          logoBuffer: logoBuffer,
-        });
-        xml = invoiceToXml(doc, pdf);
-      } else if (doc.type == "credit_note") {
-        pdf = await generateCreditNoteOut({
-          document: doc,
-          logoBuffer: logoBuffer,
-        });
-        xml = invoiceToXml(doc, pdf);
-      } else if (doc.type == "purchase") {
-        const response = await fetch(doc.files[0].url);
-        const buffer = await response.arrayBuffer();
-        pdf = {
-          filename: doc.files[0].name,
-          content: Buffer.from(buffer),
-          contentType: "application/pdf",
-        };
-        xml = purchaseToXml(doc, pdf);
+        if (doc.type == "invoice") {
+          pdf = await generateInvoiceOut({
+            document: doc,
+            logoBuffer: logoBuffer,
+          });
+          xml = invoiceToXml(doc, pdf);
+        } else if (doc.type == "credit_note") {
+          pdf = await generateCreditNoteOut({
+            document: doc,
+            logoBuffer: logoBuffer,
+          });
+          xml = invoiceToXml(doc, pdf);
+        } else if (doc.type == "purchase") {
+          const response = await fetch(doc.files[0].url);
+          const buffer = await response.arrayBuffer();
+          pdf = {
+            filename: doc.files[0].name,
+            content: Buffer.from(buffer),
+            contentType: "application/pdf",
+          };
+          xml = purchaseToXml(doc, pdf);
+        }
+
+        if (!xml) {
+          throw new Error(`xml failed: ${doc.type}`);
+        }
+
+        if (!pdf) {
+          throw new Error(`Unknown document type: ${doc.type}`);
+        }
+
+        const filePath = path.join(tempDir, xml.filename);
+        await fs.writeFile(filePath, xml.content);
+
+        return filePath;
+      } catch (error) {
+        console.error("Error generating xml for document: ", doc.number, error);
+        return null;
       }
-
-      if (!xml) {
-        throw new Error(`xml failed: ${doc.type}`);
-      }
-
-      if (!pdf) {
-        throw new Error(`Unknown document type: ${doc.type}`);
-      }
-
-      const filePath = path.join(tempDir, xml.filename);
-      await fs.writeFile(filePath, xml.content);
-
-      return filePath;
     })
   );
 
-  return filePaths;
+  return filePaths.filter((path) => path !== null);
 }
 
 async function createZip(tempDir: string, zipPath: string): Promise<void> {
@@ -105,7 +110,7 @@ async function sendEmailWithAttachment(zipPath: string): Promise<void> {
     company: company,
     attachments: [
       {
-        filename: zipPath.split("/").pop(),
+        filename: zipPath.split("/").at(-1),
         path: zipPath,
       },
     ],
@@ -122,7 +127,13 @@ const run = async () => {
     await writeAllXmlsToTempDir(tempDir, documents);
     const zipPath = path.join(
       tempDir,
-      "documents_" + company.name + "_" + dateFormatOnlyDate(documents.at(0).date) + "_" + dateFormatOnlyDate(documents.at(-1).date) + ".zip"
+      "documents_" +
+        company.name.replaceAll(" ", "_") +
+        "_" +
+        dateFormatOnlyDate(documents.at(0).date) +
+        "_" +
+        dateFormatOnlyDate(documents.at(-1).date) +
+        ".zip"
     );
     await createZip(tempDir, zipPath);
     await sendEmailWithAttachment(zipPath);

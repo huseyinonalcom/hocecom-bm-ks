@@ -695,8 +695,9 @@ var lists = {
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
                 calculateTotalWithoutTaxBeforeReduction({
-                  price: item.price,
-                  amount: item.amount,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
                   taxIncluded
                 })
               );
@@ -718,11 +719,11 @@ var lists = {
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
                 calculateTotalWithoutTaxAfterReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  reduction: item.reduction ?? 0,
-                  taxIncluded,
-                  tax: item.tax
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
+                  taxIncluded
                 })
               );
             } catch (e) {
@@ -743,9 +744,9 @@ var lists = {
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
                 calculateTotalWithTaxBeforeReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
                   taxIncluded
                 })
               );
@@ -767,10 +768,10 @@ var lists = {
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
                 calculateTotalWithTaxAfterReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  reduction: item.reduction ?? 0,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded
                 })
               );
@@ -792,10 +793,10 @@ var lists = {
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
                 calculateTotalWithoutTaxAfterReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  reduction: item.reduction ?? 0,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded
                 })
               );
@@ -817,9 +818,9 @@ var lists = {
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
                 calculateTotalWithoutTaxBeforeReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
                   taxIncluded
                 })
               );
@@ -1518,7 +1519,7 @@ var lists = {
                 where: { id: item.workOrderId },
                 query: "reduction"
               });
-              let total = item.value;
+              let total = Number(item.value);
               total -= total * (workOrder.reduction ?? 0) / 100;
               return new import_types.Decimal(total);
             } catch (e) {
@@ -1538,7 +1539,7 @@ var lists = {
                 where: { id: item.workOrderId },
                 query: "reduction"
               });
-              let total = item.value * item.amount - item.value * item.amount * (item.reduction ?? 0) / 100;
+              let total = Number(item.value) * Number(item.amount) - Number(item.value) * Number(item.amount) * (Number(item.reduction) ?? 0) / 100;
               total -= total * (workOrder.reduction ?? 0) / 100;
               return new import_types.Decimal(total);
             } catch (e) {
@@ -1574,7 +1575,7 @@ var import_path = __toESM(require("path"));
 async function fetchCompany(companyID, context) {
   let company;
   await context.sudo().query.Company.findOne({
-    query: "id name accountantEmail",
+    query: "id name accountantEmail logo { url } emailHost emailPort emailUser emailPassword",
     where: { id: companyID }
   }).then((res) => {
     company = res;
@@ -1584,7 +1585,7 @@ async function fetchCompany(companyID, context) {
 async function fetchDocuments(companyID, docTypes, month, year, context) {
   const fetchedDocuments = await context.sudo().query.Document.findMany({
     orderBy: [{ date: "desc" }],
-    query: "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name totalWithTaxAfterReduction tax }",
+    query: "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name amount totalWithTaxAfterReduction tax }",
     where: {
       company: {
         id: {

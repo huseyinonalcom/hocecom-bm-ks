@@ -262,7 +262,7 @@ export const purchaseToXml = (
     contentType: string;
   }
 ) => {
-  const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number}.xml`;
+  const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "")}.xml`;
 
   const establishment = document.establishment;
   const supplier = document.supplier;
@@ -466,7 +466,7 @@ export const purchaseToXml = (
     <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
   ${documentProducts.map((docProd, i) => {
-    let taxAmount = Number(docProd.subTotal) - Number(docProd.subTotal) / (1 + Number(docProd.tax) / 100);
+    let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
     return `<cac:InvoiceLine>
     <cbc:ID>${i + 1}</cbc:ID>
     <cbc:Note>${docProd.name
@@ -476,11 +476,11 @@ export const purchaseToXml = (
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&apos;")}</cbc:Note>
     <cbc:InvoicedQuantity>${Number(docProd.amount)}</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.subTotal) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
+    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
     <cac:TaxTotal>
       <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>
       <cac:TaxSubtotal>
-        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.subTotal) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
+        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
         <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>   
         <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>   
         <cac:TaxCategory>

@@ -15,7 +15,7 @@ async function fetchCompany(companyID: number, context: KeystoneContext) {
   await context
     .sudo()
     .query.Company.findOne({
-      query: "id name accountantEmail",
+      query: "id name accountantEmail logo { url } emailHost emailPort emailUser emailPassword",
       where: { id: companyID },
     })
     .then((res) => {
@@ -29,7 +29,7 @@ async function fetchDocuments(companyID: number, docTypes: string[], month: numb
   const fetchedDocuments = await context.sudo().query.Document.findMany({
     orderBy: [{ date: "desc" }],
     query:
-      "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name totalWithTaxAfterReduction tax }",
+      "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name amount totalWithTaxAfterReduction tax }",
     where: {
       company: {
         id: {

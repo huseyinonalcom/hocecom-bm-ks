@@ -506,8 +506,9 @@ export const lists: Lists = {
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxBeforeReduction({
-                  price: item.price,
-                  amount: item.amount,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
                   taxIncluded,
                 })
               );
@@ -529,11 +530,11 @@ export const lists: Lists = {
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxAfterReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  reduction: item.reduction ?? 0,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  tax: item.tax,
                 })
               );
             } catch (e) {
@@ -554,9 +555,9 @@ export const lists: Lists = {
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithTaxBeforeReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
                   taxIncluded,
                 })
               );
@@ -578,10 +579,10 @@ export const lists: Lists = {
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithTaxAfterReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  reduction: item.reduction ?? 0,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
                 })
               );
@@ -603,10 +604,10 @@ export const lists: Lists = {
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxAfterReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  reduction: item.reduction ?? 0,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
                 })
               );
@@ -628,9 +629,9 @@ export const lists: Lists = {
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
                 calculateTotalWithoutTaxBeforeReduction({
-                  price: item.price,
-                  amount: item.amount,
-                  tax: item.tax,
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
                   taxIncluded,
                 })
               );
@@ -1330,7 +1331,7 @@ export const lists: Lists = {
                 where: { id: item.workOrderId },
                 query: "reduction",
               });
-              let total = item.value;
+              let total = Number(item.value);
 
               total -= (total * (workOrder.reduction ?? 0)) / 100;
               return new Decimal(total);
@@ -1351,7 +1352,7 @@ export const lists: Lists = {
                 where: { id: item.workOrderId },
                 query: "reduction",
               });
-              let total = item.value * item.amount - (item.value * item.amount * (item.reduction ?? 0)) / 100;
+              let total = Number(item.value) * Number(item.amount) - (Number(item.value) * Number(item.amount) * (Number(item.reduction) ?? 0)) / 100;
 
               total -= (total * (workOrder.reduction ?? 0)) / 100;
               return new Decimal(total);
