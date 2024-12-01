@@ -469,12 +469,7 @@ export const purchaseToXml = (
     let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
     return `<cac:InvoiceLine>
     <cbc:ID>${i + 1}</cbc:ID>
-    <cbc:Note>${docProd.name
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&apos;")}</cbc:Note>
+    <cbc:Note>${docProd.name}</cbc:Note>
     <cbc:InvoicedQuantity>${Number(docProd.amount)}</cbc:InvoicedQuantity>
     <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
     <cac:TaxTotal>
@@ -492,12 +487,7 @@ export const purchaseToXml = (
       </cac:TaxSubtotal>
     </cac:TaxTotal>
     <cac:Item>
-      <cbc:Name>${docProd.name
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&apos;")}</cbc:Name>
+      <cbc:Name>${docProd.name}</cbc:Name>
       <cac:ClassifiedTaxCategory>
         <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
         <cbc:Name>OSS-S</cbc:Name>
@@ -508,9 +498,9 @@ export const purchaseToXml = (
   </cac:InvoiceLine>`;
   })}
 </Invoice>`;
-
+  let contentCleaned = content.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
   return {
-    content,
+    content: contentCleaned,
     filename,
   };
 };
