@@ -211,6 +211,7 @@ model Establishment {
   documents       Document[]      @relation("Document_establishment")
   company         Company?        @relation("Establishment_company", fields: [companyId], references: [id])
   companyId       String?         @map("company")
+  featureFlags    Json?           @default("{\"documents\":true,\"stock\":true,\"drive\":true}")
   extraFields     Json?
 
   @@index([logoId])

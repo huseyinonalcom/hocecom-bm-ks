@@ -873,6 +873,13 @@ var lists = {
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
       documents: (0, import_fields.relationship)({ ref: "Document.establishment", many: true }),
       company: (0, import_fields.relationship)({ ref: "Company.establishments", many: false }),
+      featureFlags: (0, import_fields.json)({
+        defaultValue: {
+          documents: true,
+          stock: true,
+          drive: true
+        }
+      }),
       extraFields: (0, import_fields.json)()
     }
   }),
