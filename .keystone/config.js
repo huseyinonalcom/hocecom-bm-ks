@@ -1236,8 +1236,8 @@ var lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: import_access.denyAll,
-        delete: import_access.denyAll
+        update: isEmployee,
+        delete: isSuperAdmin
       }
     },
     fields: {

@@ -1047,8 +1047,8 @@ export const lists: Lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: denyAll,
-        delete: denyAll,
+        update: isEmployee,
+        delete: isSuperAdmin,
       },
     },
     fields: {
