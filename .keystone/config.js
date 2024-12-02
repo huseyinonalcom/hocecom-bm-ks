@@ -155,73 +155,73 @@ var isSuperAdmin = ({ session: session2 }) => {
 };
 var isGlobalAdmin = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isSuperAdmin({ session: session2 }) || session2.data.role == "global_admin") return true;
-  return !session2.data.isBlocked;
+  if (isSuperAdmin({ session: session2 }) || session2.data.role == "global_admin") return !session2.data.isBlocked;
+  return false;
 };
 var isAdminAccountantOwner = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isGlobalAdmin({ session: session2 }) || session2.data.role == "admin_accountant") return true;
-  return !session2.data.isBlocked;
+  if (isGlobalAdmin({ session: session2 }) || session2.data.role == "admin_accountant") return !session2.data.isBlocked;
+  return false;
 };
 var isAdminAccountantManager = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantOwner({ session: session2 }) || session2.data.role == "admin_accountant_manager") return true;
-  return !session2.data.isBlocked;
+  if (isAdminAccountantOwner({ session: session2 }) || session2.data.role == "admin_accountant_manager") return !session2.data.isBlocked;
+  return false;
 };
 var isOwner = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "owner") return true;
-  return !session2.data.isBlocked;
+  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "owner") return !session2.data.isBlocked;
+  return false;
 };
 var isCompanyAdmin = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isOwner({ session: session2 }) || session2.data.role == "company_admin") return true;
-  return !session2.data.isBlocked;
+  if (isOwner({ session: session2 }) || session2.data.role == "company_admin") return !session2.data.isBlocked;
+  return false;
 };
 var isAdminAccountantEmployee = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "admin_accountant_employee") return true;
-  return !session2.data.isBlocked;
+  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "admin_accountant_employee") return !session2.data.isBlocked;
+  return false;
 };
 var isGeneralManager = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isCompanyAdmin({ session: session2 }) || session2.data.role == "general_manager") return true;
-  return !session2.data.isBlocked;
+  if (isCompanyAdmin({ session: session2 }) || session2.data.role == "general_manager") return !session2.data.isBlocked;
+  return false;
 };
 var isManager = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isGeneralManager({ session: session2 }) || session2.data.role == "manager") return true;
-  return !session2.data.isBlocked;
+  if (isGeneralManager({ session: session2 }) || session2.data.role == "manager") return !session2.data.isBlocked;
+  return false;
 };
 var isAccountant = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isManager({ session: session2 }) || session2.data.role == "accountant") return true;
-  return !session2.data.isBlocked;
+  if (isManager({ session: session2 }) || session2.data.role == "accountant") return !session2.data.isBlocked;
+  return false;
 };
 var isAdminAccountantIntern = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantEmployee({ session: session2 }) || session2.data.role == "admin_accountant_intern") return true;
-  return !session2.data.isBlocked;
+  if (isAdminAccountantEmployee({ session: session2 }) || session2.data.role == "admin_accountant_intern") return !session2.data.isBlocked;
+  return false;
 };
 var isEmployee = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAccountant({ session: session2 }) || session2.data.role == "employee") return true;
-  return !session2.data.isBlocked;
+  if (isAccountant({ session: session2 }) || session2.data.role == "employee") return !session2.data.isBlocked;
+  return false;
 };
 var isIntern = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isEmployee({ session: session2 }) || session2.data.role == "intern") return true;
-  return !session2.data.isBlocked;
+  if (isEmployee({ session: session2 }) || session2.data.role == "intern") return !session2.data.isBlocked;
+  return false;
 };
 var isWorker = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isIntern({ session: session2 }) || session2.data.role == "worker") return true;
-  return !session2.data.isBlocked;
+  if (isIntern({ session: session2 }) || session2.data.role == "worker") return !session2.data.isBlocked;
+  return false;
 };
 var isUser = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isWorker({ session: session2 }) || session2.data.role == "customer") return true;
-  return !session2.data.isBlocked;
+  if (isWorker({ session: session2 }) || session2.data.role == "customer") return !session2.data.isBlocked;
+  return false;
 };
 
 // schema.ts

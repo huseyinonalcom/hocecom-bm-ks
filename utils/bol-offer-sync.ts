@@ -206,8 +206,6 @@ const saveDocument = async (bolDoc, company, context) => {
       },
     });
 
-    console.log(existingCustomer);
-
     let user;
     if (existingCustomer.length > 0) {
       user = existingCustomer.at(0);
@@ -253,7 +251,6 @@ const saveDocument = async (bolDoc, company, context) => {
         },
       });
       user = newUser;
-      console.log("new user created", newUser);
       delAddress = await context.sudo().query.Address.createOne({
         query: "id street door zip city country",
         data: {
