@@ -684,6 +684,13 @@ export const lists: Lists = {
       address: relationship({ ref: "Address", many: false }),
       documents: relationship({ ref: "Document.establishment", many: true }),
       company: relationship({ ref: "Company.establishments", many: false }),
+      featureFlags: json({
+        defaultValue: {
+          documents: true,
+          stock: true,
+          drive: true,
+        },
+      }),
       extraFields: json(),
     },
   }),
