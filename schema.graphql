@@ -1713,6 +1713,7 @@ type StockMovement {
   establishment: Establishment
   amount: Decimal
   movementType: String
+  expiration: DateTime
   documentProduct: DocumentProduct
   note: String
   customer: User
@@ -1735,6 +1736,7 @@ input StockMovementWhereInput {
   establishment: EstablishmentWhereInput
   amount: DecimalFilter
   movementType: StringFilter
+  expiration: DateTimeNullableFilter
   documentProduct: DocumentProductWhereInput
   note: StringFilter
   customer: UserWhereInput
@@ -1747,6 +1749,7 @@ input StockMovementOrderByInput {
   id: OrderDirection
   amount: OrderDirection
   movementType: OrderDirection
+  expiration: OrderDirection
   note: OrderDirection
   date: OrderDirection
   createdAt: OrderDirection
@@ -1757,6 +1760,7 @@ input StockMovementUpdateInput {
   establishment: EstablishmentRelateToOneForUpdateInput
   amount: Decimal
   movementType: String
+  expiration: DateTime
   documentProduct: DocumentProductRelateToOneForUpdateInput
   note: String
   customer: UserRelateToOneForUpdateInput
@@ -1782,6 +1786,7 @@ input StockMovementCreateInput {
   establishment: EstablishmentRelateToOneForCreateInput
   amount: Decimal
   movementType: String
+  expiration: DateTime
   documentProduct: DocumentProductRelateToOneForCreateInput
   note: String
   customer: UserRelateToOneForCreateInput

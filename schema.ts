@@ -1067,6 +1067,7 @@ export const lists: Lists = {
         defaultValue: "in",
         validation: { isRequired: true },
       }),
+      expiration: timestamp(),
       documentProduct: relationship({
         ref: "DocumentProduct.stockMovements",
         many: false,

@@ -352,6 +352,7 @@ model StockMovement {
   establishmentId   String?          @map("establishment")
   amount            Decimal          @postgresql.Decimal(18, 4)
   movementType      String           @default("in")
+  expiration        DateTime?
   documentProduct   DocumentProduct? @relation("StockMovement_documentProduct", fields: [documentProductId], references: [id])
   documentProductId String?          @map("documentProduct")
   note              String           @default("")

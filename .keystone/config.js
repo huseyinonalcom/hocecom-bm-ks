@@ -1256,6 +1256,7 @@ var lists = {
         defaultValue: "in",
         validation: { isRequired: true }
       }),
+      expiration: (0, import_fields.timestamp)(),
       documentProduct: (0, import_fields.relationship)({
         ref: "DocumentProduct.stockMovements",
         many: false
