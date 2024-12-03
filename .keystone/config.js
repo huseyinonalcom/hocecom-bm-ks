@@ -1104,6 +1104,7 @@ var lists = {
         ref: "DocumentProduct.product",
         many: true
       }),
+      earliestExpiration: (0, import_fields.timestamp)(),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
@@ -1396,6 +1397,23 @@ var lists = {
           }
         } catch (error) {
           console.error(error);
+        }
+      },
+      afterOperation: async ({ operation, context, item }) => {
+        if ((operation === "create" || operation == "update") && item.movementType === "in") {
+          const material = await context.query.Material.findOne({
+            where: { id: item.materialId },
+            query: "id"
+          });
+          let earliestExpiration = await context.query.StockMovement.findMany({
+            where: { AND: [{ material: { id: { equals: item.materialId } } }, { expiration: { not: null } }, { amount: { gt: "0" } }] },
+            query: "expiration",
+            orderBy: { expiration: "asc" }
+          });
+          context.query.Material.updateOne({
+            where: { id: material.id },
+            data: { earliestExpiration: earliestExpiration[0].expiration }
+          });
         }
       }
     },

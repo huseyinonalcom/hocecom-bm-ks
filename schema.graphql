@@ -1158,6 +1158,7 @@ type Material {
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
+  earliestExpiration: DateTime
   company: Company
   extraFields: JSON
 }
@@ -1189,6 +1190,7 @@ input MaterialWhereInput {
   operations: OperationManyRelationFilter
   stockMovements: StockMovementManyRelationFilter
   documentProducts: DocumentProductManyRelationFilter
+  earliestExpiration: DateTimeNullableFilter
   company: CompanyWhereInput
 }
 
@@ -1227,6 +1229,7 @@ input MaterialOrderByInput {
   tax: OrderDirection
   pricedBy: OrderDirection
   type: OrderDirection
+  earliestExpiration: OrderDirection
 }
 
 input MaterialUpdateInput {
@@ -1248,6 +1251,7 @@ input MaterialUpdateInput {
   operations: OperationRelateToManyForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
+  earliestExpiration: DateTime
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
 }
@@ -1310,6 +1314,7 @@ input MaterialCreateInput {
   operations: OperationRelateToManyForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput
+  earliestExpiration: DateTime
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
 }

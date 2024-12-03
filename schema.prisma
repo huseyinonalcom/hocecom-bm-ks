@@ -258,6 +258,7 @@ model Material {
   operations         Operation[]         @relation("Operation_material")
   stockMovements     StockMovement[]     @relation("StockMovement_material")
   documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
+  earliestExpiration DateTime?
   company            Company?            @relation("Material_company", fields: [companyId], references: [id])
   companyId          String?             @map("company")
   extraFields        Json?
