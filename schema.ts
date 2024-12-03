@@ -749,6 +749,7 @@ export const lists: Lists = {
         ref: "StockMovement.establishment",
         many: true,
       }),
+      shelves: relationship({ ref: "Shelf.establishment", many: true }),
       users: relationship({ ref: "User.establishment", many: true }),
       address: relationship({ ref: "Address", many: false }),
       documents: relationship({ ref: "Document.establishment", many: true }),
@@ -1156,6 +1157,51 @@ export const lists: Lists = {
       extraFields: json(),
     },
   }),
+  Shelf: list({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
+      operation: {
+        create: isCompanyAdmin,
+        query: isEmployee,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
+    fields: {
+      x: text(),
+      y: text(),
+      z: text(),
+      establishment: relationship({
+        ref: "Establishment.shelves",
+        many: false,
+      }),
+      stockMovements: relationship({
+        ref: "StockMovement.shelf",
+        many: true,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      extraFields: json(),
+    },
+  }),
   SoftwareVersion: list({
     isSingleton: true,
     access: {
@@ -1258,6 +1304,10 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
+      shelf: relationship({
+        ref: "Shelf.stockMovements",
+        many: false,
+      }),
       createdAt: timestamp({
         defaultValue: { kind: "now" },
         isOrderable: true,
@@ -1266,41 +1316,6 @@ export const lists: Lists = {
           update: denyAll,
         },
       }),
-      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
-      extraFields: json(),
-    },
-  }),
-  Storage: list({
-    access: {
-      filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
-      },
-      operation: {
-        create: isCompanyAdmin,
-        query: isEmployee,
-        update: isCompanyAdmin,
-        delete: isGlobalAdmin,
-      },
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id,
-              },
-            };
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: json(),
     },

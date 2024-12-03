@@ -114,8 +114,8 @@ model Company {
   from_Notification_company       Notification[]       @relation("Notification_company")
   from_Operation_company          Operation[]          @relation("Operation_company")
   from_Payment_company            Payment[]            @relation("Payment_company")
+  from_Shelf_company              Shelf[]              @relation("Shelf_company")
   from_StockMovement_company      StockMovement[]      @relation("StockMovement_company")
-  from_Storage_company            Storage[]            @relation("Storage_company")
   from_Supplier_company           Supplier[]           @relation("Supplier_company")
   from_WorkOrder_company          WorkOrder[]          @relation("WorkOrder_company")
   from_WorkOrderOperation_company WorkOrderOperation[] @relation("WorkOrderOperation_company")
@@ -205,6 +205,7 @@ model Establishment {
   bankAccount2    String          @default("")
   bankAccount3    String          @default("")
   stockMovements  StockMovement[] @relation("StockMovement_establishment")
+  shelves         Shelf[]         @relation("Shelf_establishment")
   users           User[]          @relation("User_establishment")
   address         Address?        @relation("Establishment_address", fields: [addressId], references: [id])
   addressId       String?         @map("address")
@@ -334,6 +335,22 @@ model Payment {
   @@index([companyId])
 }
 
+model Shelf {
+  id              String          @id @default(cuid())
+  x               String          @default("")
+  y               String          @default("")
+  z               String          @default("")
+  establishment   Establishment?  @relation("Shelf_establishment", fields: [establishmentId], references: [id])
+  establishmentId String?         @map("establishment")
+  stockMovements  StockMovement[] @relation("StockMovement_shelf")
+  company         Company?        @relation("Shelf_company", fields: [companyId], references: [id])
+  companyId       String?         @map("company")
+  extraFields     Json?
+
+  @@index([establishmentId])
+  @@index([companyId])
+}
+
 model SoftwareVersion {
   id          Int       @id
   version     Int
@@ -360,6 +377,8 @@ model StockMovement {
   customer          User?            @relation("StockMovement_customer", fields: [customerId], references: [id])
   customerId        String?          @map("customer")
   date              DateTime?        @default(now())
+  shelf             Shelf?           @relation("StockMovement_shelf", fields: [shelfId], references: [id])
+  shelfId           String?          @map("shelf")
   createdAt         DateTime?        @default(now())
   company           Company?         @relation("StockMovement_company", fields: [companyId], references: [id])
   companyId         String?          @map("company")
@@ -369,16 +388,7 @@ model StockMovement {
   @@index([establishmentId])
   @@index([documentProductId])
   @@index([customerId])
-  @@index([companyId])
-}
-
-model Storage {
-  id          String   @id @default(cuid())
-  name        String   @default("")
-  company     Company? @relation("Storage_company", fields: [companyId], references: [id])
-  companyId   String?  @map("company")
-  extraFields Json?
-
+  @@index([shelfId])
   @@index([companyId])
 }
 

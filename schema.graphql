@@ -974,6 +974,8 @@ type Establishment {
   bankAccount3: String
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
+  shelves(where: ShelfWhereInput! = {}, orderBy: [ShelfOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfWhereUniqueInput): [Shelf!]
+  shelvesCount(where: ShelfWhereInput! = {}): Int
   users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
   usersCount(where: UserWhereInput! = {}): Int
   address: Address
@@ -1003,10 +1005,17 @@ input EstablishmentWhereInput {
   bankAccount2: StringFilter
   bankAccount3: StringFilter
   stockMovements: StockMovementManyRelationFilter
+  shelves: ShelfManyRelationFilter
   users: UserManyRelationFilter
   address: AddressWhereInput
   documents: DocumentManyRelationFilter
   company: CompanyWhereInput
+}
+
+input ShelfManyRelationFilter {
+  every: ShelfWhereInput
+  some: ShelfWhereInput
+  none: ShelfWhereInput
 }
 
 input DocumentManyRelationFilter {
@@ -1038,12 +1047,20 @@ input EstablishmentUpdateInput {
   bankAccount2: String
   bankAccount3: String
   stockMovements: StockMovementRelateToManyForUpdateInput
+  shelves: ShelfRelateToManyForUpdateInput
   users: UserRelateToManyForUpdateInput
   address: AddressRelateToOneForUpdateInput
   documents: DocumentRelateToManyForUpdateInput
   company: CompanyRelateToOneForUpdateInput
   featureFlags: JSON
   extraFields: JSON
+}
+
+input ShelfRelateToManyForUpdateInput {
+  disconnect: [ShelfWhereUniqueInput!]
+  set: [ShelfWhereUniqueInput!]
+  create: [ShelfCreateInput!]
+  connect: [ShelfWhereUniqueInput!]
 }
 
 input DocumentRelateToManyForUpdateInput {
@@ -1069,12 +1086,18 @@ input EstablishmentCreateInput {
   bankAccount2: String
   bankAccount3: String
   stockMovements: StockMovementRelateToManyForCreateInput
+  shelves: ShelfRelateToManyForCreateInput
   users: UserRelateToManyForCreateInput
   address: AddressRelateToOneForCreateInput
   documents: DocumentRelateToManyForCreateInput
   company: CompanyRelateToOneForCreateInput
   featureFlags: JSON
   extraFields: JSON
+}
+
+input ShelfRelateToManyForCreateInput {
+  create: [ShelfCreateInput!]
+  connect: [ShelfWhereUniqueInput!]
 }
 
 input DocumentRelateToManyForCreateInput {
@@ -1636,6 +1659,67 @@ input PaymentCreateInput {
   extraFields: JSON
 }
 
+type Shelf {
+  id: ID!
+  x: String
+  y: String
+  z: String
+  establishment: Establishment
+  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
+  stockMovementsCount(where: StockMovementWhereInput! = {}): Int
+  company: Company
+  extraFields: JSON
+}
+
+input ShelfWhereUniqueInput {
+  id: ID
+}
+
+input ShelfWhereInput {
+  AND: [ShelfWhereInput!]
+  OR: [ShelfWhereInput!]
+  NOT: [ShelfWhereInput!]
+  id: IDFilter
+  x: StringFilter
+  y: StringFilter
+  z: StringFilter
+  establishment: EstablishmentWhereInput
+  stockMovements: StockMovementManyRelationFilter
+  company: CompanyWhereInput
+}
+
+input ShelfOrderByInput {
+  id: OrderDirection
+  x: OrderDirection
+  y: OrderDirection
+  z: OrderDirection
+}
+
+input ShelfUpdateInput {
+  x: String
+  y: String
+  z: String
+  establishment: EstablishmentRelateToOneForUpdateInput
+  stockMovements: StockMovementRelateToManyForUpdateInput
+  company: CompanyRelateToOneForUpdateInput
+  extraFields: JSON
+}
+
+input ShelfUpdateArgs {
+  where: ShelfWhereUniqueInput!
+  data: ShelfUpdateInput!
+}
+
+input ShelfCreateInput {
+  x: String
+  y: String
+  z: String
+  establishment: EstablishmentRelateToOneForCreateInput
+  stockMovements: StockMovementRelateToManyForCreateInput
+  company: CompanyRelateToOneForCreateInput
+  extraFields: JSON
+}
+
 type SoftwareVersion {
   id: ID!
   version: Int
@@ -1723,6 +1807,7 @@ type StockMovement {
   note: String
   customer: User
   date: DateTime
+  shelf: Shelf
   createdAt: DateTime
   company: Company
   extraFields: JSON
@@ -1746,6 +1831,7 @@ input StockMovementWhereInput {
   note: StringFilter
   customer: UserWhereInput
   date: DateTimeNullableFilter
+  shelf: ShelfWhereInput
   createdAt: DateTimeNullableFilter
   company: CompanyWhereInput
 }
@@ -1770,6 +1856,7 @@ input StockMovementUpdateInput {
   note: String
   customer: UserRelateToOneForUpdateInput
   date: DateTime
+  shelf: ShelfRelateToOneForUpdateInput
   createdAt: DateTime
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
@@ -1778,6 +1865,12 @@ input StockMovementUpdateInput {
 input DocumentProductRelateToOneForUpdateInput {
   create: DocumentProductCreateInput
   connect: DocumentProductWhereUniqueInput
+  disconnect: Boolean
+}
+
+input ShelfRelateToOneForUpdateInput {
+  create: ShelfCreateInput
+  connect: ShelfWhereUniqueInput
   disconnect: Boolean
 }
 
@@ -1796,6 +1889,7 @@ input StockMovementCreateInput {
   note: String
   customer: UserRelateToOneForCreateInput
   date: DateTime
+  shelf: ShelfRelateToOneForCreateInput
   createdAt: DateTime
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
@@ -1806,46 +1900,9 @@ input DocumentProductRelateToOneForCreateInput {
   connect: DocumentProductWhereUniqueInput
 }
 
-type Storage {
-  id: ID!
-  name: String
-  company: Company
-  extraFields: JSON
-}
-
-input StorageWhereUniqueInput {
-  id: ID
-}
-
-input StorageWhereInput {
-  AND: [StorageWhereInput!]
-  OR: [StorageWhereInput!]
-  NOT: [StorageWhereInput!]
-  id: IDFilter
-  name: StringFilter
-  company: CompanyWhereInput
-}
-
-input StorageOrderByInput {
-  id: OrderDirection
-  name: OrderDirection
-}
-
-input StorageUpdateInput {
-  name: String
-  company: CompanyRelateToOneForUpdateInput
-  extraFields: JSON
-}
-
-input StorageUpdateArgs {
-  where: StorageWhereUniqueInput!
-  data: StorageUpdateInput!
-}
-
-input StorageCreateInput {
-  name: String
-  company: CompanyRelateToOneForCreateInput
-  extraFields: JSON
+input ShelfRelateToOneForCreateInput {
+  create: ShelfCreateInput
+  connect: ShelfWhereUniqueInput
 }
 
 type Supplier {
@@ -2385,6 +2442,12 @@ type Mutation {
   updatePayments(data: [PaymentUpdateArgs!]!): [Payment]
   deletePayment(where: PaymentWhereUniqueInput!): Payment
   deletePayments(where: [PaymentWhereUniqueInput!]!): [Payment]
+  createShelf(data: ShelfCreateInput!): Shelf
+  createShelves(data: [ShelfCreateInput!]!): [Shelf]
+  updateShelf(where: ShelfWhereUniqueInput!, data: ShelfUpdateInput!): Shelf
+  updateShelves(data: [ShelfUpdateArgs!]!): [Shelf]
+  deleteShelf(where: ShelfWhereUniqueInput!): Shelf
+  deleteShelves(where: [ShelfWhereUniqueInput!]!): [Shelf]
   createSoftwareVersion(data: SoftwareVersionCreateInput!): SoftwareVersion
   createSoftwareVersions(data: [SoftwareVersionCreateInput!]!): [SoftwareVersion]
   updateSoftwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}, data: SoftwareVersionUpdateInput!): SoftwareVersion
@@ -2397,12 +2460,6 @@ type Mutation {
   updateStockMovements(data: [StockMovementUpdateArgs!]!): [StockMovement]
   deleteStockMovement(where: StockMovementWhereUniqueInput!): StockMovement
   deleteStockMovements(where: [StockMovementWhereUniqueInput!]!): [StockMovement]
-  createStorage(data: StorageCreateInput!): Storage
-  createStorages(data: [StorageCreateInput!]!): [Storage]
-  updateStorage(where: StorageWhereUniqueInput!, data: StorageUpdateInput!): Storage
-  updateStorages(data: [StorageUpdateArgs!]!): [Storage]
-  deleteStorage(where: StorageWhereUniqueInput!): Storage
-  deleteStorages(where: [StorageWhereUniqueInput!]!): [Storage]
   createSupplier(data: SupplierCreateInput!): Supplier
   createSuppliers(data: [SupplierCreateInput!]!): [Supplier]
   updateSupplier(where: SupplierWhereUniqueInput!, data: SupplierUpdateInput!): Supplier
@@ -2493,15 +2550,15 @@ type Query {
   payment(where: PaymentWhereUniqueInput!): Payment
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
+  shelf(where: ShelfWhereUniqueInput!): Shelf
+  shelves(where: ShelfWhereInput! = {}, orderBy: [ShelfOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfWhereUniqueInput): [Shelf!]
+  shelvesCount(where: ShelfWhereInput! = {}): Int
   softwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}): SoftwareVersion
   softwareVersions(where: SoftwareVersionWhereInput! = {id: {equals: 1}}, orderBy: [SoftwareVersionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SoftwareVersionWhereUniqueInput): [SoftwareVersion!]
   softwareVersionsCount(where: SoftwareVersionWhereInput! = {id: {equals: 1}}): Int
   stockMovement(where: StockMovementWhereUniqueInput!): StockMovement
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
-  storage(where: StorageWhereUniqueInput!): Storage
-  storages(where: StorageWhereInput! = {}, orderBy: [StorageOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StorageWhereUniqueInput): [Storage!]
-  storagesCount(where: StorageWhereInput! = {}): Int
   supplier(where: SupplierWhereUniqueInput!): Supplier
   suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
   suppliersCount(where: SupplierWhereInput! = {}): Int

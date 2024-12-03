@@ -938,6 +938,7 @@ var lists = {
         ref: "StockMovement.establishment",
         many: true
       }),
+      shelves: (0, import_fields.relationship)({ ref: "Shelf.establishment", many: true }),
       users: (0, import_fields.relationship)({ ref: "User.establishment", many: true }),
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
       documents: (0, import_fields.relationship)({ ref: "Document.establishment", many: true }),
@@ -1345,6 +1346,51 @@ var lists = {
       extraFields: (0, import_fields.json)()
     }
   }),
+  Shelf: (0, import_core.list)({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
+      operation: {
+        create: isCompanyAdmin,
+        query: isEmployee,
+        update: isCompanyAdmin,
+        delete: isGlobalAdmin
+      }
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id
+              }
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    },
+    fields: {
+      x: (0, import_fields.text)(),
+      y: (0, import_fields.text)(),
+      z: (0, import_fields.text)(),
+      establishment: (0, import_fields.relationship)({
+        ref: "Establishment.shelves",
+        many: false
+      }),
+      stockMovements: (0, import_fields.relationship)({
+        ref: "StockMovement.shelf",
+        many: true
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
   SoftwareVersion: (0, import_core.list)({
     isSingleton: true,
     access: {
@@ -1447,6 +1493,10 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
+      shelf: (0, import_fields.relationship)({
+        ref: "Shelf.stockMovements",
+        many: false
+      }),
       createdAt: (0, import_fields.timestamp)({
         defaultValue: { kind: "now" },
         isOrderable: true,
@@ -1455,41 +1505,6 @@ var lists = {
           update: import_access.denyAll
         }
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  Storage: (0, import_core.list)({
-    access: {
-      filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
-      },
-      operation: {
-        create: isCompanyAdmin,
-        query: isEmployee,
-        update: isCompanyAdmin,
-        delete: isGlobalAdmin
-      }
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
