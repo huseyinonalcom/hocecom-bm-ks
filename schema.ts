@@ -28,7 +28,6 @@ const companyFilter = ({ session }: { session?: any }) => {
     return { company: { id: { equals: session.data.company.id } } };
   }
 };
-
 export const lists: Lists = {
   Accountancy: list({
     access: {
@@ -69,12 +68,14 @@ export const lists: Lists = {
       },
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
+      beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
         try {
           if (operation === "create") {
-            if (!inputData.company) {
-              throw new Error("Company is required");
-            }
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
           }
         } catch (error) {
           console.error(error);
@@ -111,6 +112,21 @@ export const lists: Lists = {
         delete: isManager,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       description: text(),
@@ -139,6 +155,21 @@ export const lists: Lists = {
         query: isUser,
         update: isEmployee,
         delete: isGlobalAdmin,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
       },
     },
     fields: {
@@ -207,6 +238,18 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+
         try {
           if (operation === "delete") {
             const products = await context.query.DocumentProduct.findMany({
@@ -431,7 +474,18 @@ export const lists: Lists = {
       labelField: "amount",
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
         try {
           if (operation === "delete") {
             const movements = await context.query.StockMovement.findMany({
@@ -663,6 +717,21 @@ export const lists: Lists = {
         delete: isGlobalAdmin,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       defaultCurrency: text({ defaultValue: "EUR" }),
@@ -708,6 +777,21 @@ export const lists: Lists = {
         delete: isSuperAdmin,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       url: text(),
@@ -727,6 +811,21 @@ export const lists: Lists = {
         query: isUser,
         update: isManager,
         delete: isManager,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
       },
     },
     fields: {
@@ -837,6 +936,21 @@ export const lists: Lists = {
         delete: denyAll,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       note: text({ validation: { isRequired: true } }),
       creator: relationship({
@@ -905,6 +1019,21 @@ export const lists: Lists = {
         delete: isEmployee,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       files: relationship({
@@ -943,6 +1072,21 @@ export const lists: Lists = {
         query: isEmployee,
         update: isManager,
         delete: isCompanyAdmin,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
       },
     },
     fields: {
@@ -1051,6 +1195,21 @@ export const lists: Lists = {
         delete: isSuperAdmin,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       material: relationship({
         ref: "Material.stockMovements",
@@ -1107,6 +1266,21 @@ export const lists: Lists = {
         delete: isGlobalAdmin,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
@@ -1125,6 +1299,21 @@ export const lists: Lists = {
         query: isUser,
         update: isManager,
         delete: isGlobalAdmin,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
       },
     },
     fields: {
@@ -1155,7 +1344,18 @@ export const lists: Lists = {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
           if (operation === "create") {
-            if (!inputData.company) {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+        try {
+          if (operation === "create") {
+            if (!resolvedData.company) {
               throw new Error("Company is required");
             }
             let mail = inputData.email!;
@@ -1246,6 +1446,21 @@ export const lists: Lists = {
     ui: {
       labelField: "number",
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     access: {
       filter: {
         query: companyFilter,
@@ -1295,7 +1510,18 @@ export const lists: Lists = {
       },
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context }) => {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
         try {
           if (operation === "update") {
             if (inputData.startedAt) {
