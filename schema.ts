@@ -1190,6 +1190,52 @@ export const lists: Lists = {
       x: text(),
       y: text(),
       z: text(),
+      totals: virtual({
+        field: graphql.field({
+          type: graphql.JSON,
+          async resolve(item, args, context): Promise<Record<string, any>> {
+            try {
+              const stockMovements = await context.query.StockMovement.findMany({
+                where: { shelf: { id: { equals: item.id } } },
+                query: "id amount movementType expiration material { id name }",
+              });
+
+              let total = {
+                materials: [
+                  {
+                    id: stockMovements[0].material.id,
+                    name: stockMovements[0].material.name,
+                    amountsByExpiration: [
+                      {
+                        expiration: stockMovements[0].expiration,
+                        amount: stockMovements[0].amount,
+                      },
+                    ],
+                  },
+                ],
+              };
+
+              for (let i = 1; i < stockMovements.length; i++) {
+                const stockMovement = stockMovements[i];
+                if (total.materials.find((mat) => mat.id == stockMovement.material.id)) {
+                  try {
+                    total.materials
+                      .find((mat) => mat.id == stockMovement.material.id)
+                      .amountsByExpiration.push({
+                        expiration: stockMovement.expiration,
+                        amount: stockMovement.amount,
+                      });
+                  } catch (e) {}
+                }
+              }
+
+              return { total: total.toString() };
+            } catch (e) {
+              return { total: "0" };
+            }
+          },
+        }),
+      }),
       establishment: relationship({
         ref: "Establishment.shelves",
         many: false,
