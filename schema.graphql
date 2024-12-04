@@ -972,8 +972,6 @@ type Establishment {
   bankAccount1: String
   bankAccount2: String
   bankAccount3: String
-  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
-  stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   shelves(where: ShelfWhereInput! = {}, orderBy: [ShelfOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfWhereUniqueInput): [Shelf!]
   shelvesCount(where: ShelfWhereInput! = {}): Int
   users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
@@ -1004,7 +1002,6 @@ input EstablishmentWhereInput {
   bankAccount1: StringFilter
   bankAccount2: StringFilter
   bankAccount3: StringFilter
-  stockMovements: StockMovementManyRelationFilter
   shelves: ShelfManyRelationFilter
   users: UserManyRelationFilter
   address: AddressWhereInput
@@ -1046,7 +1043,6 @@ input EstablishmentUpdateInput {
   bankAccount1: String
   bankAccount2: String
   bankAccount3: String
-  stockMovements: StockMovementRelateToManyForUpdateInput
   shelves: ShelfRelateToManyForUpdateInput
   users: UserRelateToManyForUpdateInput
   address: AddressRelateToOneForUpdateInput
@@ -1085,7 +1081,6 @@ input EstablishmentCreateInput {
   bankAccount1: String
   bankAccount2: String
   bankAccount3: String
-  stockMovements: StockMovementRelateToManyForCreateInput
   shelves: ShelfRelateToManyForCreateInput
   users: UserRelateToManyForCreateInput
   address: AddressRelateToOneForCreateInput
@@ -1664,6 +1659,7 @@ type Shelf {
   x: String
   y: String
   z: String
+  totals: JSON
   establishment: Establishment
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
@@ -1799,7 +1795,6 @@ input SoftwareVersionCreateInput {
 type StockMovement {
   id: ID!
   material: Material
-  establishment: Establishment
   amount: Decimal
   movementType: String
   expiration: DateTime
@@ -1823,7 +1818,6 @@ input StockMovementWhereInput {
   NOT: [StockMovementWhereInput!]
   id: IDFilter
   material: MaterialWhereInput
-  establishment: EstablishmentWhereInput
   amount: DecimalFilter
   movementType: StringFilter
   expiration: DateTimeNullableFilter
@@ -1848,7 +1842,6 @@ input StockMovementOrderByInput {
 
 input StockMovementUpdateInput {
   material: MaterialRelateToOneForUpdateInput
-  establishment: EstablishmentRelateToOneForUpdateInput
   amount: Decimal
   movementType: String
   expiration: DateTime
@@ -1881,7 +1874,6 @@ input StockMovementUpdateArgs {
 
 input StockMovementCreateInput {
   material: MaterialRelateToOneForCreateInput
-  establishment: EstablishmentRelateToOneForCreateInput
   amount: Decimal
   movementType: String
   expiration: DateTime

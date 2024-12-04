@@ -934,10 +934,6 @@ var lists = {
       bankAccount1: (0, import_fields.text)(),
       bankAccount2: (0, import_fields.text)(),
       bankAccount3: (0, import_fields.text)(),
-      stockMovements: (0, import_fields.relationship)({
-        ref: "StockMovement.establishment",
-        many: true
-      }),
       shelves: (0, import_fields.relationship)({ ref: "Shelf.establishment", many: true }),
       users: (0, import_fields.relationship)({ ref: "User.establishment", many: true }),
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
@@ -1379,6 +1375,60 @@ var lists = {
       x: (0, import_fields.text)(),
       y: (0, import_fields.text)(),
       z: (0, import_fields.text)(),
+      totals: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.JSON,
+          async resolve(item, args, context) {
+            try {
+              const stockMovements = await context.query.StockMovement.findMany({
+                where: { shelf: { id: { equals: item.id } } },
+                query: "id amount movementType expiration material { id name }"
+              });
+              if (!stockMovements.length) {
+                return { materials: [] };
+              }
+              const materialsMap = /* @__PURE__ */ new Map();
+              for (const movement of stockMovements) {
+                const { material, amount, expiration } = movement;
+                if (!materialsMap.has(material.id)) {
+                  materialsMap.set(material.id, {
+                    id: material.id,
+                    name: material.name,
+                    amountsByExpiration: []
+                  });
+                }
+                const materialEntry = materialsMap.get(material.id);
+                const existingExpiration = materialEntry.amountsByExpiration.find((e) => e.expiration === expiration);
+                let amountPositiveNegative = 0;
+                if (movement.movementType === "in") {
+                  amountPositiveNegative = movement.amount;
+                } else {
+                  amountPositiveNegative = -movement.amount;
+                }
+                if (existingExpiration) {
+                  existingExpiration.amount += amount;
+                } else {
+                  materialEntry.amountsByExpiration.push({
+                    expiration,
+                    amount
+                  });
+                }
+              }
+              const filteredMaterials = Array.from(materialsMap.values()).map((material) => ({
+                ...material,
+                // Filter out expired dates or zero/negative amounts
+                amountsByExpiration: material.amountsByExpiration.filter((exp) => exp.amount > 0).sort((a, b) => new Date(a.expiration).getTime() - new Date(b.expiration).getTime())
+              })).filter((material) => material.amountsByExpiration.length > 0);
+              return {
+                materials: filteredMaterials
+              };
+            } catch (e) {
+              console.error(e);
+              return { materials: [] };
+            }
+          }
+        })
+      }),
       establishment: (0, import_fields.relationship)({
         ref: "Establishment.shelves",
         many: false
@@ -1466,10 +1516,6 @@ var lists = {
     fields: {
       material: (0, import_fields.relationship)({
         ref: "Material.stockMovements",
-        many: false
-      }),
-      establishment: (0, import_fields.relationship)({
-        ref: "Establishment.stockMovements",
         many: false
       }),
       amount: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),

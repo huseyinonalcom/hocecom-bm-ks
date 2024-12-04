@@ -745,10 +745,6 @@ export const lists: Lists = {
       bankAccount1: text(),
       bankAccount2: text(),
       bankAccount3: text(),
-      stockMovements: relationship({
-        ref: "StockMovement.establishment",
-        many: true,
-      }),
       shelves: relationship({ ref: "Shelf.establishment", many: true }),
       users: relationship({ ref: "User.establishment", many: true }),
       address: relationship({ ref: "Address", many: false }),
@@ -1346,10 +1342,6 @@ export const lists: Lists = {
     fields: {
       material: relationship({
         ref: "Material.stockMovements",
-        many: false,
-      }),
-      establishment: relationship({
-        ref: "Establishment.stockMovements",
         many: false,
       }),
       amount: decimal({ validation: { isRequired: true, min: "0" } }),
