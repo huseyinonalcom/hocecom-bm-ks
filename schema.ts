@@ -1220,6 +1220,14 @@ export const lists: Lists = {
                 const materialEntry = materialsMap.get(material.id);
                 const existingExpiration = materialEntry.amountsByExpiration.find((e) => e.expiration === expiration);
 
+                let amountPositiveNegative = 0;
+
+                if (movement.movementType === "in") {
+                  amountPositiveNegative = movement.amount;
+                } else {
+                  amountPositiveNegative = -movement.amount;
+                }
+
                 if (existingExpiration) {
                   existingExpiration.amount += amount;
                 } else {
