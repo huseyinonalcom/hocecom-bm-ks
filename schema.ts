@@ -1200,38 +1200,53 @@ export const lists: Lists = {
                 query: "id amount movementType expiration material { id name }",
               });
 
-              let total = {
-                materials: [
-                  {
-                    id: stockMovements[0].material.id,
-                    name: stockMovements[0].material.name,
-                    amountsByExpiration: [
-                      {
-                        expiration: stockMovements[0].expiration,
-                        amount: stockMovements[0].amount,
-                      },
-                    ],
-                  },
-                ],
-              };
+              if (!stockMovements.length) {
+                return { materials: [] };
+              }
 
-              for (let i = 1; i < stockMovements.length; i++) {
-                const stockMovement = stockMovements[i];
-                if (total.materials.find((mat) => mat.id == stockMovement.material.id)) {
-                  try {
-                    total.materials
-                      .find((mat) => mat.id == stockMovement.material.id)
-                      .amountsByExpiration.push({
-                        expiration: stockMovement.expiration,
-                        amount: stockMovement.amount,
-                      });
-                  } catch (e) {}
+              const materialsMap = new Map();
+
+              for (const movement of stockMovements) {
+                const { material, amount, expiration } = movement;
+
+                if (!materialsMap.has(material.id)) {
+                  materialsMap.set(material.id, {
+                    id: material.id,
+                    name: material.name,
+                    amountsByExpiration: [],
+                  });
+                }
+
+                const materialEntry = materialsMap.get(material.id);
+                const existingExpiration = materialEntry.amountsByExpiration.find((e) => e.expiration === expiration);
+
+                if (existingExpiration) {
+                  existingExpiration.amount += amount;
+                } else {
+                  materialEntry.amountsByExpiration.push({
+                    expiration,
+                    amount,
+                  });
                 }
               }
 
-              return { total: total.toString() };
+              const filteredMaterials = Array.from(materialsMap.values())
+                .map((material) => ({
+                  ...material,
+                  // Filter out expired dates or zero/negative amounts
+                  amountsByExpiration: material.amountsByExpiration
+                    .filter((exp) => exp.amount > 0)
+                    .sort((a, b) => new Date(a.expiration).getTime() - new Date(b.expiration).getTime()),
+                }))
+                // Remove materials that have no valid amounts left
+                .filter((material) => material.amountsByExpiration.length > 0);
+
+              return {
+                materials: filteredMaterials,
+              };
             } catch (e) {
-              return { total: "0" };
+              console.error(e);
+              return { materials: [] };
             }
           },
         }),
