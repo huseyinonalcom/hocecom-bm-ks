@@ -839,7 +839,7 @@ export const lists: Lists = {
       price: decimal({ validation: { isRequired: true, min: "0" } }),
       currentStock: virtual({
         field: graphql.field({
-          type: graphql.Int,
+          type: graphql.Decimal,
           async resolve(item, args, context) {
             try {
               const movements = await context.query.StockMovement.findMany({
@@ -851,14 +851,14 @@ export const lists: Lists = {
               let stock = 0;
               movements.forEach((movement) => {
                 if (movement.movementType == "in") {
-                  stock += movement.amount;
+                  stock += Number(movement.amount);
                 } else {
-                  stock -= movement.amount;
+                  stock -= Number(movement.amount);
                 }
               });
-              return stock;
+              return new Decimal(stock);
             } catch (e) {
-              return 0;
+              return new Decimal(0);
             }
           },
         }),
@@ -1219,9 +1219,9 @@ export const lists: Lists = {
                 let amountPositiveNegative = 0;
 
                 if (movement.movementType === "in") {
-                  amountPositiveNegative = movement.amount;
+                  amountPositiveNegative = Number(movement.amount);
                 } else {
-                  amountPositiveNegative = -movement.amount;
+                  amountPositiveNegative = -Number(movement.amount);
                 }
 
                 if (existingExpiration) {
