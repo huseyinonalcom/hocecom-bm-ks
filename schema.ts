@@ -1280,7 +1280,7 @@ export const lists: Lists = {
             query: "id contents",
           });
 
-          let newMaterialStock: MaterialStock = material.stock;
+          let newMaterialStock: MaterialStock = material.stock ?? { shelfStocks: [] };
 
           // if material.stock does not include any stock with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
           if (!material.stock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration)) {
@@ -1322,7 +1322,7 @@ export const lists: Lists = {
             data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock },
           });
 
-          let newShelfContents: ShelfContents = shelf.contents;
+          let newShelfContents: ShelfContents = shelf.contents ?? { materialContents: [] };
 
           // if shelf.contents does not include any contents with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
           if (!shelf.contents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration)) {

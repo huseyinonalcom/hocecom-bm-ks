@@ -1447,7 +1447,7 @@ var lists = {
             where: { id: item.shelfId },
             query: "id contents"
           });
-          let newMaterialStock = material.stock;
+          let newMaterialStock = material.stock ?? { shelfStocks: [] };
           if (!material.stock.shelfStocks.find((s) => s.expiration === item.expiration)) {
             newMaterialStock.shelfStocks.push({
               shelfId: item.shelfId,
@@ -1482,7 +1482,7 @@ var lists = {
             where: { id: material.id },
             data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock }
           });
-          let newShelfContents = shelf.contents;
+          let newShelfContents = shelf.contents ?? { materialContents: [] };
           if (!shelf.contents.materialContents.find((c) => c.expiration === item.expiration)) {
             newShelfContents.materialContents.push({
               materialId: item.materialId,
