@@ -850,7 +850,7 @@ export const lists: Lists = {
               });
               let stock = 0;
               movements.forEach((movement) => {
-                if (movement.movementType == "giriş") {
+                if (movement.movementType == "in") {
                   stock += movement.amount;
                 } else {
                   stock -= movement.amount;
