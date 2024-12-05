@@ -28,7 +28,7 @@ interface MaterialStock {
 interface ShelfStock {
   location: string;
   shelfId: string;
-  expiration: Date;
+  expiration: Date | null;
   amount: number;
 }
 
@@ -39,7 +39,7 @@ interface ShelfContents {
 interface MaterialContent {
   name: string;
   materialId: string;
-  expiration: Date;
+  expiration: Date | null;
   amount: number;
 }
 
@@ -1278,10 +1278,7 @@ export const lists: Lists = {
         }
       },
       afterOperation: async ({ operation, context, item }) => {
-        if (operation === "create" || operation == "update") {
-          if (!item.expiration) {
-            return;
-          }
+        if (operation === "create") {
           const material = await context.query.Material.findOne({
             where: { id: item.materialId },
             query: "id stock name",
@@ -1296,8 +1293,8 @@ export const lists: Lists = {
 
           let newMaterialStock: MaterialStock = material.stock ?? { shelfStocks: [] };
 
-          // if material.stock does not include any stock with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
-          if (!newMaterialStock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration)) {
+          // if material.stock does not include any stock with the same expiration date and shelf add it, otherwise update the amount based on the movement type (in or out)
+          if (!newMaterialStock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration && s.shelfId === item.shelfId)) {
             newMaterialStock.shelfStocks.push({
               shelfId: item.shelfId!,
               expiration: item.expiration,
@@ -1305,7 +1302,7 @@ export const lists: Lists = {
               location: shelf.x + `-` + shelf.y + `-` + shelf.z,
             });
           } else {
-            const existingShelfStock = newMaterialStock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration);
+            const existingShelfStock = newMaterialStock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration && s.shelfId === item.shelfId);
             if (item.movementType == "in") {
               existingShelfStock!.amount += Number(item.amount);
             } else if (item.movementType == "out") {
@@ -1322,7 +1319,9 @@ export const lists: Lists = {
 
           if (newMaterialStock.shelfStocks.length > 0) {
             newMaterialStock.shelfStocks.sort((a: ShelfStock, b: ShelfStock) => {
-              if (a.expiration < b.expiration) {
+              if (!a.expiration || !b.expiration) {
+                return 1;
+              } else if (a.expiration < b.expiration) {
                 return -1;
               } else if (a.expiration > b.expiration) {
                 return 1;
