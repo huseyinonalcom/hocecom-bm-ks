@@ -1342,7 +1342,7 @@ export const lists: Lists = {
           let newShelfContents: ShelfContents = shelf.contents ?? { materialContents: [] };
 
           // if shelf.contents does not include any contents with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
-          if (!newShelfContents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration)) {
+          if (!newShelfContents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration && c.materialId === item.materialId)) {
             newShelfContents.materialContents.push({
               name: material.name,
               materialId: item.materialId!,
@@ -1350,14 +1350,18 @@ export const lists: Lists = {
               amount: Number(item.amount),
             });
           } else {
-            const existingMaterialContent = newShelfContents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration);
+            const existingMaterialContent = newShelfContents.materialContents.find(
+              (c: MaterialContent) => c.expiration === item.expiration && c.materialId === item.materialId
+            );
             if (item.movementType == "in") {
               existingMaterialContent!.amount += Number(item.amount);
             } else if (item.movementType == "out") {
               existingMaterialContent!.amount -= Number(item.amount);
               if (existingMaterialContent!.amount < 0) {
                 // remove the materialContent from the shelf.contents
-                newShelfContents.materialContents = newShelfContents.materialContents.filter((c: MaterialContent) => c.expiration !== item.expiration);
+                newShelfContents.materialContents = newShelfContents.materialContents.filter(
+                  (c: MaterialContent) => c.expiration !== item.expiration && c.materialId === item.materialId
+                );
               }
             }
           }

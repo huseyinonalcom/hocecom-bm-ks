@@ -1444,10 +1444,7 @@ var lists = {
         }
       },
       afterOperation: async ({ operation, context, item }) => {
-        if (operation === "create" || operation == "update") {
-          if (!item.expiration) {
-            return;
-          }
+        if (operation === "create") {
           const material = await context.query.Material.findOne({
             where: { id: item.materialId },
             query: "id stock name"
@@ -1459,7 +1456,7 @@ var lists = {
           console.log(material);
           console.log(shelf);
           let newMaterialStock = material.stock ?? { shelfStocks: [] };
-          if (!newMaterialStock.shelfStocks.find((s) => s.expiration === item.expiration)) {
+          if (!newMaterialStock.shelfStocks.find((s) => s.expiration === item.expiration && s.shelfId === item.shelfId)) {
             newMaterialStock.shelfStocks.push({
               shelfId: item.shelfId,
               expiration: item.expiration,
@@ -1467,7 +1464,7 @@ var lists = {
               location: shelf.x + `-` + shelf.y + `-` + shelf.z
             });
           } else {
-            const existingShelfStock = newMaterialStock.shelfStocks.find((s) => s.expiration === item.expiration);
+            const existingShelfStock = newMaterialStock.shelfStocks.find((s) => s.expiration === item.expiration && s.shelfId === item.shelfId);
             if (item.movementType == "in") {
               existingShelfStock.amount += Number(item.amount);
             } else if (item.movementType == "out") {
@@ -1481,7 +1478,9 @@ var lists = {
           let newEarliestExpiration = null;
           if (newMaterialStock.shelfStocks.length > 0) {
             newMaterialStock.shelfStocks.sort((a, b) => {
-              if (a.expiration < b.expiration) {
+              if (!a.expiration || !b.expiration) {
+                return 1;
+              } else if (a.expiration < b.expiration) {
                 return -1;
               } else if (a.expiration > b.expiration) {
                 return 1;
@@ -1497,7 +1496,7 @@ var lists = {
             data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock }
           });
           let newShelfContents = shelf.contents ?? { materialContents: [] };
-          if (!newShelfContents.materialContents.find((c) => c.expiration === item.expiration)) {
+          if (!newShelfContents.materialContents.find((c) => c.expiration === item.expiration && c.materialId === item.materialId)) {
             newShelfContents.materialContents.push({
               name: material.name,
               materialId: item.materialId,
@@ -1505,13 +1504,17 @@ var lists = {
               amount: Number(item.amount)
             });
           } else {
-            const existingMaterialContent = newShelfContents.materialContents.find((c) => c.expiration === item.expiration);
+            const existingMaterialContent = newShelfContents.materialContents.find(
+              (c) => c.expiration === item.expiration && c.materialId === item.materialId
+            );
             if (item.movementType == "in") {
               existingMaterialContent.amount += Number(item.amount);
             } else if (item.movementType == "out") {
               existingMaterialContent.amount -= Number(item.amount);
               if (existingMaterialContent.amount < 0) {
-                newShelfContents.materialContents = newShelfContents.materialContents.filter((c) => c.expiration !== item.expiration);
+                newShelfContents.materialContents = newShelfContents.materialContents.filter(
+                  (c) => c.expiration !== item.expiration && c.materialId === item.materialId
+                );
               }
             }
           }
