@@ -863,7 +863,16 @@ export const lists: Lists = {
           async resolve(item, args, context) {
             try {
               let stock = 0;
-              item.stock.shelfStocks.reduce((acc: number, s: ShelfStock) => {
+              if (!item.stock) {
+                return new Decimal(0);
+              }
+              if (!item.stock.shelfStocks) {
+                return new Decimal(0);
+              }
+              if (item.stock.shelfStocks.length === 0) {
+                return new Decimal(0);
+              }
+              stock = item.stock.shelfStocks.reduce((acc: number, s: ShelfStock) => {
                 acc += s.amount;
                 return acc;
               }, 0);

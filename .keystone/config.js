@@ -1032,7 +1032,16 @@ var lists = {
           async resolve(item, args, context) {
             try {
               let stock = 0;
-              item.stock.shelfStocks.reduce((acc, s) => {
+              if (!item.stock) {
+                return new import_types.Decimal(0);
+              }
+              if (!item.stock.shelfStocks) {
+                return new import_types.Decimal(0);
+              }
+              if (item.stock.shelfStocks.length === 0) {
+                return new import_types.Decimal(0);
+              }
+              stock = item.stock.shelfStocks.reduce((acc, s) => {
                 acc += s.amount;
                 return acc;
               }, 0);
