@@ -1283,14 +1283,14 @@ export const lists: Lists = {
           let newMaterialStock: MaterialStock = material.stock ?? { shelfStocks: [] };
 
           // if material.stock does not include any stock with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
-          if (!material.stock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration)) {
+          if (!newMaterialStock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration)) {
             newMaterialStock.shelfStocks.push({
               shelfId: item.shelfId!,
               expiration: item.expiration,
               amount: Number(item.amount),
             });
           } else {
-            const existingShelfStock = material.stock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration);
+            const existingShelfStock = newMaterialStock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration);
             if (item.movementType === "in") {
               existingShelfStock.amount += Number(item.amount);
             } else {
@@ -1325,14 +1325,14 @@ export const lists: Lists = {
           let newShelfContents: ShelfContents = shelf.contents ?? { materialContents: [] };
 
           // if shelf.contents does not include any contents with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
-          if (!shelf.contents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration)) {
+          if (!newShelfContents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration)) {
             newShelfContents.materialContents.push({
               materialId: item.materialId!,
               expiration: item.expiration,
               amount: Number(item.amount),
             });
           } else {
-            const existingMaterialContent = shelf.contents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration);
+            const existingMaterialContent = newShelfContents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration);
             if (item.movementType === "in") {
               existingMaterialContent.amount += Number(item.amount);
             } else {
