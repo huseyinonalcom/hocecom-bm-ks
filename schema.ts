@@ -1279,11 +1279,11 @@ export const lists: Lists = {
       },
       afterOperation: async ({ operation, context, item }) => {
         if (operation === "create") {
-          const material = await context.query.Material.findOne({
+          const material = await context.sudo().query.Material.findOne({
             where: { id: item.materialId },
             query: "id stock name",
           });
-          const shelf = await context.query.Shelf.findOne({
+          const shelf = await context.sudo().query.Shelf.findOne({
             where: { id: item.shelfId },
             query: "id contents x y z",
           });
@@ -1334,7 +1334,7 @@ export const lists: Lists = {
 
           console.log(newEarliestExpiration);
 
-          context.query.Material.updateOne({
+          context.sudo().query.Material.updateOne({
             where: { id: material.id },
             data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock },
           });
@@ -1368,7 +1368,7 @@ export const lists: Lists = {
 
           console.log(newShelfContents);
 
-          context.query.Shelf.updateOne({
+          context.sudo().query.Shelf.updateOne({
             where: { id: shelf.id },
             data: { contents: newShelfContents },
           });
