@@ -21,6 +21,26 @@ import {
 } from "./functions";
 import { Decimal } from "@keystone-6/core/types";
 
+interface MaterialStock {
+  shelfStocks: ShelfStock[];
+}
+
+interface ShelfStock {
+  shelfId: string;
+  expiration: Date;
+  amount: number;
+}
+
+interface ShelfContents {
+  materialContents: MaterialContent[];
+}
+
+interface MaterialContent {
+  materialId: string;
+  expiration: Date;
+  amount: number;
+}
+
 const companyFilter = ({ session }: { session?: any }) => {
   if (isGlobalAdmin({ session })) {
     return {};
@@ -912,6 +932,7 @@ export const lists: Lists = {
         ref: "DocumentProduct.product",
         many: true,
       }),
+      stock: json(),
       earliestExpiration: timestamp(),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: json(),
@@ -1186,75 +1207,7 @@ export const lists: Lists = {
       x: text(),
       y: text(),
       z: text(),
-      totals: virtual({
-        field: graphql.field({
-          type: graphql.JSON,
-          async resolve(item, args, context): Promise<Record<string, any>> {
-            try {
-              const stockMovements = await context.query.StockMovement.findMany({
-                where: { shelf: { id: { equals: item.id } } },
-                query: "id amount movementType expiration material { id name }",
-              });
-
-              if (!stockMovements.length) {
-                return { materials: [] };
-              }
-
-              const materialsMap = new Map();
-
-              for (const movement of stockMovements) {
-                const { material, amount, expiration, movementType } = movement;
-
-                if (!materialsMap.has(material.id)) {
-                  materialsMap.set(material.id, {
-                    id: material.id,
-                    name: material.name,
-                    amountsByExpiration: [],
-                  });
-                }
-
-                const materialEntry = materialsMap.get(material.id);
-                const existingExpiration = materialEntry.amountsByExpiration.find((e) => e.expiration === expiration);
-
-                let amountPositiveNegative = 0;
-
-                if (movement.movementType === "in") {
-                  amountPositiveNegative = Number(movement.amount);
-                } else {
-                  amountPositiveNegative = -Number(movement.amount);
-                }
-
-                if (existingExpiration) {
-                  existingExpiration.amount += amount;
-                } else {
-                  materialEntry.amountsByExpiration.push({
-                    expiration,
-                    amount,
-                  });
-                }
-              }
-
-              const filteredMaterials = Array.from(materialsMap.values())
-                .map((material) => ({
-                  ...material,
-                  // Filter out expired dates or zero/negative amounts
-                  amountsByExpiration: material.amountsByExpiration
-                    .filter((exp) => exp.amount > 0)
-                    .sort((a, b) => new Date(a.expiration).getTime() - new Date(b.expiration).getTime()),
-                }))
-                // Remove materials that have no valid amounts left
-                .filter((material) => material.amountsByExpiration.length > 0);
-
-              return {
-                materials: filteredMaterials,
-              };
-            } catch (e) {
-              console.error(e);
-              return { materials: [] };
-            }
-          },
-        }),
-      }),
+      contents: json(),
       establishment: relationship({
         ref: "Establishment.shelves",
         many: false,
@@ -1328,16 +1281,80 @@ export const lists: Lists = {
           }
           const material = await context.query.Material.findOne({
             where: { id: item.materialId },
-            query: "id",
+            query: "id stock",
           });
-          let earliestExpiration = await context.query.StockMovement.findMany({
-            where: { AND: [{ material: { id: { equals: item.materialId } } }, { expiration: { not: null } }, { amount: { gt: "0" } }] },
-            query: "expiration",
-            orderBy: { expiration: "asc" },
+          const shelf = await context.query.Shelf.findOne({
+            where: { id: item.shelfId },
+            query: "id contents",
           });
+
+          let newMaterialStock: MaterialStock = material.stock;
+
+          // if material.stock does not include any stock with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
+          if (!material.stock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration)) {
+            newMaterialStock.shelfStocks.push({
+              shelfId: item.shelfId!,
+              expiration: item.expiration,
+              amount: Number(item.amount),
+            });
+          } else {
+            const existingShelfStock = material.stock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration);
+            if (item.movementType === "in") {
+              existingShelfStock.amount += Number(item.amount);
+            } else {
+              existingShelfStock.amount -= Number(item.amount);
+              if (existingShelfStock.amount < 0) {
+                // remove the shelfStock from the material.stock
+                newMaterialStock.shelfStocks = newMaterialStock.shelfStocks.filter((s: ShelfStock) => s.expiration !== item.expiration);
+              }
+            }
+          }
+
+          let newEarliestExpiration: Date | null = null;
+
+          if (newMaterialStock.shelfStocks.length > 0) {
+            newMaterialStock.shelfStocks.sort((a: ShelfStock, b: ShelfStock) => {
+              if (a.expiration < b.expiration) {
+                return -1;
+              } else if (a.expiration > b.expiration) {
+                return 1;
+              } else {
+                return 0;
+              }
+            });
+            newEarliestExpiration = newMaterialStock.shelfStocks[0].expiration;
+          }
+
           context.query.Material.updateOne({
             where: { id: material.id },
-            data: { earliestExpiration: earliestExpiration[0].expiration },
+            data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock },
+          });
+
+          let newShelfContents: ShelfContents = shelf.contents;
+
+          // if shelf.contents does not include any contents with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
+          if (!shelf.contents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration)) {
+            newShelfContents.materialContents.push({
+              materialId: item.materialId!,
+              expiration: item.expiration,
+              amount: Number(item.amount),
+            });
+          } else {
+            const existingMaterialContent = shelf.contents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration);
+            if (item.movementType === "in") {
+              existingMaterialContent.amount += Number(item.amount);
+            } else {
+              existingMaterialContent.amount -= Number(item.amount);
+              if (existingMaterialContent.amount < 0) {
+                // remove the materialContent from the shelf.contents
+                newShelfContents.materialContents = newShelfContents.materialContents.filter((c: MaterialContent) => c.expiration !== item.expiration);
+              }
+            }
+          }
+
+          context.query.Shelf.updateOne({
+            where: { id: shelf.id },
+            data: { contents: newShelfContents },
           });
         }
       },

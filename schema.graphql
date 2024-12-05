@@ -1176,6 +1176,7 @@ type Material {
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
+  stock: JSON
   earliestExpiration: DateTime
   company: Company
   extraFields: JSON
@@ -1269,6 +1270,7 @@ input MaterialUpdateInput {
   operations: OperationRelateToManyForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
+  stock: JSON
   earliestExpiration: DateTime
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
@@ -1332,6 +1334,7 @@ input MaterialCreateInput {
   operations: OperationRelateToManyForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput
+  stock: JSON
   earliestExpiration: DateTime
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
@@ -1659,7 +1662,7 @@ type Shelf {
   x: String
   y: String
   z: String
-  totals: JSON
+  contents: JSON
   establishment: Establishment
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
@@ -1695,6 +1698,7 @@ input ShelfUpdateInput {
   x: String
   y: String
   z: String
+  contents: JSON
   establishment: EstablishmentRelateToOneForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   company: CompanyRelateToOneForUpdateInput
@@ -1710,6 +1714,7 @@ input ShelfCreateInput {
   x: String
   y: String
   z: String
+  contents: JSON
   establishment: EstablishmentRelateToOneForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   company: CompanyRelateToOneForCreateInput

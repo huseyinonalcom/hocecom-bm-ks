@@ -1101,6 +1101,7 @@ var lists = {
         ref: "DocumentProduct.product",
         many: true
       }),
+      stock: (0, import_fields.json)(),
       earliestExpiration: (0, import_fields.timestamp)(),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
@@ -1375,60 +1376,7 @@ var lists = {
       x: (0, import_fields.text)(),
       y: (0, import_fields.text)(),
       z: (0, import_fields.text)(),
-      totals: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.JSON,
-          async resolve(item, args, context) {
-            try {
-              const stockMovements = await context.query.StockMovement.findMany({
-                where: { shelf: { id: { equals: item.id } } },
-                query: "id amount movementType expiration material { id name }"
-              });
-              if (!stockMovements.length) {
-                return { materials: [] };
-              }
-              const materialsMap = /* @__PURE__ */ new Map();
-              for (const movement of stockMovements) {
-                const { material, amount, expiration, movementType } = movement;
-                if (!materialsMap.has(material.id)) {
-                  materialsMap.set(material.id, {
-                    id: material.id,
-                    name: material.name,
-                    amountsByExpiration: []
-                  });
-                }
-                const materialEntry = materialsMap.get(material.id);
-                const existingExpiration = materialEntry.amountsByExpiration.find((e) => e.expiration === expiration);
-                let amountPositiveNegative = 0;
-                if (movement.movementType === "in") {
-                  amountPositiveNegative = Number(movement.amount);
-                } else {
-                  amountPositiveNegative = -Number(movement.amount);
-                }
-                if (existingExpiration) {
-                  existingExpiration.amount += amount;
-                } else {
-                  materialEntry.amountsByExpiration.push({
-                    expiration,
-                    amount
-                  });
-                }
-              }
-              const filteredMaterials = Array.from(materialsMap.values()).map((material) => ({
-                ...material,
-                // Filter out expired dates or zero/negative amounts
-                amountsByExpiration: material.amountsByExpiration.filter((exp) => exp.amount > 0).sort((a, b) => new Date(a.expiration).getTime() - new Date(b.expiration).getTime())
-              })).filter((material) => material.amountsByExpiration.length > 0);
-              return {
-                materials: filteredMaterials
-              };
-            } catch (e) {
-              console.error(e);
-              return { materials: [] };
-            }
-          }
-        })
-      }),
+      contents: (0, import_fields.json)(),
       establishment: (0, import_fields.relationship)({
         ref: "Establishment.shelves",
         many: false
@@ -1502,16 +1450,68 @@ var lists = {
           }
           const material = await context.query.Material.findOne({
             where: { id: item.materialId },
-            query: "id"
+            query: "id stock"
           });
-          let earliestExpiration = await context.query.StockMovement.findMany({
-            where: { AND: [{ material: { id: { equals: item.materialId } } }, { expiration: { not: null } }, { amount: { gt: "0" } }] },
-            query: "expiration",
-            orderBy: { expiration: "asc" }
+          const shelf = await context.query.Shelf.findOne({
+            where: { id: item.shelfId },
+            query: "id contents"
           });
+          let newMaterialStock = material.stock;
+          if (!material.stock.shelfStocks.find((s) => s.expiration === item.expiration)) {
+            newMaterialStock.shelfStocks.push({
+              shelfId: item.shelfId,
+              expiration: item.expiration,
+              amount: Number(item.amount)
+            });
+          } else {
+            const existingShelfStock = material.stock.shelfStocks.find((s) => s.expiration === item.expiration);
+            if (item.movementType === "in") {
+              existingShelfStock.amount += Number(item.amount);
+            } else {
+              existingShelfStock.amount -= Number(item.amount);
+              if (existingShelfStock.amount < 0) {
+                newMaterialStock.shelfStocks = newMaterialStock.shelfStocks.filter((s) => s.expiration !== item.expiration);
+              }
+            }
+          }
+          let newEarliestExpiration = null;
+          if (newMaterialStock.shelfStocks.length > 0) {
+            newMaterialStock.shelfStocks.sort((a, b) => {
+              if (a.expiration < b.expiration) {
+                return -1;
+              } else if (a.expiration > b.expiration) {
+                return 1;
+              } else {
+                return 0;
+              }
+            });
+            newEarliestExpiration = newMaterialStock.shelfStocks[0].expiration;
+          }
           context.query.Material.updateOne({
             where: { id: material.id },
-            data: { earliestExpiration: earliestExpiration[0].expiration }
+            data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock }
+          });
+          let newShelfContents = shelf.contents;
+          if (!shelf.contents.materialContents.find((c) => c.expiration === item.expiration)) {
+            newShelfContents.materialContents.push({
+              materialId: item.materialId,
+              expiration: item.expiration,
+              amount: Number(item.amount)
+            });
+          } else {
+            const existingMaterialContent = shelf.contents.materialContents.find((c) => c.expiration === item.expiration);
+            if (item.movementType === "in") {
+              existingMaterialContent.amount += Number(item.amount);
+            } else {
+              existingMaterialContent.amount -= Number(item.amount);
+              if (existingMaterialContent.amount < 0) {
+                newShelfContents.materialContents = newShelfContents.materialContents.filter((c) => c.expiration !== item.expiration);
+              }
+            }
+          }
+          context.query.Shelf.updateOne({
+            where: { id: shelf.id },
+            data: { contents: newShelfContents }
           });
         }
       }

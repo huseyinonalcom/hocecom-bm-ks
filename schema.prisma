@@ -258,6 +258,7 @@ model Material {
   operations         Operation[]         @relation("Operation_material")
   stockMovements     StockMovement[]     @relation("StockMovement_material")
   documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
+  stock              Json?
   earliestExpiration DateTime?
   company            Company?            @relation("Material_company", fields: [companyId], references: [id])
   companyId          String?             @map("company")
@@ -339,6 +340,7 @@ model Shelf {
   x               String          @default("")
   y               String          @default("")
   z               String          @default("")
+  contents        Json?
   establishment   Establishment?  @relation("Shelf_establishment", fields: [establishmentId], references: [id])
   establishmentId String?         @map("establishment")
   stockMovements  StockMovement[] @relation("StockMovement_shelf")
