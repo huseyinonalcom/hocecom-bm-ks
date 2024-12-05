@@ -1323,6 +1323,9 @@ export const lists: Lists = {
       },
       afterOperation: async ({ operation, context, item }) => {
         if ((operation === "create" || operation == "update") && item.movementType === "in") {
+          if (!item.expiration) {
+            return;
+          }
           const material = await context.query.Material.findOne({
             where: { id: item.materialId },
             query: "id",
