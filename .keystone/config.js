@@ -1031,20 +1031,11 @@ var lists = {
           type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
-              const movements = await context.query.StockMovement.findMany({
-                where: {
-                  material: { id: { equals: item.id } }
-                },
-                query: "amount movementType"
-              });
               let stock = 0;
-              movements.forEach((movement) => {
-                if (movement.movementType == "in") {
-                  stock += Number(movement.amount);
-                } else {
-                  stock -= Number(movement.amount);
-                }
-              });
+              item.stock.shelfStocks.reduce((acc, s) => {
+                acc += s.amount;
+                return acc;
+              }, 0);
               return new import_types.Decimal(stock);
             } catch (e) {
               return new import_types.Decimal(0);
