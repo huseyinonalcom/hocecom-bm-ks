@@ -1307,7 +1307,7 @@ export const lists: Lists = {
               existingShelfStock!.amount += Number(item.amount);
             } else if (item.movementType == "out") {
               existingShelfStock!.amount -= Number(item.amount);
-              if (existingShelfStock!.amount < 0) {
+              if (existingShelfStock!.amount <= 0) {
                 // remove the shelfStock from the material.stock
                 newMaterialStock.shelfStocks = newMaterialStock.shelfStocks.filter((s: ShelfStock) => s.expiration !== item.expiration);
               }
