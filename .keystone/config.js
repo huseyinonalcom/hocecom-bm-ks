@@ -1028,7 +1028,7 @@ var lists = {
       price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       currentStock: (0, import_fields.virtual)({
         field: import_core.graphql.field({
-          type: import_core.graphql.Int,
+          type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
             try {
               const movements = await context.query.StockMovement.findMany({
@@ -1039,15 +1039,15 @@ var lists = {
               });
               let stock = 0;
               movements.forEach((movement) => {
-                if (movement.movementType == "giri\u015F") {
-                  stock += movement.amount;
+                if (movement.movementType == "in") {
+                  stock += Number(movement.amount);
                 } else {
-                  stock -= movement.amount;
+                  stock -= Number(movement.amount);
                 }
               });
-              return stock;
+              return new import_types.Decimal(stock);
             } catch (e) {
-              return 0;
+              return new import_types.Decimal(0);
             }
           }
         })
@@ -1389,7 +1389,7 @@ var lists = {
               }
               const materialsMap = /* @__PURE__ */ new Map();
               for (const movement of stockMovements) {
-                const { material, amount, expiration } = movement;
+                const { material, amount, expiration, movementType } = movement;
                 if (!materialsMap.has(material.id)) {
                   materialsMap.set(material.id, {
                     id: material.id,
@@ -1401,9 +1401,9 @@ var lists = {
                 const existingExpiration = materialEntry.amountsByExpiration.find((e) => e.expiration === expiration);
                 let amountPositiveNegative = 0;
                 if (movement.movementType === "in") {
-                  amountPositiveNegative = movement.amount;
+                  amountPositiveNegative = Number(movement.amount);
                 } else {
-                  amountPositiveNegative = -movement.amount;
+                  amountPositiveNegative = -Number(movement.amount);
                 }
                 if (existingExpiration) {
                   existingExpiration.amount += amount;

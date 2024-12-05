@@ -1156,7 +1156,7 @@ type Material {
   assemblyComponentsCount(where: AssemblyComponentWhereInput! = {}): Int
   description: String
   price: Decimal
-  currentStock: Int
+  currentStock: Decimal
   status: String
   files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
   filesCount(where: FileWhereInput! = {}): Int

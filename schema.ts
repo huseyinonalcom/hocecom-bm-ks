@@ -1203,7 +1203,7 @@ export const lists: Lists = {
               const materialsMap = new Map();
 
               for (const movement of stockMovements) {
-                const { material, amount, expiration } = movement;
+                const { material, amount, expiration, movementType } = movement;
 
                 if (!materialsMap.has(material.id)) {
                   materialsMap.set(material.id, {
