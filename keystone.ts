@@ -3,7 +3,6 @@ import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
-import { createDocumentsFromBolOrders } from "./utils/bol-offer-sync";
 import { bulkSendDocuments } from "./utils/bulkdocumentsenderstart";
 
 export default withAuth(
@@ -16,7 +15,7 @@ export default withAuth(
     server: {
       port: 3399,
       cors: {
-        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173", "https://dfatest.huseyinonal.com", "https://huseyinonal.com"],
+        origin: ["https://dfatest.huseyinonal.com", "https://huseyinonal.com", "http://localhost:3399"],
         credentials: true,
       },
       extendExpressApp: (app, context) => {

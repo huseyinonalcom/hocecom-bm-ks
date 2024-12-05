@@ -1444,36 +1444,40 @@ var lists = {
         }
       },
       afterOperation: async ({ operation, context, item }) => {
-        if ((operation === "create" || operation == "update") && item.movementType === "in") {
+        if (operation === "create" || operation == "update") {
           if (!item.expiration) {
             return;
           }
           const material = await context.query.Material.findOne({
             where: { id: item.materialId },
-            query: "id stock"
+            query: "id stock name"
           });
           const shelf = await context.query.Shelf.findOne({
             where: { id: item.shelfId },
-            query: "id contents"
+            query: "id contents x y z"
           });
+          console.log(material);
+          console.log(shelf);
           let newMaterialStock = material.stock ?? { shelfStocks: [] };
           if (!newMaterialStock.shelfStocks.find((s) => s.expiration === item.expiration)) {
             newMaterialStock.shelfStocks.push({
               shelfId: item.shelfId,
               expiration: item.expiration,
-              amount: Number(item.amount)
+              amount: Number(item.amount),
+              location: shelf.x + `-` + shelf.y + `-` + shelf.z
             });
           } else {
             const existingShelfStock = newMaterialStock.shelfStocks.find((s) => s.expiration === item.expiration);
-            if (item.movementType === "in") {
+            if (item.movementType == "in") {
               existingShelfStock.amount += Number(item.amount);
-            } else {
+            } else if (item.movementType == "out") {
               existingShelfStock.amount -= Number(item.amount);
               if (existingShelfStock.amount < 0) {
                 newMaterialStock.shelfStocks = newMaterialStock.shelfStocks.filter((s) => s.expiration !== item.expiration);
               }
             }
           }
+          console.log(newMaterialStock);
           let newEarliestExpiration = null;
           if (newMaterialStock.shelfStocks.length > 0) {
             newMaterialStock.shelfStocks.sort((a, b) => {
@@ -1487,6 +1491,7 @@ var lists = {
             });
             newEarliestExpiration = newMaterialStock.shelfStocks[0].expiration;
           }
+          console.log(newEarliestExpiration);
           context.query.Material.updateOne({
             where: { id: material.id },
             data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock }
@@ -1494,21 +1499,23 @@ var lists = {
           let newShelfContents = shelf.contents ?? { materialContents: [] };
           if (!newShelfContents.materialContents.find((c) => c.expiration === item.expiration)) {
             newShelfContents.materialContents.push({
+              name: material.name,
               materialId: item.materialId,
               expiration: item.expiration,
               amount: Number(item.amount)
             });
           } else {
             const existingMaterialContent = newShelfContents.materialContents.find((c) => c.expiration === item.expiration);
-            if (item.movementType === "in") {
+            if (item.movementType == "in") {
               existingMaterialContent.amount += Number(item.amount);
-            } else {
+            } else if (item.movementType == "out") {
               existingMaterialContent.amount -= Number(item.amount);
               if (existingMaterialContent.amount < 0) {
                 newShelfContents.materialContents = newShelfContents.materialContents.filter((c) => c.expiration !== item.expiration);
               }
             }
           }
+          console.log(newShelfContents);
           context.query.Shelf.updateOne({
             where: { id: shelf.id },
             data: { contents: newShelfContents }
@@ -1951,7 +1958,7 @@ var keystone_default = withAuth(
     server: {
       port: 3399,
       cors: {
-        origin: ["http://localhost:8081", "http://localhost:3000", "http://localhost:5173", "https://dfatest.huseyinonal.com", "https://huseyinonal.com"],
+        origin: ["https://dfatest.huseyinonal.com", "https://huseyinonal.com", "http://localhost:3399"],
         credentials: true
       },
       extendExpressApp: (app, context) => {

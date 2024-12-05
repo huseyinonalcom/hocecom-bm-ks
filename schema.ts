@@ -26,6 +26,7 @@ interface MaterialStock {
 }
 
 interface ShelfStock {
+  location: string;
   shelfId: string;
   expiration: Date;
   amount: number;
@@ -36,6 +37,7 @@ interface ShelfContents {
 }
 
 interface MaterialContent {
+  name: string;
   materialId: string;
   expiration: Date;
   amount: number;
@@ -1276,18 +1278,21 @@ export const lists: Lists = {
         }
       },
       afterOperation: async ({ operation, context, item }) => {
-        if ((operation === "create" || operation == "update") && item.movementType === "in") {
+        if (operation === "create" || operation == "update") {
           if (!item.expiration) {
             return;
           }
           const material = await context.query.Material.findOne({
             where: { id: item.materialId },
-            query: "id stock",
+            query: "id stock name",
           });
           const shelf = await context.query.Shelf.findOne({
             where: { id: item.shelfId },
-            query: "id contents",
+            query: "id contents x y z",
           });
+
+          console.log(material);
+          console.log(shelf);
 
           let newMaterialStock: MaterialStock = material.stock ?? { shelfStocks: [] };
 
@@ -1297,19 +1302,21 @@ export const lists: Lists = {
               shelfId: item.shelfId!,
               expiration: item.expiration,
               amount: Number(item.amount),
+              location: shelf.x + `-` + shelf.y + `-` + shelf.z,
             });
           } else {
             const existingShelfStock = newMaterialStock.shelfStocks.find((s: ShelfStock) => s.expiration === item.expiration);
-            if (item.movementType === "in") {
-              existingShelfStock.amount += Number(item.amount);
-            } else {
-              existingShelfStock.amount -= Number(item.amount);
-              if (existingShelfStock.amount < 0) {
+            if (item.movementType == "in") {
+              existingShelfStock!.amount += Number(item.amount);
+            } else if (item.movementType == "out") {
+              existingShelfStock!.amount -= Number(item.amount);
+              if (existingShelfStock!.amount < 0) {
                 // remove the shelfStock from the material.stock
                 newMaterialStock.shelfStocks = newMaterialStock.shelfStocks.filter((s: ShelfStock) => s.expiration !== item.expiration);
               }
             }
           }
+          console.log(newMaterialStock);
 
           let newEarliestExpiration: Date | null = null;
 
@@ -1326,6 +1333,8 @@ export const lists: Lists = {
             newEarliestExpiration = newMaterialStock.shelfStocks[0].expiration;
           }
 
+          console.log(newEarliestExpiration);
+
           context.query.Material.updateOne({
             where: { id: material.id },
             data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock },
@@ -1336,22 +1345,25 @@ export const lists: Lists = {
           // if shelf.contents does not include any contents with the same expiration date add it, otherwise update the amount based on the movement type (in or out)
           if (!newShelfContents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration)) {
             newShelfContents.materialContents.push({
+              name: material.name,
               materialId: item.materialId!,
               expiration: item.expiration,
               amount: Number(item.amount),
             });
           } else {
             const existingMaterialContent = newShelfContents.materialContents.find((c: MaterialContent) => c.expiration === item.expiration);
-            if (item.movementType === "in") {
-              existingMaterialContent.amount += Number(item.amount);
-            } else {
-              existingMaterialContent.amount -= Number(item.amount);
-              if (existingMaterialContent.amount < 0) {
+            if (item.movementType == "in") {
+              existingMaterialContent!.amount += Number(item.amount);
+            } else if (item.movementType == "out") {
+              existingMaterialContent!.amount -= Number(item.amount);
+              if (existingMaterialContent!.amount < 0) {
                 // remove the materialContent from the shelf.contents
                 newShelfContents.materialContents = newShelfContents.materialContents.filter((c: MaterialContent) => c.expiration !== item.expiration);
               }
             }
           }
+
+          console.log(newShelfContents);
 
           context.query.Shelf.updateOne({
             where: { id: shelf.id },
