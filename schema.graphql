@@ -838,8 +838,7 @@ input EstablishmentRelateToOneForCreateInput {
 type DocumentProduct {
   id: ID!
   amount: Decimal
-  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
-  stockMovementsCount(where: StockMovementWhereInput! = {}): Int
+  stockMovement: StockMovement
   product: Material
   name: String
   description: String
@@ -867,7 +866,7 @@ input DocumentProductWhereInput {
   NOT: [DocumentProductWhereInput!]
   id: IDFilter
   amount: DecimalFilter
-  stockMovements: StockMovementManyRelationFilter
+  stockMovement: StockMovementWhereInput
   product: MaterialWhereInput
   name: StringFilter
   description: StringFilter
@@ -887,12 +886,6 @@ input DecimalFilter {
   gt: Decimal
   gte: Decimal
   not: DecimalFilter
-}
-
-input StockMovementManyRelationFilter {
-  every: StockMovementWhereInput
-  some: StockMovementWhereInput
-  none: StockMovementWhereInput
 }
 
 input DecimalNullableFilter {
@@ -918,7 +911,7 @@ input DocumentProductOrderByInput {
 
 input DocumentProductUpdateInput {
   amount: Decimal
-  stockMovements: StockMovementRelateToManyForUpdateInput
+  stockMovement: StockMovementRelateToOneForUpdateInput
   product: MaterialRelateToOneForUpdateInput
   name: String
   description: String
@@ -930,11 +923,10 @@ input DocumentProductUpdateInput {
   extraFields: JSON
 }
 
-input StockMovementRelateToManyForUpdateInput {
-  disconnect: [StockMovementWhereUniqueInput!]
-  set: [StockMovementWhereUniqueInput!]
-  create: [StockMovementCreateInput!]
-  connect: [StockMovementWhereUniqueInput!]
+input StockMovementRelateToOneForUpdateInput {
+  create: StockMovementCreateInput
+  connect: StockMovementWhereUniqueInput
+  disconnect: Boolean
 }
 
 input DocumentProductUpdateArgs {
@@ -944,7 +936,7 @@ input DocumentProductUpdateArgs {
 
 input DocumentProductCreateInput {
   amount: Decimal
-  stockMovements: StockMovementRelateToManyForCreateInput
+  stockMovement: StockMovementRelateToOneForCreateInput
   product: MaterialRelateToOneForCreateInput
   name: String
   description: String
@@ -956,9 +948,9 @@ input DocumentProductCreateInput {
   extraFields: JSON
 }
 
-input StockMovementRelateToManyForCreateInput {
-  create: [StockMovementCreateInput!]
-  connect: [StockMovementWhereUniqueInput!]
+input StockMovementRelateToOneForCreateInput {
+  create: StockMovementCreateInput
+  connect: StockMovementWhereUniqueInput
 }
 
 type Establishment {
@@ -1237,6 +1229,12 @@ input OperationManyRelationFilter {
   none: OperationWhereInput
 }
 
+input StockMovementManyRelationFilter {
+  every: StockMovementWhereInput
+  some: StockMovementWhereInput
+  none: StockMovementWhereInput
+}
+
 input MaterialOrderByInput {
   id: OrderDirection
   name: OrderDirection
@@ -1310,6 +1308,13 @@ input OperationRelateToManyForUpdateInput {
   connect: [OperationWhereUniqueInput!]
 }
 
+input StockMovementRelateToManyForUpdateInput {
+  disconnect: [StockMovementWhereUniqueInput!]
+  set: [StockMovementWhereUniqueInput!]
+  create: [StockMovementCreateInput!]
+  connect: [StockMovementWhereUniqueInput!]
+}
+
 input MaterialUpdateArgs {
   where: MaterialWhereUniqueInput!
   data: MaterialUpdateInput!
@@ -1363,6 +1368,11 @@ input SupplierRelateToManyForCreateInput {
 input OperationRelateToManyForCreateInput {
   create: [OperationCreateInput!]
   connect: [OperationWhereUniqueInput!]
+}
+
+input StockMovementRelateToManyForCreateInput {
+  create: [StockMovementCreateInput!]
+  connect: [StockMovementWhereUniqueInput!]
 }
 
 type Note {

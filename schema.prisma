@@ -171,21 +171,22 @@ model Document {
 }
 
 model DocumentProduct {
-  id             String          @id @default(cuid())
-  amount         Decimal         @postgresql.Decimal(18, 4)
-  stockMovements StockMovement[] @relation("StockMovement_documentProduct")
-  product        Material?       @relation("DocumentProduct_product", fields: [productId], references: [id])
-  productId      String?         @map("product")
-  name           String          @default("")
-  description    String          @default("")
-  tax            Decimal         @postgresql.Decimal(18, 4)
-  price          Decimal         @postgresql.Decimal(18, 4)
-  reduction      Decimal?        @default("0") @postgresql.Decimal(18, 4)
-  document       Document?       @relation("DocumentProduct_document", fields: [documentId], references: [id])
-  documentId     String?         @map("document")
-  company        Company?        @relation("DocumentProduct_company", fields: [companyId], references: [id])
-  companyId      String?         @map("company")
-  extraFields    Json?
+  id              String         @id @default(cuid())
+  amount          Decimal        @postgresql.Decimal(18, 4)
+  stockMovement   StockMovement? @relation("DocumentProduct_stockMovement", fields: [stockMovementId], references: [id])
+  stockMovementId String?        @unique @map("stockMovement")
+  product         Material?      @relation("DocumentProduct_product", fields: [productId], references: [id])
+  productId       String?        @map("product")
+  name            String         @default("")
+  description     String         @default("")
+  tax             Decimal        @postgresql.Decimal(18, 4)
+  price           Decimal        @postgresql.Decimal(18, 4)
+  reduction       Decimal?       @default("0") @postgresql.Decimal(18, 4)
+  document        Document?      @relation("DocumentProduct_document", fields: [documentId], references: [id])
+  documentId      String?        @map("document")
+  company         Company?       @relation("DocumentProduct_company", fields: [companyId], references: [id])
+  companyId       String?        @map("company")
+  extraFields     Json?
 
   @@index([productId])
   @@index([documentId])
@@ -364,27 +365,25 @@ model SoftwareVersion {
 }
 
 model StockMovement {
-  id                String           @id @default(cuid())
-  material          Material?        @relation("StockMovement_material", fields: [materialId], references: [id])
-  materialId        String?          @map("material")
-  amount            Decimal          @postgresql.Decimal(18, 4)
-  movementType      String           @default("in")
-  expiration        DateTime?
-  documentProduct   DocumentProduct? @relation("StockMovement_documentProduct", fields: [documentProductId], references: [id])
-  documentProductId String?          @map("documentProduct")
-  note              String           @default("")
-  customer          User?            @relation("StockMovement_customer", fields: [customerId], references: [id])
-  customerId        String?          @map("customer")
-  date              DateTime?        @default(now())
-  shelf             Shelf?           @relation("StockMovement_shelf", fields: [shelfId], references: [id])
-  shelfId           String?          @map("shelf")
-  createdAt         DateTime?        @default(now())
-  company           Company?         @relation("StockMovement_company", fields: [companyId], references: [id])
-  companyId         String?          @map("company")
-  extraFields       Json?
+  id              String           @id @default(cuid())
+  material        Material?        @relation("StockMovement_material", fields: [materialId], references: [id])
+  materialId      String?          @map("material")
+  amount          Decimal          @postgresql.Decimal(18, 4)
+  movementType    String           @default("in")
+  expiration      DateTime?
+  documentProduct DocumentProduct? @relation("DocumentProduct_stockMovement")
+  note            String           @default("")
+  customer        User?            @relation("StockMovement_customer", fields: [customerId], references: [id])
+  customerId      String?          @map("customer")
+  date            DateTime?        @default(now())
+  shelf           Shelf?           @relation("StockMovement_shelf", fields: [shelfId], references: [id])
+  shelfId         String?          @map("shelf")
+  createdAt       DateTime?        @default(now())
+  company         Company?         @relation("StockMovement_company", fields: [companyId], references: [id])
+  companyId       String?          @map("company")
+  extraFields     Json?
 
   @@index([materialId])
-  @@index([documentProductId])
   @@index([customerId])
   @@index([shelfId])
   @@index([companyId])
