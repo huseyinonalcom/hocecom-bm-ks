@@ -1459,12 +1459,16 @@ var lists = {
             (s) => s.shelfId === item.shelfId && (!s.expiration && !normalizedExpiration || s.expiration && normalizedExpiration && new Date(s.expiration).getTime() === new Date(normalizedExpiration).getTime())
           );
           if (existingStockIndex === -1) {
-            newMaterialStock.shelfStocks.push({
-              shelfId: item.shelfId,
-              expiration: normalizedExpiration,
-              amount: Number(item.amount),
-              location: shelf.x + `-` + shelf.y + `-` + shelf.z
-            });
+            if (item.movementType === "in") {
+              newMaterialStock.shelfStocks.push({
+                shelfId: item.shelfId,
+                expiration: normalizedExpiration,
+                amount: Number(item.amount),
+                location: shelf.x + `-` + shelf.y + `-` + shelf.z
+              });
+            } else if (item.movementType === "out") {
+              throw new Error("Cannot perform 'out' movement for non-existent stock");
+            }
           } else {
             if (item.movementType === "in") {
               newMaterialStock.shelfStocks[existingStockIndex].amount += Number(item.amount);
@@ -1494,12 +1498,16 @@ var lists = {
             (c) => c.materialId === item.materialId && (!c.expiration && !normalizedExpiration || c.expiration && normalizedExpiration && new Date(c.expiration).getTime() === new Date(normalizedExpiration).getTime())
           );
           if (existingContentIndex === -1) {
-            newShelfContents.materialContents.push({
-              name: material.name,
-              materialId: item.materialId,
-              expiration: normalizedExpiration,
-              amount: Number(item.amount)
-            });
+            if (item.movementType === "in") {
+              newShelfContents.materialContents.push({
+                name: material.name,
+                materialId: item.materialId,
+                expiration: normalizedExpiration,
+                amount: Number(item.amount)
+              });
+            } else if (item.movementType === "out") {
+              throw new Error("Cannot perform 'out' movement for non-existent shelf content");
+            }
           } else {
             if (item.movementType === "in") {
               newShelfContents.materialContents[existingContentIndex].amount += Number(item.amount);

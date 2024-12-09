@@ -1300,13 +1300,19 @@ export const lists: Lists = {
                 (s.expiration && normalizedExpiration && new Date(s.expiration).getTime() === new Date(normalizedExpiration).getTime()))
           );
 
+          // Handle 'in' and 'out' movements
           if (existingStockIndex === -1) {
-            newMaterialStock.shelfStocks.push({
-              shelfId: item.shelfId!,
-              expiration: normalizedExpiration,
-              amount: Number(item.amount),
-              location: shelf.x + `-` + shelf.y + `-` + shelf.z,
-            });
+            if (item.movementType === "in") {
+              newMaterialStock.shelfStocks.push({
+                shelfId: item.shelfId!,
+                expiration: normalizedExpiration,
+                amount: Number(item.amount),
+                location: shelf.x + `-` + shelf.y + `-` + shelf.z,
+              });
+            } else if (item.movementType === "out") {
+              // Log an error or handle invalid "out" movement
+              throw new Error("Cannot perform 'out' movement for non-existent stock");
+            }
           } else {
             if (item.movementType === "in") {
               newMaterialStock.shelfStocks[existingStockIndex].amount += Number(item.amount);
@@ -1318,6 +1324,7 @@ export const lists: Lists = {
             }
           }
 
+          // Determine the new earliest expiration
           let newEarliestExpiration: Date | null = null;
 
           if (newMaterialStock.shelfStocks.length > 0) {
@@ -1331,6 +1338,7 @@ export const lists: Lists = {
             newEarliestExpiration = newMaterialStock.shelfStocks[0].expiration ? new Date(newMaterialStock.shelfStocks[0].expiration) : null;
           }
 
+          // Update the material's stock and earliest expiration
           await context.sudo().query.Material.updateOne({
             where: { id: material.id },
             data: { earliestExpiration: newEarliestExpiration, stock: newMaterialStock },
@@ -1345,13 +1353,19 @@ export const lists: Lists = {
                 (c.expiration && normalizedExpiration && new Date(c.expiration).getTime() === new Date(normalizedExpiration).getTime()))
           );
 
+          // Handle 'in' and 'out' movements for shelf contents
           if (existingContentIndex === -1) {
-            newShelfContents.materialContents.push({
-              name: material.name,
-              materialId: item.materialId!,
-              expiration: normalizedExpiration,
-              amount: Number(item.amount),
-            });
+            if (item.movementType === "in") {
+              newShelfContents.materialContents.push({
+                name: material.name,
+                materialId: item.materialId!,
+                expiration: normalizedExpiration,
+                amount: Number(item.amount),
+              });
+            } else if (item.movementType === "out") {
+              // Log an error or handle invalid "out" movement
+              throw new Error("Cannot perform 'out' movement for non-existent shelf content");
+            }
           } else {
             if (item.movementType === "in") {
               newShelfContents.materialContents[existingContentIndex].amount += Number(item.amount);
@@ -1363,6 +1377,7 @@ export const lists: Lists = {
             }
           }
 
+          // Update the shelf's contents
           await context.sudo().query.Shelf.updateOne({
             where: { id: shelf.id },
             data: { contents: newShelfContents },
