@@ -1300,6 +1300,8 @@ export const lists: Lists = {
                 (s.expiration && normalizedExpiration && new Date(s.expiration).getTime() === new Date(normalizedExpiration).getTime()))
           );
 
+          console.log({ existingStockIndex });
+
           // Handle 'in' and 'out' movements
           if (existingStockIndex === -1) {
             if (item.movementType === "in") {

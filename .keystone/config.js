@@ -1458,6 +1458,7 @@ var lists = {
           const existingStockIndex = newMaterialStock.shelfStocks.findIndex(
             (s) => s.shelfId === item.shelfId && (!s.expiration && !normalizedExpiration || s.expiration && normalizedExpiration && new Date(s.expiration).getTime() === new Date(normalizedExpiration).getTime())
           );
+          console.log({ existingStockIndex });
           if (existingStockIndex === -1) {
             if (item.movementType === "in") {
               newMaterialStock.shelfStocks.push({
