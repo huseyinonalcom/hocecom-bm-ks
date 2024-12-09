@@ -1467,7 +1467,6 @@ var lists = {
                 location: shelf.x + `-` + shelf.y + `-` + shelf.z
               });
             } else if (item.movementType === "out") {
-              throw new Error("Cannot perform 'out' movement for non-existent stock");
             }
           } else {
             if (item.movementType === "in") {
@@ -1506,7 +1505,6 @@ var lists = {
                 amount: Number(item.amount)
               });
             } else if (item.movementType === "out") {
-              throw new Error("Cannot perform 'out' movement for non-existent shelf content");
             }
           } else {
             if (item.movementType === "in") {

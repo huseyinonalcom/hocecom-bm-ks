@@ -1310,8 +1310,6 @@ export const lists: Lists = {
                 location: shelf.x + `-` + shelf.y + `-` + shelf.z,
               });
             } else if (item.movementType === "out") {
-              // Log an error or handle invalid "out" movement
-              throw new Error("Cannot perform 'out' movement for non-existent stock");
             }
           } else {
             if (item.movementType === "in") {
@@ -1364,7 +1362,6 @@ export const lists: Lists = {
               });
             } else if (item.movementType === "out") {
               // Log an error or handle invalid "out" movement
-              throw new Error("Cannot perform 'out' movement for non-existent shelf content");
             }
           } else {
             if (item.movementType === "in") {
