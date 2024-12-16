@@ -30,6 +30,7 @@ export default withAuth(
         });
 
         app.post("/rest/upload", upload.single("file"), async (req, res) => {
+          const keystoneContext = await context.withRequest(req, res);
           try {
             // @ts-ignore
             if (!req.file) {
@@ -39,9 +40,8 @@ export default withAuth(
             // @ts-ignore
             const result = await fileUpload(req.file);
             try {
-              console.log(context);
-              console.log(context.withSession().session);
-              console.log(context.session.data);
+              console.log(keystoneContext.session);
+              console.log(keystoneContext.session.data);
             } catch (error) {
               console.error(error);
             }
@@ -53,7 +53,7 @@ export default withAuth(
                 url: result.fileUrl,
                 company: {
                   connect: {
-                    id: context.session.data.company.id,
+                    id: keystoneContext.session.data.company.id,
                   },
                 },
               },
