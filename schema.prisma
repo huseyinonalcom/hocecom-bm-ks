@@ -226,7 +226,7 @@ model File {
   url                           String               @default("")
   company                       Company?             @relation("File_company", fields: [companyId], references: [id])
   companyId                     String?              @map("company")
-  extraFields                   Json?
+  extraFields                   Json?                @default("{\"isCover\":false,\"order\":1}")
   from_Accountancy_logo         Accountancy[]        @relation("Accountancy_logo")
   from_Company_logo             Company[]            @relation("Company_logo")
   from_Document_files           Document[]           @relation("Document_files")

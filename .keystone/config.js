@@ -982,7 +982,12 @@ var lists = {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       url: (0, import_fields.text)(),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
-      extraFields: (0, import_fields.json)()
+      extraFields: (0, import_fields.json)({
+        defaultValue: {
+          isCover: false,
+          order: 1
+        }
+      })
     }
   }),
   Material: (0, import_core.list)({
@@ -1977,7 +1982,7 @@ var keystone_default = withAuth(
               return res.status(400).json({ message: "No valid file provided" });
             }
             const result = await fileUpload(req.file);
-            const file = await context.sudo().query.File.createOne({
+            const file = await context.query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
