@@ -1106,6 +1106,10 @@ var lists = {
         ref: "DocumentProduct.product",
         many: true
       }),
+      productCollections: (0, import_fields.relationship)({
+        ref: "ProductCollection.products",
+        many: true
+      }),
       stock: (0, import_fields.json)(),
       earliestExpiration: (0, import_fields.timestamp)(),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
@@ -1344,6 +1348,27 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  ProductCollection: (0, import_core.list)({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
+      operation: {
+        create: isCompanyAdmin,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      products: (0, import_fields.relationship)({ ref: "Material.productCollections", many: true }),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
@@ -1977,16 +2002,22 @@ var keystone_default = withAuth(
           }
         });
         app.post("/rest/upload", upload.single("file"), async (req, res) => {
+          const keystoneContext = await context.withRequest(req, res);
           try {
             if (!req.file) {
               return res.status(400).json({ message: "No valid file provided" });
             }
             const result = await fileUpload(req.file);
-            const file = await context.query.File.createOne({
+            const file = await context.sudo().query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
-                url: result.fileUrl
+                url: result.fileUrl,
+                company: {
+                  connect: {
+                    id: keystoneContext.session.data.company.id
+                  }
+                }
               }
             });
             res.status(200).json({

@@ -114,6 +114,7 @@ model Company {
   from_Notification_company       Notification[]       @relation("Notification_company")
   from_Operation_company          Operation[]          @relation("Operation_company")
   from_Payment_company            Payment[]            @relation("Payment_company")
+  from_ProductCollection_company  ProductCollection[]  @relation("ProductCollection_company")
   from_Shelf_company              Shelf[]              @relation("Shelf_company")
   from_StockMovement_company      StockMovement[]      @relation("StockMovement_company")
   from_Supplier_company           Supplier[]           @relation("Supplier_company")
@@ -259,6 +260,7 @@ model Material {
   operations         Operation[]         @relation("Operation_material")
   stockMovements     StockMovement[]     @relation("StockMovement_material")
   documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
+  productCollections ProductCollection[] @relation("Material_productCollections")
   stock              Json?
   earliestExpiration DateTime?
   company            Company?            @relation("Material_company", fields: [companyId], references: [id])
@@ -333,6 +335,17 @@ model Payment {
   extraFields Json?
 
   @@index([creatorId])
+  @@index([companyId])
+}
+
+model ProductCollection {
+  id          String     @id @default(cuid())
+  name        String     @default("")
+  products    Material[] @relation("Material_productCollections")
+  company     Company?   @relation("ProductCollection_company", fields: [companyId], references: [id])
+  companyId   String?    @map("company")
+  extraFields Json?
+
   @@index([companyId])
 }
 

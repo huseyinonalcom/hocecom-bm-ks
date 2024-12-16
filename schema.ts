@@ -940,6 +940,10 @@ export const lists: Lists = {
         ref: "DocumentProduct.product",
         many: true,
       }),
+      productCollections: relationship({
+        ref: "ProductCollection.products",
+        many: true,
+      }),
       stock: json(),
       earliestExpiration: timestamp(),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
@@ -1178,6 +1182,27 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
+      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      extraFields: json(),
+    },
+  }),
+  ProductCollection: list({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
+      operation: {
+        create: isCompanyAdmin,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isEmployee,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      products: relationship({ ref: "Material.productCollections", many: true }),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: json(),
     },

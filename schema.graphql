@@ -1168,6 +1168,8 @@ type Material {
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
+  productCollections(where: ProductCollectionWhereInput! = {}, orderBy: [ProductCollectionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductCollectionWhereUniqueInput): [ProductCollection!]
+  productCollectionsCount(where: ProductCollectionWhereInput! = {}): Int
   stock: JSON
   earliestExpiration: DateTime
   company: Company
@@ -1201,6 +1203,7 @@ input MaterialWhereInput {
   operations: OperationManyRelationFilter
   stockMovements: StockMovementManyRelationFilter
   documentProducts: DocumentProductManyRelationFilter
+  productCollections: ProductCollectionManyRelationFilter
   earliestExpiration: DateTimeNullableFilter
   company: CompanyWhereInput
 }
@@ -1233,6 +1236,12 @@ input StockMovementManyRelationFilter {
   every: StockMovementWhereInput
   some: StockMovementWhereInput
   none: StockMovementWhereInput
+}
+
+input ProductCollectionManyRelationFilter {
+  every: ProductCollectionWhereInput
+  some: ProductCollectionWhereInput
+  none: ProductCollectionWhereInput
 }
 
 input MaterialOrderByInput {
@@ -1268,6 +1277,7 @@ input MaterialUpdateInput {
   operations: OperationRelateToManyForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
+  productCollections: ProductCollectionRelateToManyForUpdateInput
   stock: JSON
   earliestExpiration: DateTime
   company: CompanyRelateToOneForUpdateInput
@@ -1315,6 +1325,13 @@ input StockMovementRelateToManyForUpdateInput {
   connect: [StockMovementWhereUniqueInput!]
 }
 
+input ProductCollectionRelateToManyForUpdateInput {
+  disconnect: [ProductCollectionWhereUniqueInput!]
+  set: [ProductCollectionWhereUniqueInput!]
+  create: [ProductCollectionCreateInput!]
+  connect: [ProductCollectionWhereUniqueInput!]
+}
+
 input MaterialUpdateArgs {
   where: MaterialWhereUniqueInput!
   data: MaterialUpdateInput!
@@ -1339,6 +1356,7 @@ input MaterialCreateInput {
   operations: OperationRelateToManyForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput
+  productCollections: ProductCollectionRelateToManyForCreateInput
   stock: JSON
   earliestExpiration: DateTime
   company: CompanyRelateToOneForCreateInput
@@ -1373,6 +1391,11 @@ input OperationRelateToManyForCreateInput {
 input StockMovementRelateToManyForCreateInput {
   create: [StockMovementCreateInput!]
   connect: [StockMovementWhereUniqueInput!]
+}
+
+input ProductCollectionRelateToManyForCreateInput {
+  create: [ProductCollectionCreateInput!]
+  connect: [ProductCollectionWhereUniqueInput!]
 }
 
 type Note {
@@ -1663,6 +1686,53 @@ input PaymentCreateInput {
   reference: String
   type: String
   timestamp: DateTime
+  company: CompanyRelateToOneForCreateInput
+  extraFields: JSON
+}
+
+type ProductCollection {
+  id: ID!
+  name: String
+  products(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
+  productsCount(where: MaterialWhereInput! = {}): Int
+  company: Company
+  extraFields: JSON
+}
+
+input ProductCollectionWhereUniqueInput {
+  id: ID
+}
+
+input ProductCollectionWhereInput {
+  AND: [ProductCollectionWhereInput!]
+  OR: [ProductCollectionWhereInput!]
+  NOT: [ProductCollectionWhereInput!]
+  id: IDFilter
+  name: StringFilter
+  products: MaterialManyRelationFilter
+  company: CompanyWhereInput
+}
+
+input ProductCollectionOrderByInput {
+  id: OrderDirection
+  name: OrderDirection
+}
+
+input ProductCollectionUpdateInput {
+  name: String
+  products: MaterialRelateToManyForUpdateInput
+  company: CompanyRelateToOneForUpdateInput
+  extraFields: JSON
+}
+
+input ProductCollectionUpdateArgs {
+  where: ProductCollectionWhereUniqueInput!
+  data: ProductCollectionUpdateInput!
+}
+
+input ProductCollectionCreateInput {
+  name: String
+  products: MaterialRelateToManyForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
 }
@@ -2449,6 +2519,12 @@ type Mutation {
   updatePayments(data: [PaymentUpdateArgs!]!): [Payment]
   deletePayment(where: PaymentWhereUniqueInput!): Payment
   deletePayments(where: [PaymentWhereUniqueInput!]!): [Payment]
+  createProductCollection(data: ProductCollectionCreateInput!): ProductCollection
+  createProductCollections(data: [ProductCollectionCreateInput!]!): [ProductCollection]
+  updateProductCollection(where: ProductCollectionWhereUniqueInput!, data: ProductCollectionUpdateInput!): ProductCollection
+  updateProductCollections(data: [ProductCollectionUpdateArgs!]!): [ProductCollection]
+  deleteProductCollection(where: ProductCollectionWhereUniqueInput!): ProductCollection
+  deleteProductCollections(where: [ProductCollectionWhereUniqueInput!]!): [ProductCollection]
   createShelf(data: ShelfCreateInput!): Shelf
   createShelves(data: [ShelfCreateInput!]!): [Shelf]
   updateShelf(where: ShelfWhereUniqueInput!, data: ShelfUpdateInput!): Shelf
@@ -2557,6 +2633,9 @@ type Query {
   payment(where: PaymentWhereUniqueInput!): Payment
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
+  productCollection(where: ProductCollectionWhereUniqueInput!): ProductCollection
+  productCollections(where: ProductCollectionWhereInput! = {}, orderBy: [ProductCollectionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductCollectionWhereUniqueInput): [ProductCollection!]
+  productCollectionsCount(where: ProductCollectionWhereInput! = {}): Int
   shelf(where: ShelfWhereUniqueInput!): Shelf
   shelves(where: ShelfWhereInput! = {}, orderBy: [ShelfOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfWhereUniqueInput): [Shelf!]
   shelvesCount(where: ShelfWhereInput! = {}): Int
