@@ -39,11 +39,16 @@ export default withAuth(
             // @ts-ignore
             const result = await fileUpload(req.file);
 
-            const file = await context.query.File.createOne({
+            const file = await context.sudo().query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
                 url: result.fileUrl,
+                company: {
+                  connect: {
+                    id: context.session.data.company.id,
+                  },
+                },
               },
             });
             res.status(200).json({
