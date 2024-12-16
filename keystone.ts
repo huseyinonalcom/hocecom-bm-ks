@@ -39,7 +39,7 @@ export default withAuth(
             // @ts-ignore
             const result = await fileUpload(req.file);
 
-            const file = await context.sudo().query.File.createOne({
+            const file = await context.query.File.createOne({
               query: "id",
               data: {
                 name: result.fileName,
