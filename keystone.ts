@@ -38,6 +38,14 @@ export default withAuth(
 
             // @ts-ignore
             const result = await fileUpload(req.file);
+try {
+  
+  console.log(context);
+  console.log(context.session);
+  console.log(context.session.data);
+} catch (error) {
+  console.error(error);
+}
 
             const file = await context.sudo().query.File.createOne({
               query: "id",
