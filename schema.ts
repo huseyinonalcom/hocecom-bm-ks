@@ -285,7 +285,7 @@ export const lists: Lists = {
             });
           }
           if (operation === "create") {
-            if (inputData.type == "purchase" && inputData.number) {
+            if (inputData.number) {
               return;
             } else {
               const docs = await context.query.Document.findMany({
@@ -397,7 +397,7 @@ export const lists: Lists = {
       }),
       prefix: text(),
       phase: integer(),
-      number: text({ validation: { isRequired: true } }),
+      number: text(),
       total: virtual({
         field: graphql.field({
           type: graphql.Decimal,
