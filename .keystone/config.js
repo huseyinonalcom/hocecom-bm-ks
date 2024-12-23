@@ -1172,6 +1172,7 @@ var lists = {
       stock: (0, import_fields.json)(),
       earliestExpiration: (0, import_fields.timestamp)(),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      tags: (0, import_fields.relationship)({ ref: "Tag.materials", many: true }),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -1691,6 +1692,49 @@ var lists = {
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
       taxId: (0, import_fields.text)(),
+      contactMail: (0, import_fields.text)(),
+      orderMail: (0, import_fields.text)(),
+      phone: (0, import_fields.text)(),
+      orderTime: (0, import_fields.integer)(),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
+  Tag: (0, import_core.list)({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
+      },
+      operation: {
+        create: isEmployee,
+        query: isUser,
+        update: isEmployee,
+        delete: isManager
+      }
+    },
+    fields: {
+      name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      materials: (0, import_fields.relationship)({ ref: "Material.tags", many: true }),
+      parentTag: (0, import_fields.relationship)({
+        ref: "Tag.childTags",
+        many: false
+      }),
+      childTags: (0, import_fields.relationship)({
+        ref: "Tag.parentTag",
+        many: true
+      }),
+      type: (0, import_fields.select)({
+        type: "string",
+        options: ["collection", "category", "brand"],
+        defaultValue: "category",
+        validation: { isRequired: true }
+      }),
+      image: (0, import_fields.relationship)({
+        ref: "File",
+        many: false
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
   }),

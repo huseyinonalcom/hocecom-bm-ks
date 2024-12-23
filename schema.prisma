@@ -118,6 +118,7 @@ model Company {
   from_Shelf_company              Shelf[]              @relation("Shelf_company")
   from_StockMovement_company      StockMovement[]      @relation("StockMovement_company")
   from_Supplier_company           Supplier[]           @relation("Supplier_company")
+  from_Tag_company                Tag[]                @relation("Tag_company")
   from_WorkOrder_company          WorkOrder[]          @relation("WorkOrder_company")
   from_WorkOrderOperation_company WorkOrderOperation[] @relation("WorkOrderOperation_company")
 
@@ -234,6 +235,7 @@ model File {
   from_Establishment_logo       Establishment[]      @relation("Establishment_logo")
   from_Material_files           Material[]           @relation("Material_files")
   from_Operation_files          Operation[]          @relation("Operation_files")
+  from_Tag_image                Tag[]                @relation("Tag_image")
   from_WorkOrderOperation_files WorkOrderOperation[] @relation("WorkOrderOperation_files")
 
   @@index([companyId])
@@ -265,6 +267,7 @@ model Material {
   earliestExpiration DateTime?
   company            Company?            @relation("Material_company", fields: [companyId], references: [id])
   companyId          String?             @map("company")
+  tags               Tag[]               @relation("Material_tags")
   extraFields        Json?
 
   @@index([brandId])
@@ -412,10 +415,33 @@ model Supplier {
   address     Address?   @relation("Supplier_address", fields: [addressId], references: [id])
   addressId   String?    @map("address")
   taxId       String     @default("")
+  contactMail String     @default("")
+  orderMail   String     @default("")
+  phone       String     @default("")
+  orderTime   Int?
   extraFields Json?
 
   @@index([companyId])
   @@index([addressId])
+}
+
+model Tag {
+  id          String     @id @default(cuid())
+  name        String     @default("")
+  materials   Material[] @relation("Material_tags")
+  parentTag   Tag?       @relation("Tag_parentTag", fields: [parentTagId], references: [id])
+  parentTagId String?    @map("parentTag")
+  childTags   Tag[]      @relation("Tag_parentTag")
+  type        String     @default("category")
+  image       File?      @relation("Tag_image", fields: [imageId], references: [id])
+  imageId     String?    @map("image")
+  company     Company?   @relation("Tag_company", fields: [companyId], references: [id])
+  companyId   String?    @map("company")
+  extraFields Json?
+
+  @@index([parentTagId])
+  @@index([imageId])
+  @@index([companyId])
 }
 
 model User {

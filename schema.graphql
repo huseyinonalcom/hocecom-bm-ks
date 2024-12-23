@@ -1188,6 +1188,8 @@ type Material {
   stock: JSON
   earliestExpiration: DateTime
   company: Company
+  tags(where: TagWhereInput! = {}, orderBy: [TagOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TagWhereUniqueInput): [Tag!]
+  tagsCount(where: TagWhereInput! = {}): Int
   extraFields: JSON
 }
 
@@ -1221,6 +1223,7 @@ input MaterialWhereInput {
   productCollections: ProductCollectionManyRelationFilter
   earliestExpiration: DateTimeNullableFilter
   company: CompanyWhereInput
+  tags: TagManyRelationFilter
 }
 
 input AssemblyComponentManyRelationFilter {
@@ -1257,6 +1260,12 @@ input ProductCollectionManyRelationFilter {
   every: ProductCollectionWhereInput
   some: ProductCollectionWhereInput
   none: ProductCollectionWhereInput
+}
+
+input TagManyRelationFilter {
+  every: TagWhereInput
+  some: TagWhereInput
+  none: TagWhereInput
 }
 
 input MaterialOrderByInput {
@@ -1296,6 +1305,7 @@ input MaterialUpdateInput {
   stock: JSON
   earliestExpiration: DateTime
   company: CompanyRelateToOneForUpdateInput
+  tags: TagRelateToManyForUpdateInput
   extraFields: JSON
 }
 
@@ -1347,6 +1357,13 @@ input ProductCollectionRelateToManyForUpdateInput {
   connect: [ProductCollectionWhereUniqueInput!]
 }
 
+input TagRelateToManyForUpdateInput {
+  disconnect: [TagWhereUniqueInput!]
+  set: [TagWhereUniqueInput!]
+  create: [TagCreateInput!]
+  connect: [TagWhereUniqueInput!]
+}
+
 input MaterialUpdateArgs {
   where: MaterialWhereUniqueInput!
   data: MaterialUpdateInput!
@@ -1375,6 +1392,7 @@ input MaterialCreateInput {
   stock: JSON
   earliestExpiration: DateTime
   company: CompanyRelateToOneForCreateInput
+  tags: TagRelateToManyForCreateInput
   extraFields: JSON
 }
 
@@ -1411,6 +1429,11 @@ input StockMovementRelateToManyForCreateInput {
 input ProductCollectionRelateToManyForCreateInput {
   create: [ProductCollectionCreateInput!]
   connect: [ProductCollectionWhereUniqueInput!]
+}
+
+input TagRelateToManyForCreateInput {
+  create: [TagCreateInput!]
+  connect: [TagWhereUniqueInput!]
 }
 
 type Note {
@@ -2007,6 +2030,10 @@ type Supplier {
   company: Company
   address: Address
   taxId: String
+  contactMail: String
+  orderMail: String
+  phone: String
+  orderTime: Int
   extraFields: JSON
 }
 
@@ -2025,12 +2052,20 @@ input SupplierWhereInput {
   company: CompanyWhereInput
   address: AddressWhereInput
   taxId: StringFilter
+  contactMail: StringFilter
+  orderMail: StringFilter
+  phone: StringFilter
+  orderTime: IntNullableFilter
 }
 
 input SupplierOrderByInput {
   id: OrderDirection
   name: OrderDirection
   taxId: OrderDirection
+  contactMail: OrderDirection
+  orderMail: OrderDirection
+  phone: OrderDirection
+  orderTime: OrderDirection
 }
 
 input SupplierUpdateInput {
@@ -2040,6 +2075,10 @@ input SupplierUpdateInput {
   company: CompanyRelateToOneForUpdateInput
   address: AddressRelateToOneForUpdateInput
   taxId: String
+  contactMail: String
+  orderMail: String
+  phone: String
+  orderTime: Int
   extraFields: JSON
 }
 
@@ -2055,7 +2094,87 @@ input SupplierCreateInput {
   company: CompanyRelateToOneForCreateInput
   address: AddressRelateToOneForCreateInput
   taxId: String
+  contactMail: String
+  orderMail: String
+  phone: String
+  orderTime: Int
   extraFields: JSON
+}
+
+type Tag {
+  id: ID!
+  name: String
+  materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
+  materialsCount(where: MaterialWhereInput! = {}): Int
+  parentTag: Tag
+  childTags(where: TagWhereInput! = {}, orderBy: [TagOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TagWhereUniqueInput): [Tag!]
+  childTagsCount(where: TagWhereInput! = {}): Int
+  type: String
+  image: File
+  company: Company
+  extraFields: JSON
+}
+
+input TagWhereUniqueInput {
+  id: ID
+}
+
+input TagWhereInput {
+  AND: [TagWhereInput!]
+  OR: [TagWhereInput!]
+  NOT: [TagWhereInput!]
+  id: IDFilter
+  name: StringFilter
+  materials: MaterialManyRelationFilter
+  parentTag: TagWhereInput
+  childTags: TagManyRelationFilter
+  type: StringFilter
+  image: FileWhereInput
+  company: CompanyWhereInput
+}
+
+input TagOrderByInput {
+  id: OrderDirection
+  name: OrderDirection
+  type: OrderDirection
+}
+
+input TagUpdateInput {
+  name: String
+  materials: MaterialRelateToManyForUpdateInput
+  parentTag: TagRelateToOneForUpdateInput
+  childTags: TagRelateToManyForUpdateInput
+  type: String
+  image: FileRelateToOneForUpdateInput
+  company: CompanyRelateToOneForUpdateInput
+  extraFields: JSON
+}
+
+input TagRelateToOneForUpdateInput {
+  create: TagCreateInput
+  connect: TagWhereUniqueInput
+  disconnect: Boolean
+}
+
+input TagUpdateArgs {
+  where: TagWhereUniqueInput!
+  data: TagUpdateInput!
+}
+
+input TagCreateInput {
+  name: String
+  materials: MaterialRelateToManyForCreateInput
+  parentTag: TagRelateToOneForCreateInput
+  childTags: TagRelateToManyForCreateInput
+  type: String
+  image: FileRelateToOneForCreateInput
+  company: CompanyRelateToOneForCreateInput
+  extraFields: JSON
+}
+
+input TagRelateToOneForCreateInput {
+  create: TagCreateInput
+  connect: TagWhereUniqueInput
 }
 
 type User {
@@ -2564,6 +2683,12 @@ type Mutation {
   updateSuppliers(data: [SupplierUpdateArgs!]!): [Supplier]
   deleteSupplier(where: SupplierWhereUniqueInput!): Supplier
   deleteSuppliers(where: [SupplierWhereUniqueInput!]!): [Supplier]
+  createTag(data: TagCreateInput!): Tag
+  createTags(data: [TagCreateInput!]!): [Tag]
+  updateTag(where: TagWhereUniqueInput!, data: TagUpdateInput!): Tag
+  updateTags(data: [TagUpdateArgs!]!): [Tag]
+  deleteTag(where: TagWhereUniqueInput!): Tag
+  deleteTags(where: [TagWhereUniqueInput!]!): [Tag]
   createUser(data: UserCreateInput!): User
   createUsers(data: [UserCreateInput!]!): [User]
   updateUser(where: UserWhereUniqueInput!, data: UserUpdateInput!): User
@@ -2663,6 +2788,9 @@ type Query {
   supplier(where: SupplierWhereUniqueInput!): Supplier
   suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
   suppliersCount(where: SupplierWhereInput! = {}): Int
+  tag(where: TagWhereUniqueInput!): Tag
+  tags(where: TagWhereInput! = {}, orderBy: [TagOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TagWhereUniqueInput): [Tag!]
+  tagsCount(where: TagWhereInput! = {}): Int
   user(where: UserWhereUniqueInput!): User
   users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
   usersCount(where: UserWhereInput! = {}): Int

@@ -1512,10 +1512,10 @@ export const lists: Lists = {
         delete: companyFilter,
       },
       operation: {
-        create: isCompanyAdmin,
-        query: isCompanyAdmin,
-        update: isCompanyAdmin,
-        delete: isCompanyAdmin,
+        create: isEmployee,
+        query: isUser,
+        update: isEmployee,
+        delete: isManager,
       },
     },
     fields: {
@@ -1532,7 +1532,7 @@ export const lists: Lists = {
       type: select({
         type: "string",
         options: ["collection", "category", "brand"],
-        defaultValue: "material",
+        defaultValue: "category",
         validation: { isRequired: true },
       }),
       image: relationship({
