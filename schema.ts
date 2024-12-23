@@ -398,6 +398,31 @@ export const lists: Lists = {
       prefix: text(),
       phase: integer(),
       number: text(),
+      value: virtual({
+        field: graphql.field({
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "price amount reduction tax",
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += calculateTotalWithTaxBeforeReduction({
+                  price: docProd.price,
+                  amount: docProd.amount,
+                  tax: docProd.tax,
+                  taxIncluded: item.taxIncluded,
+                });
+              });
+              return new Decimal(total);
+            } catch (e) {
+              return new Decimal(0);
+            }
+          },
+        }),
+      }),
       total: virtual({
         field: graphql.field({
           type: graphql.Decimal,
