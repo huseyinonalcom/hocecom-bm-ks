@@ -1269,7 +1269,8 @@ export const lists: Lists = {
       },
     },
     fields: {
-      version: integer({ validation: { isRequired: true } }),
+      version: integer({ validation: { isRequired: true }, defaultValue: 1 }),
+      mobileVersion: integer({ validation: { isRequired: true }, defaultValue: 1 }),
       iosLink: text(),
       androidLink: text(),
       webLink: text(),
