@@ -756,7 +756,11 @@ export const lists: Lists = {
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      defaultCurrency: text({ defaultValue: "EUR" }),
+      defaultCurrency: select({
+        type: "string",
+        options: ["TRY", "USD", "EUR"],
+        defaultValue: "EUR",
+      }),
       logo: relationship({
         ref: "File",
         many: false,
