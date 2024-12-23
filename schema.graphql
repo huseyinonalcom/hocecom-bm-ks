@@ -1842,6 +1842,7 @@ input ShelfCreateInput {
 type SoftwareVersion {
   id: ID!
   version: Int
+  mobileVersion: Int
   iosLink: String
   androidLink: String
   webLink: String
@@ -1860,6 +1861,7 @@ input SoftwareVersionWhereInput {
   NOT: [SoftwareVersionWhereInput!]
   id: IDFilter
   version: IntFilter
+  mobileVersion: IntFilter
   iosLink: StringFilter
   androidLink: StringFilter
   webLink: StringFilter
@@ -1882,6 +1884,7 @@ input IntFilter {
 input SoftwareVersionOrderByInput {
   id: OrderDirection
   version: OrderDirection
+  mobileVersion: OrderDirection
   iosLink: OrderDirection
   androidLink: OrderDirection
   webLink: OrderDirection
@@ -1892,6 +1895,7 @@ input SoftwareVersionOrderByInput {
 
 input SoftwareVersionUpdateInput {
   version: Int
+  mobileVersion: Int
   iosLink: String
   androidLink: String
   webLink: String
@@ -1907,6 +1911,7 @@ input SoftwareVersionUpdateArgs {
 
 input SoftwareVersionCreateInput {
   version: Int
+  mobileVersion: Int
   iosLink: String
   androidLink: String
   webLink: String

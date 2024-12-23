@@ -370,14 +370,15 @@ model Shelf {
 }
 
 model SoftwareVersion {
-  id          Int       @id
-  version     Int
-  iosLink     String    @default("")
-  androidLink String    @default("")
-  webLink     String    @default("")
-  windowsLink String    @default("")
-  macLink     String    @default("")
-  date        DateTime? @default(now())
+  id            Int       @id
+  version       Int       @default(1)
+  mobileVersion Int       @default(1)
+  iosLink       String    @default("")
+  androidLink   String    @default("")
+  webLink       String    @default("")
+  windowsLink   String    @default("")
+  macLink       String    @default("")
+  date          DateTime? @default(now())
 }
 
 model StockMovement {
