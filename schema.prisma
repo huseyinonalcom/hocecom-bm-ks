@@ -197,7 +197,7 @@ model DocumentProduct {
 model Establishment {
   id              String     @id @default(cuid())
   name            String     @default("")
-  defaultCurrency String     @default("EUR")
+  defaultCurrency String?    @default("EUR")
   logo            File?      @relation("Establishment_logo", fields: [logoId], references: [id])
   logoId          String?    @map("logo")
   phone           String     @default("")

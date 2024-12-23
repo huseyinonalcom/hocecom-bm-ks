@@ -986,7 +986,7 @@ input EstablishmentWhereInput {
   NOT: [EstablishmentWhereInput!]
   id: IDFilter
   name: StringFilter
-  defaultCurrency: StringFilter
+  defaultCurrency: StringNullableFilter
   logo: FileWhereInput
   phone: StringFilter
   phone2: StringFilter
@@ -999,6 +999,21 @@ input EstablishmentWhereInput {
   address: AddressWhereInput
   documents: DocumentManyRelationFilter
   company: CompanyWhereInput
+}
+
+input StringNullableFilter {
+  equals: String
+  in: [String!]
+  notIn: [String!]
+  lt: String
+  lte: String
+  gt: String
+  gte: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  mode: QueryMode
+  not: StringNullableFilter
 }
 
 input ShelfManyRelationFilter {
