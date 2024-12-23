@@ -951,6 +951,7 @@ export const lists: Lists = {
       stock: json(),
       earliestExpiration: timestamp(),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      tags: relationship({ ref: "Tag.materials", many: true }),
       extraFields: json(),
     },
   }),
@@ -1500,6 +1501,45 @@ export const lists: Lists = {
       orderMail: text(),
       phone: text(),
       orderTime: integer(),
+      extraFields: json(),
+    },
+  }),
+  Tag: list({
+    access: {
+      filter: {
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
+      },
+      operation: {
+        create: isCompanyAdmin,
+        query: isCompanyAdmin,
+        update: isCompanyAdmin,
+        delete: isCompanyAdmin,
+      },
+    },
+    fields: {
+      name: text({ validation: { isRequired: true } }),
+      materials: relationship({ ref: "Material.tags", many: true }),
+      parentTag: relationship({
+        ref: "Tag.childTags",
+        many: false,
+      }),
+      childTags: relationship({
+        ref: "Tag.parentTag",
+        many: true,
+      }),
+      type: select({
+        type: "string",
+        options: ["collection", "category", "brand"],
+        defaultValue: "material",
+        validation: { isRequired: true },
+      }),
+      image: relationship({
+        ref: "File",
+        many: false,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: json(),
     },
   }),
