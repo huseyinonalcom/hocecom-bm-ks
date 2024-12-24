@@ -1585,6 +1585,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        if (isSuperAdmin({ session: context.session })) {
+          return;
+        }
         try {
           if (operation === "create" || operation === "update") {
             resolvedData.company = {
