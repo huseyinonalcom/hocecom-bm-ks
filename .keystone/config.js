@@ -635,6 +635,31 @@ var lists = {
       prefix: (0, import_fields.text)(),
       phase: (0, import_fields.integer)(),
       number: (0, import_fields.text)(),
+      value: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Decimal,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "price amount tax"
+              });
+              let total = 0;
+              materials.forEach((docProd) => {
+                total += calculateTotalWithTaxBeforeReduction({
+                  price: docProd.price,
+                  amount: docProd.amount,
+                  tax: docProd.tax,
+                  taxIncluded: item.taxIncluded
+                });
+              });
+              return new import_types.Decimal(total);
+            } catch (e) {
+              return new import_types.Decimal(0);
+            }
+          }
+        })
+      }),
       total: (0, import_fields.virtual)({
         field: import_core.graphql.field({
           type: import_core.graphql.Decimal,
@@ -1755,8 +1780,11 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        if (isSuperAdmin({ session: context.session })) {
+          return;
+        }
         try {
-          if (operation === "create") {
+          if (operation === "create" || operation === "update") {
             resolvedData.company = {
               connect: {
                 id: context.session.data.company.id
@@ -1767,14 +1795,16 @@ var lists = {
           console.error(error);
         }
         try {
-          if (operation === "create") {
+          if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
               throw new Error("Company is required");
             }
             let mail = inputData.email;
-            let mailPart1 = mail.split("@")[0];
-            let mailPart2 = mail.split("@")[1];
+            console.log(mail);
+            let mailPart1 = mail.split("@").at(0);
+            let mailPart2 = mail.split("@").at(-1);
             resolvedData.email = mailPart1 + "+" + resolvedData.company?.connect?.id + "@" + mailPart2;
+            console.log(resolvedData.email);
           }
         } catch (error) {
           console.error(error);

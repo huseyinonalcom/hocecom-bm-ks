@@ -594,6 +594,7 @@ type Document {
   prefix: String
   phase: Int
   number: String
+  value: Decimal
   total: Decimal
   totalPaid: Decimal
   totalToPay: Decimal
