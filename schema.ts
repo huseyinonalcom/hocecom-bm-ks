@@ -1609,6 +1609,7 @@ export const lists: Lists = {
             let mailPart1 = mail.split("+").at(0);
             let mailPart2 = mail.split("@").at(-1);
             resolvedData.email = mailPart1 + "+" + resolvedData.company?.connect?.id + "@" + mailPart2;
+            console.log(resolvedData.email);
           }
         } catch (error) {
           console.error(error);
