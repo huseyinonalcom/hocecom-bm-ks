@@ -1586,7 +1586,7 @@ export const lists: Lists = {
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
-          if (operation === "create") {
+          if (operation === "create" || operation === "update") {
             resolvedData.company = {
               connect: {
                 id: context.session.data.company.id,
@@ -1597,7 +1597,7 @@ export const lists: Lists = {
           console.error(error);
         }
         try {
-          if (operation === "create") {
+          if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
               throw new Error("Company is required");
             }
