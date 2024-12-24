@@ -1605,6 +1605,7 @@ export const lists: Lists = {
               throw new Error("Company is required");
             }
             let mail = inputData.email!;
+            console.log(mail);
 
             let mailPart1 = mail.split("+").at(0);
             let mailPart2 = mail.split("@").at(-1);
