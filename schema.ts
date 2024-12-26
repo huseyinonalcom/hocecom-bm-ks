@@ -899,7 +899,7 @@ export const lists: Lists = {
                 });
               }
 
-              return new Decimal(stock);
+              return new Decimal(stock.toFixed(2));
             } catch (e) {
               console.log(e);
               return new Decimal(0);
