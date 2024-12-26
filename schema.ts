@@ -894,7 +894,7 @@ export const lists: Lists = {
 
               if (shelfStocks.length > 0) {
                 stock = shelfStocks.reduce((acc: number, s: any) => {
-                  acc += s.currentStock;
+                  acc += Number(s.currentStock);
                   return acc;
                 });
               }
