@@ -116,6 +116,7 @@ model Company {
   from_Payment_company            Payment[]            @relation("Payment_company")
   from_ProductCollection_company  ProductCollection[]  @relation("ProductCollection_company")
   from_Shelf_company              Shelf[]              @relation("Shelf_company")
+  from_ShelfStock_company         ShelfStock[]         @relation("ShelfStock_company")
   from_StockMovement_company      StockMovement[]      @relation("StockMovement_company")
   from_Supplier_company           Supplier[]           @relation("Supplier_company")
   from_Tag_company                Tag[]                @relation("Tag_company")
@@ -263,7 +264,7 @@ model Material {
   stockMovements     StockMovement[]     @relation("StockMovement_material")
   documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
   productCollections ProductCollection[] @relation("Material_productCollections")
-  stock              Json?
+  stock              ShelfStock[]        @relation("ShelfStock_material")
   earliestExpiration DateTime?
   company            Company?            @relation("Material_company", fields: [companyId], references: [id])
   companyId          String?             @map("company")
@@ -357,7 +358,7 @@ model Shelf {
   x               String          @default("")
   y               String          @default("")
   z               String          @default("")
-  contents        Json?
+  contents        ShelfStock[]    @relation("ShelfStock_shelf")
   establishment   Establishment?  @relation("Shelf_establishment", fields: [establishmentId], references: [id])
   establishmentId String?         @map("establishment")
   stockMovements  StockMovement[] @relation("StockMovement_shelf")
@@ -366,6 +367,23 @@ model Shelf {
   extraFields     Json?
 
   @@index([establishmentId])
+  @@index([companyId])
+}
+
+model ShelfStock {
+  id             String          @id @default(cuid())
+  shelf          Shelf?          @relation("ShelfStock_shelf", fields: [shelfId], references: [id])
+  shelfId        String?         @map("shelf")
+  material       Material?       @relation("ShelfStock_material", fields: [materialId], references: [id])
+  materialId     String?         @map("material")
+  stockMovements StockMovement[] @relation("StockMovement_shelfStock")
+  expiration     DateTime?
+  currentStock   Decimal?        @postgresql.Decimal(18, 4)
+  company        Company?        @relation("ShelfStock_company", fields: [companyId], references: [id])
+  companyId      String?         @map("company")
+
+  @@index([shelfId])
+  @@index([materialId])
   @@index([companyId])
 }
 
@@ -387,6 +405,8 @@ model StockMovement {
   materialId      String?          @map("material")
   amount          Decimal          @postgresql.Decimal(18, 4)
   movementType    String           @default("in")
+  shelfStock      ShelfStock?      @relation("StockMovement_shelfStock", fields: [shelfStockId], references: [id])
+  shelfStockId    String?          @map("shelfStock")
   expiration      DateTime?
   documentProduct DocumentProduct? @relation("DocumentProduct_stockMovement")
   note            String           @default("")
@@ -401,6 +421,7 @@ model StockMovement {
   extraFields     Json?
 
   @@index([materialId])
+  @@index([shelfStockId])
   @@index([customerId])
   @@index([shelfId])
   @@index([companyId])

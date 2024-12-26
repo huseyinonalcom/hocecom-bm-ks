@@ -22,28 +22,6 @@ import {
 } from "./functions";
 import { Decimal } from "@keystone-6/core/types";
 
-interface MaterialStock {
-  shelfStocks: ShelfStock[];
-}
-
-interface ShelfStock {
-  location: string;
-  shelfId: string;
-  expiration: Date | null;
-  amount: number;
-}
-
-interface ShelfContents {
-  materialContents: MaterialContent[];
-}
-
-interface MaterialContent {
-  name: string;
-  materialId: string;
-  expiration: Date | null;
-  amount: number;
-}
-
 const companyFilter = ({ session }: { session?: any }) => {
   if (isGlobalAdmin({ session })) {
     return {};
@@ -901,10 +879,29 @@ export const lists: Lists = {
             try {
               let stock = 0;
 
-              console.log(item);
+              const shelfStocks = await context.query.ShelfStock.findMany({
+                where: {
+                  material: {
+                    id: {
+                      equals: item.id,
+                    },
+                  },
+                },
+                query: "currentStock",
+              });
+
+              console.log(shelfStocks);
+
+              if (shelfStocks.length > 0) {
+                stock = shelfStocks.reduce((acc: number, s: any) => {
+                  acc += s.currentStock;
+                  return acc;
+                });
+              }
 
               return new Decimal(stock);
             } catch (e) {
+              console.log(e);
               return new Decimal(0);
             }
           },
@@ -1293,6 +1290,21 @@ export const lists: Lists = {
         delete: isWorker,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       shelf: relationship({
         ref: "Shelf.contents",
@@ -1308,6 +1320,7 @@ export const lists: Lists = {
       }),
       expiration: timestamp(),
       currentStock: decimal(),
+      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
     },
   }),
   SoftwareVersion: list({

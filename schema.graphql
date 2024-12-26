@@ -1186,7 +1186,8 @@ type Material {
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
   productCollections(where: ProductCollectionWhereInput! = {}, orderBy: [ProductCollectionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductCollectionWhereUniqueInput): [ProductCollection!]
   productCollectionsCount(where: ProductCollectionWhereInput! = {}): Int
-  stock: JSON
+  stock(where: ShelfStockWhereInput! = {}, orderBy: [ShelfStockOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfStockWhereUniqueInput): [ShelfStock!]
+  stockCount(where: ShelfStockWhereInput! = {}): Int
   earliestExpiration: DateTime
   company: Company
   tags(where: TagWhereInput! = {}, orderBy: [TagOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TagWhereUniqueInput): [Tag!]
@@ -1222,6 +1223,7 @@ input MaterialWhereInput {
   stockMovements: StockMovementManyRelationFilter
   documentProducts: DocumentProductManyRelationFilter
   productCollections: ProductCollectionManyRelationFilter
+  stock: ShelfStockManyRelationFilter
   earliestExpiration: DateTimeNullableFilter
   company: CompanyWhereInput
   tags: TagManyRelationFilter
@@ -1261,6 +1263,12 @@ input ProductCollectionManyRelationFilter {
   every: ProductCollectionWhereInput
   some: ProductCollectionWhereInput
   none: ProductCollectionWhereInput
+}
+
+input ShelfStockManyRelationFilter {
+  every: ShelfStockWhereInput
+  some: ShelfStockWhereInput
+  none: ShelfStockWhereInput
 }
 
 input TagManyRelationFilter {
@@ -1303,7 +1311,7 @@ input MaterialUpdateInput {
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
   productCollections: ProductCollectionRelateToManyForUpdateInput
-  stock: JSON
+  stock: ShelfStockRelateToManyForUpdateInput
   earliestExpiration: DateTime
   company: CompanyRelateToOneForUpdateInput
   tags: TagRelateToManyForUpdateInput
@@ -1358,6 +1366,13 @@ input ProductCollectionRelateToManyForUpdateInput {
   connect: [ProductCollectionWhereUniqueInput!]
 }
 
+input ShelfStockRelateToManyForUpdateInput {
+  disconnect: [ShelfStockWhereUniqueInput!]
+  set: [ShelfStockWhereUniqueInput!]
+  create: [ShelfStockCreateInput!]
+  connect: [ShelfStockWhereUniqueInput!]
+}
+
 input TagRelateToManyForUpdateInput {
   disconnect: [TagWhereUniqueInput!]
   set: [TagWhereUniqueInput!]
@@ -1390,7 +1405,7 @@ input MaterialCreateInput {
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput
   productCollections: ProductCollectionRelateToManyForCreateInput
-  stock: JSON
+  stock: ShelfStockRelateToManyForCreateInput
   earliestExpiration: DateTime
   company: CompanyRelateToOneForCreateInput
   tags: TagRelateToManyForCreateInput
@@ -1430,6 +1445,11 @@ input StockMovementRelateToManyForCreateInput {
 input ProductCollectionRelateToManyForCreateInput {
   create: [ProductCollectionCreateInput!]
   connect: [ProductCollectionWhereUniqueInput!]
+}
+
+input ShelfStockRelateToManyForCreateInput {
+  create: [ShelfStockCreateInput!]
+  connect: [ShelfStockWhereUniqueInput!]
 }
 
 input TagRelateToManyForCreateInput {
@@ -1781,7 +1801,8 @@ type Shelf {
   x: String
   y: String
   z: String
-  contents: JSON
+  contents(where: ShelfStockWhereInput! = {}, orderBy: [ShelfStockOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfStockWhereUniqueInput): [ShelfStock!]
+  contentsCount(where: ShelfStockWhereInput! = {}): Int
   establishment: Establishment
   stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
@@ -1801,6 +1822,7 @@ input ShelfWhereInput {
   x: StringFilter
   y: StringFilter
   z: StringFilter
+  contents: ShelfStockManyRelationFilter
   establishment: EstablishmentWhereInput
   stockMovements: StockMovementManyRelationFilter
   company: CompanyWhereInput
@@ -1817,7 +1839,7 @@ input ShelfUpdateInput {
   x: String
   y: String
   z: String
-  contents: JSON
+  contents: ShelfStockRelateToManyForUpdateInput
   establishment: EstablishmentRelateToOneForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   company: CompanyRelateToOneForUpdateInput
@@ -1833,11 +1855,79 @@ input ShelfCreateInput {
   x: String
   y: String
   z: String
-  contents: JSON
+  contents: ShelfStockRelateToManyForCreateInput
   establishment: EstablishmentRelateToOneForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
+}
+
+type ShelfStock {
+  id: ID!
+  shelf: Shelf
+  material: Material
+  stockMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
+  stockMovementsCount(where: StockMovementWhereInput! = {}): Int
+  expiration: DateTime
+  currentStock: Decimal
+  company: Company
+}
+
+input ShelfStockWhereUniqueInput {
+  id: ID
+}
+
+input ShelfStockWhereInput {
+  AND: [ShelfStockWhereInput!]
+  OR: [ShelfStockWhereInput!]
+  NOT: [ShelfStockWhereInput!]
+  id: IDFilter
+  shelf: ShelfWhereInput
+  material: MaterialWhereInput
+  stockMovements: StockMovementManyRelationFilter
+  expiration: DateTimeNullableFilter
+  currentStock: DecimalNullableFilter
+  company: CompanyWhereInput
+}
+
+input ShelfStockOrderByInput {
+  id: OrderDirection
+  expiration: OrderDirection
+  currentStock: OrderDirection
+}
+
+input ShelfStockUpdateInput {
+  shelf: ShelfRelateToOneForUpdateInput
+  material: MaterialRelateToOneForUpdateInput
+  stockMovements: StockMovementRelateToManyForUpdateInput
+  expiration: DateTime
+  currentStock: Decimal
+  company: CompanyRelateToOneForUpdateInput
+}
+
+input ShelfRelateToOneForUpdateInput {
+  create: ShelfCreateInput
+  connect: ShelfWhereUniqueInput
+  disconnect: Boolean
+}
+
+input ShelfStockUpdateArgs {
+  where: ShelfStockWhereUniqueInput!
+  data: ShelfStockUpdateInput!
+}
+
+input ShelfStockCreateInput {
+  shelf: ShelfRelateToOneForCreateInput
+  material: MaterialRelateToOneForCreateInput
+  stockMovements: StockMovementRelateToManyForCreateInput
+  expiration: DateTime
+  currentStock: Decimal
+  company: CompanyRelateToOneForCreateInput
+}
+
+input ShelfRelateToOneForCreateInput {
+  create: ShelfCreateInput
+  connect: ShelfWhereUniqueInput
 }
 
 type SoftwareVersion {
@@ -1926,6 +2016,7 @@ type StockMovement {
   material: Material
   amount: Decimal
   movementType: String
+  shelfStock: ShelfStock
   expiration: DateTime
   documentProduct: DocumentProduct
   note: String
@@ -1949,6 +2040,7 @@ input StockMovementWhereInput {
   material: MaterialWhereInput
   amount: DecimalFilter
   movementType: StringFilter
+  shelfStock: ShelfStockWhereInput
   expiration: DateTimeNullableFilter
   documentProduct: DocumentProductWhereInput
   note: StringFilter
@@ -1973,6 +2065,7 @@ input StockMovementUpdateInput {
   material: MaterialRelateToOneForUpdateInput
   amount: Decimal
   movementType: String
+  shelfStock: ShelfStockRelateToOneForUpdateInput
   expiration: DateTime
   documentProduct: DocumentProductRelateToOneForUpdateInput
   note: String
@@ -1984,15 +2077,15 @@ input StockMovementUpdateInput {
   extraFields: JSON
 }
 
-input DocumentProductRelateToOneForUpdateInput {
-  create: DocumentProductCreateInput
-  connect: DocumentProductWhereUniqueInput
+input ShelfStockRelateToOneForUpdateInput {
+  create: ShelfStockCreateInput
+  connect: ShelfStockWhereUniqueInput
   disconnect: Boolean
 }
 
-input ShelfRelateToOneForUpdateInput {
-  create: ShelfCreateInput
-  connect: ShelfWhereUniqueInput
+input DocumentProductRelateToOneForUpdateInput {
+  create: DocumentProductCreateInput
+  connect: DocumentProductWhereUniqueInput
   disconnect: Boolean
 }
 
@@ -2005,6 +2098,7 @@ input StockMovementCreateInput {
   material: MaterialRelateToOneForCreateInput
   amount: Decimal
   movementType: String
+  shelfStock: ShelfStockRelateToOneForCreateInput
   expiration: DateTime
   documentProduct: DocumentProductRelateToOneForCreateInput
   note: String
@@ -2016,14 +2110,14 @@ input StockMovementCreateInput {
   extraFields: JSON
 }
 
+input ShelfStockRelateToOneForCreateInput {
+  create: ShelfStockCreateInput
+  connect: ShelfStockWhereUniqueInput
+}
+
 input DocumentProductRelateToOneForCreateInput {
   create: DocumentProductCreateInput
   connect: DocumentProductWhereUniqueInput
-}
-
-input ShelfRelateToOneForCreateInput {
-  create: ShelfCreateInput
-  connect: ShelfWhereUniqueInput
 }
 
 type Supplier {
@@ -2671,6 +2765,12 @@ type Mutation {
   updateShelves(data: [ShelfUpdateArgs!]!): [Shelf]
   deleteShelf(where: ShelfWhereUniqueInput!): Shelf
   deleteShelves(where: [ShelfWhereUniqueInput!]!): [Shelf]
+  createShelfStock(data: ShelfStockCreateInput!): ShelfStock
+  createShelfStocks(data: [ShelfStockCreateInput!]!): [ShelfStock]
+  updateShelfStock(where: ShelfStockWhereUniqueInput!, data: ShelfStockUpdateInput!): ShelfStock
+  updateShelfStocks(data: [ShelfStockUpdateArgs!]!): [ShelfStock]
+  deleteShelfStock(where: ShelfStockWhereUniqueInput!): ShelfStock
+  deleteShelfStocks(where: [ShelfStockWhereUniqueInput!]!): [ShelfStock]
   createSoftwareVersion(data: SoftwareVersionCreateInput!): SoftwareVersion
   createSoftwareVersions(data: [SoftwareVersionCreateInput!]!): [SoftwareVersion]
   updateSoftwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}, data: SoftwareVersionUpdateInput!): SoftwareVersion
@@ -2785,6 +2885,9 @@ type Query {
   shelf(where: ShelfWhereUniqueInput!): Shelf
   shelves(where: ShelfWhereInput! = {}, orderBy: [ShelfOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfWhereUniqueInput): [Shelf!]
   shelvesCount(where: ShelfWhereInput! = {}): Int
+  shelfStock(where: ShelfStockWhereUniqueInput!): ShelfStock
+  shelfStocks(where: ShelfStockWhereInput! = {}, orderBy: [ShelfStockOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfStockWhereUniqueInput): [ShelfStock!]
+  shelfStocksCount(where: ShelfStockWhereInput! = {}): Int
   softwareVersion(where: SoftwareVersionWhereUniqueInput! = {id: 1}): SoftwareVersion
   softwareVersions(where: SoftwareVersionWhereInput! = {id: {equals: 1}}, orderBy: [SoftwareVersionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SoftwareVersionWhereUniqueInput): [SoftwareVersion!]
   softwareVersionsCount(where: SoftwareVersionWhereInput! = {id: {equals: 1}}): Int
