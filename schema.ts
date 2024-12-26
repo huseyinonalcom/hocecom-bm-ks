@@ -1270,6 +1270,39 @@ export const lists: Lists = {
           console.error(error);
         }
       },
+      afterOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create" || operation === "update" || operation === "delete") {
+            const relatedShelfStocks = await context.query.ShelfStock.findMany({
+              where: {
+                material: {
+                  id: {
+                    equals: item.materialId,
+                  },
+                },
+              },
+              query: "id currentStock expiration material { id }",
+            });
+            let newMaterialStock: Decimal = new Decimal("0.00");
+            let newExpiration = null;
+            if (relatedShelfStocks.length > 0) {
+              relatedShelfStocks.forEach((s) => {
+                newMaterialStock = Decimal.add(newMaterialStock, s.currentStock);
+              });
+              newExpiration = relatedShelfStocks.toSorted((a, b) => new Date(a.expiration).getTime() - new Date(b.expiration).getTime())[0].expiration;
+            } else {
+              newMaterialStock = new Decimal("0.00");
+              newExpiration = null;
+            }
+            await context.query.Material.updateOne({
+              where: { id: item.materialId },
+              data: { currentStock: newMaterialStock, earliestExpiration: newExpiration },
+            });
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
     },
     fields: {
       shelf: relationship({
