@@ -872,39 +872,7 @@ export const lists: Lists = {
       }),
       description: text(),
       price: decimal({ validation: { isRequired: true, min: "0" } }),
-      currentStock: virtual({
-        field: graphql.field({
-          type: graphql.Decimal,
-          async resolve(item, args, context) {
-            try {
-              const shelfStocks = await context.query.ShelfStock.findMany({
-                where: {
-                  material: {
-                    id: {
-                      equals: item.id,
-                    },
-                  },
-                },
-                query: "currentStock",
-              });
-
-              console.log(shelfStocks);
-
-              let stock: Decimal = new Decimal("0.0");
-              if (shelfStocks.length > 0) {
-                shelfStocks.forEach((s: any) => {
-                  stock = Decimal.add(stock, s.currentStock);
-                });
-              }
-
-              return stock;
-            } catch (e) {
-              console.log(e);
-              return new Decimal(0);
-            }
-          },
-        }),
-      }),
+      currentStock: decimal({ defaultValue: "0" }),
       status: select({
         type: "string",
         options: ["active", "passive", "cancelled"],
