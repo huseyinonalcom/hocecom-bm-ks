@@ -1471,6 +1471,10 @@ export const lists: Lists = {
         defaultValue: "in",
         validation: { isRequired: true },
       }),
+      shelfStock: relationship({
+        ref: "ShelfStock.stockMovements",
+        many: false,
+      }),
       expiration: timestamp(),
       documentProduct: relationship({
         ref: "DocumentProduct.stockMovement",
