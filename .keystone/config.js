@@ -1532,7 +1532,7 @@ var lists = {
               relatedShelfStocks.forEach((s) => {
                 newMaterialStock = import_types.Decimal.add(newMaterialStock, s.currentStock);
               });
-              newExpiration = relatedShelfStocks.toSorted((a, b) => new Date(a.expiration).getTime() - new Date(b.expiration).getTime())[0].expiration;
+              newExpiration = relatedShelfStocks.filter((st) => st.expiration).toSorted((a, b) => new Date(a.expiration).getTime() - new Date(b.expiration).getTime())[0].expiration;
             } else {
               newMaterialStock = new import_types.Decimal("0.00");
               newExpiration = null;
