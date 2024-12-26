@@ -877,8 +877,6 @@ export const lists: Lists = {
           type: graphql.Decimal,
           async resolve(item, args, context) {
             try {
-              let stock = 0;
-
               const shelfStocks = await context.query.ShelfStock.findMany({
                 where: {
                   material: {
@@ -892,14 +890,14 @@ export const lists: Lists = {
 
               console.log(shelfStocks);
 
+              let stock: Decimal = new Decimal("0.0");
               if (shelfStocks.length > 0) {
-                stock = shelfStocks.reduce((acc: number, s: any) => {
-                  acc += Number(s.currentStock);
-                  return acc;
+                shelfStocks.forEach((s: any) => {
+                  stock = Decimal.add(stock, s.currentStock);
                 });
               }
 
-              return new Decimal(stock.toFixed(2));
+              return stock;
             } catch (e) {
               console.log(e);
               return new Decimal(0);
