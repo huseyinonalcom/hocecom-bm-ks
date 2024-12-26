@@ -1209,6 +1209,7 @@ input MaterialWhereInput {
   assemblyComponents: AssemblyComponentManyRelationFilter
   description: StringFilter
   price: DecimalFilter
+  currentStock: DecimalNullableFilter
   status: StringFilter
   files: FileManyRelationFilter
   workOrders: WorkOrderManyRelationFilter
@@ -1282,6 +1283,7 @@ input MaterialOrderByInput {
   name: OrderDirection
   description: OrderDirection
   price: OrderDirection
+  currentStock: OrderDirection
   status: OrderDirection
   code: OrderDirection
   ean: OrderDirection
@@ -1297,6 +1299,7 @@ input MaterialUpdateInput {
   assemblyComponents: AssemblyComponentRelateToManyForUpdateInput
   description: String
   price: Decimal
+  currentStock: Decimal
   status: String
   files: FileRelateToManyForUpdateInput
   workOrders: WorkOrderRelateToManyForUpdateInput
@@ -1391,6 +1394,7 @@ input MaterialCreateInput {
   assemblyComponents: AssemblyComponentRelateToManyForCreateInput
   description: String
   price: Decimal
+  currentStock: Decimal
   status: String
   files: FileRelateToManyForCreateInput
   workOrders: WorkOrderRelateToManyForCreateInput

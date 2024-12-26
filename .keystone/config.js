@@ -1115,37 +1115,7 @@ var lists = {
       }),
       description: (0, import_fields.text)(),
       price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
-      currentStock: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Decimal,
-          async resolve(item, args, context) {
-            try {
-              let stock = 0;
-              const shelfStocks = await context.query.ShelfStock.findMany({
-                where: {
-                  material: {
-                    id: {
-                      equals: item.id
-                    }
-                  }
-                },
-                query: "currentStock"
-              });
-              console.log(shelfStocks);
-              if (shelfStocks.length > 0) {
-                stock = shelfStocks.reduce((acc, s) => {
-                  acc += s.currentStock;
-                  return acc;
-                });
-              }
-              return new import_types.Decimal(stock);
-            } catch (e) {
-              console.log(e);
-              return new import_types.Decimal(0);
-            }
-          }
-        })
-      }),
+      currentStock: (0, import_fields.decimal)({ defaultValue: "0" }),
       status: (0, import_fields.select)({
         type: "string",
         options: ["active", "passive", "cancelled"],

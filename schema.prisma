@@ -249,6 +249,7 @@ model Material {
   assemblyComponents AssemblyComponent[] @relation("AssemblyComponent_material")
   description        String              @default("")
   price              Decimal             @postgresql.Decimal(18, 4)
+  currentStock       Decimal?            @default("0") @postgresql.Decimal(18, 4)
   status             String              @default("active")
   files              File[]              @relation("Material_files")
   workOrders         WorkOrder[]         @relation("Material_workOrders")
