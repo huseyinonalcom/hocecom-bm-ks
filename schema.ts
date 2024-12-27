@@ -902,7 +902,6 @@ export const lists: Lists = {
         type: "string",
         options: ["amount", "volume", "length", "weight", "area"],
         defaultValue: "amount",
-        validation: { isRequired: true },
       }),
       type: select({
         type: "string",
