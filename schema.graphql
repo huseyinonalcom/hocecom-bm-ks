@@ -1210,7 +1210,7 @@ input MaterialWhereInput {
   description: StringFilter
   price: DecimalFilter
   currentStock: DecimalNullableFilter
-  status: StringFilter
+  status: StringNullableFilter
   files: FileManyRelationFilter
   workOrders: WorkOrderManyRelationFilter
   code: StringFilter
@@ -1218,7 +1218,7 @@ input MaterialWhereInput {
   tax: DecimalFilter
   brand: BrandWhereInput
   suppliers: SupplierManyRelationFilter
-  pricedBy: StringFilter
+  pricedBy: StringNullableFilter
   type: StringFilter
   operations: OperationManyRelationFilter
   stockMovements: StockMovementManyRelationFilter

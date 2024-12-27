@@ -876,8 +876,7 @@ export const lists: Lists = {
       status: select({
         type: "string",
         options: ["active", "passive", "cancelled"],
-        defaultValue: "active",
-        validation: { isRequired: true },
+        defaultValue: "passive",
       }),
       files: relationship({
         ref: "File",

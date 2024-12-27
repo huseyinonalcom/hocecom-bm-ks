@@ -1119,8 +1119,7 @@ var lists = {
       status: (0, import_fields.select)({
         type: "string",
         options: ["active", "passive", "cancelled"],
-        defaultValue: "active",
-        validation: { isRequired: true }
+        defaultValue: "passive"
       }),
       files: (0, import_fields.relationship)({
         ref: "File",
@@ -1144,8 +1143,7 @@ var lists = {
       pricedBy: (0, import_fields.select)({
         type: "string",
         options: ["amount", "volume", "length", "weight", "area"],
-        defaultValue: "amount",
-        validation: { isRequired: true }
+        defaultValue: "amount"
       }),
       type: (0, import_fields.select)({
         type: "string",
