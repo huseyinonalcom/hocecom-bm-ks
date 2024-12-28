@@ -878,6 +878,11 @@ export const lists: Lists = {
       description: text(),
       price: decimal({ validation: { isRequired: true, min: "0" } }),
       currentStock: decimal({ defaultValue: "0" }),
+      length: decimal({}),
+      width: decimal({}),
+      height: decimal({}),
+      weight: decimal({}),
+      area: decimal({}),
       status: select({
         type: "string",
         options: ["active", "passive", "cancelled"],
