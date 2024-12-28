@@ -1170,6 +1170,11 @@ type Material {
   description: String
   price: Decimal
   currentStock: Decimal
+  length: Decimal
+  width: Decimal
+  height: Decimal
+  weight: Decimal
+  area: Decimal
   status: String
   files(where: FileWhereInput! = {}, orderBy: [FileOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: FileWhereUniqueInput): [File!]
   filesCount(where: FileWhereInput! = {}): Int
@@ -1215,6 +1220,11 @@ input MaterialWhereInput {
   description: StringFilter
   price: DecimalFilter
   currentStock: DecimalNullableFilter
+  length: DecimalNullableFilter
+  width: DecimalNullableFilter
+  height: DecimalNullableFilter
+  weight: DecimalNullableFilter
+  area: DecimalNullableFilter
   status: StringNullableFilter
   files: FileManyRelationFilter
   workOrders: WorkOrderManyRelationFilter
@@ -1289,6 +1299,11 @@ input MaterialOrderByInput {
   description: OrderDirection
   price: OrderDirection
   currentStock: OrderDirection
+  length: OrderDirection
+  width: OrderDirection
+  height: OrderDirection
+  weight: OrderDirection
+  area: OrderDirection
   status: OrderDirection
   code: OrderDirection
   ean: OrderDirection
@@ -1305,6 +1320,11 @@ input MaterialUpdateInput {
   description: String
   price: Decimal
   currentStock: Decimal
+  length: Decimal
+  width: Decimal
+  height: Decimal
+  weight: Decimal
+  area: Decimal
   status: String
   files: FileRelateToManyForUpdateInput
   workOrders: WorkOrderRelateToManyForUpdateInput
@@ -1400,6 +1420,11 @@ input MaterialCreateInput {
   description: String
   price: Decimal
   currentStock: Decimal
+  length: Decimal
+  width: Decimal
+  height: Decimal
+  weight: Decimal
+  area: Decimal
   status: String
   files: FileRelateToManyForCreateInput
   workOrders: WorkOrderRelateToManyForCreateInput
