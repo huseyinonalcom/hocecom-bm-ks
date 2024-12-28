@@ -573,6 +573,11 @@ export const lists: Lists = {
       description: text(),
       tax: decimal({ validation: { isRequired: true, min: "0" } }),
       price: decimal({ validation: { isRequired: true, min: "0" } }),
+      pricedBy: select({
+        type: "string",
+        options: ["amount", "volume", "length", "weight", "area"],
+        defaultValue: "amount",
+      }),
       reduction: decimal({ defaultValue: "0" }),
       totalWithoutTaxBeforeReduction: virtual({
         field: graphql.field({
