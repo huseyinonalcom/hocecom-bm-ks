@@ -457,6 +457,7 @@ model Supplier {
 model Tag {
   id          String     @id @default(cuid())
   name        String     @default("")
+  description Json?
   materials   Material[] @relation("Material_tags")
   parentTag   Tag?       @relation("Tag_parentTag", fields: [parentTagId], references: [id])
   parentTagId String?    @map("parentTag")

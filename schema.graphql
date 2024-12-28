@@ -2238,6 +2238,7 @@ input SupplierCreateInput {
 type Tag {
   id: ID!
   name: String
+  description: JSON
   materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
   materialsCount(where: MaterialWhereInput! = {}): Int
   parentTag: Tag
@@ -2275,6 +2276,7 @@ input TagOrderByInput {
 
 input TagUpdateInput {
   name: String
+  description: JSON
   materials: MaterialRelateToManyForUpdateInput
   parentTag: TagRelateToOneForUpdateInput
   childTags: TagRelateToManyForUpdateInput
@@ -2297,6 +2299,7 @@ input TagUpdateArgs {
 
 input TagCreateInput {
   name: String
+  description: JSON
   materials: MaterialRelateToManyForCreateInput
   parentTag: TagRelateToOneForCreateInput
   childTags: TagRelateToManyForCreateInput

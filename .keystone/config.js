@@ -1734,8 +1734,24 @@ var lists = {
         delete: isManager
       }
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id
+              }
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      description: (0, import_fields.json)(),
       materials: (0, import_fields.relationship)({ ref: "Material.tags", many: true }),
       parentTag: (0, import_fields.relationship)({
         ref: "Tag.childTags",
