@@ -1584,6 +1584,21 @@ export const lists: Lists = {
         delete: isManager,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            resolvedData.company = {
+              connect: {
+                id: context.session.data.company.id,
+              },
+            };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       materials: relationship({ ref: "Material.tags", many: true }),
