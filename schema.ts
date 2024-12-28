@@ -1601,6 +1601,7 @@ export const lists: Lists = {
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
+      description: text(),
       materials: relationship({ ref: "Material.tags", many: true }),
       parentTag: relationship({
         ref: "Tag.childTags",
