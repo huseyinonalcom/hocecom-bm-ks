@@ -816,6 +816,11 @@ var lists = {
       description: (0, import_fields.text)(),
       tax: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
+      pricedBy: (0, import_fields.select)({
+        type: "string",
+        options: ["amount", "volume", "length", "weight", "area"],
+        defaultValue: "amount"
+      }),
       reduction: (0, import_fields.decimal)({ defaultValue: "0" }),
       totalWithoutTaxBeforeReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({

@@ -845,6 +845,7 @@ type DocumentProduct {
   description: String
   tax: Decimal
   price: Decimal
+  pricedBy: String
   reduction: Decimal
   totalWithoutTaxBeforeReduction: Decimal
   totalWithoutTaxAfterReduction: Decimal
@@ -873,6 +874,7 @@ input DocumentProductWhereInput {
   description: StringFilter
   tax: DecimalFilter
   price: DecimalFilter
+  pricedBy: StringNullableFilter
   reduction: DecimalNullableFilter
   document: DocumentWhereInput
   company: CompanyWhereInput
@@ -887,6 +889,21 @@ input DecimalFilter {
   gt: Decimal
   gte: Decimal
   not: DecimalFilter
+}
+
+input StringNullableFilter {
+  equals: String
+  in: [String!]
+  notIn: [String!]
+  lt: String
+  lte: String
+  gt: String
+  gte: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  mode: QueryMode
+  not: StringNullableFilter
 }
 
 input DecimalNullableFilter {
@@ -907,6 +924,7 @@ input DocumentProductOrderByInput {
   description: OrderDirection
   tax: OrderDirection
   price: OrderDirection
+  pricedBy: OrderDirection
   reduction: OrderDirection
 }
 
@@ -918,6 +936,7 @@ input DocumentProductUpdateInput {
   description: String
   tax: Decimal
   price: Decimal
+  pricedBy: String
   reduction: Decimal
   document: DocumentRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
@@ -943,6 +962,7 @@ input DocumentProductCreateInput {
   description: String
   tax: Decimal
   price: Decimal
+  pricedBy: String
   reduction: Decimal
   document: DocumentRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
@@ -1000,21 +1020,6 @@ input EstablishmentWhereInput {
   address: AddressWhereInput
   documents: DocumentManyRelationFilter
   company: CompanyWhereInput
-}
-
-input StringNullableFilter {
-  equals: String
-  in: [String!]
-  notIn: [String!]
-  lt: String
-  lte: String
-  gt: String
-  gte: String
-  contains: String
-  startsWith: String
-  endsWith: String
-  mode: QueryMode
-  not: StringNullableFilter
 }
 
 input ShelfManyRelationFilter {
