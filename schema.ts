@@ -831,6 +831,7 @@ export const lists: Lists = {
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
+      nameLocalized: json(),
       components: relationship({
         ref: "AssemblyComponent.assembly",
         many: true,
@@ -839,7 +840,8 @@ export const lists: Lists = {
         ref: "AssemblyComponent.material",
         many: true,
       }),
-      description: json(),
+      description: text(),
+      descriptionLocalized: json(),
       price: decimal({ validation: { isRequired: true, min: "0" } }),
       currentStock: decimal({ defaultValue: "0" }),
       length: decimal({}),
