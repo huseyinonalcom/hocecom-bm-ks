@@ -340,71 +340,6 @@ input MaterialRelateToOneForCreateInput {
   connect: MaterialWhereUniqueInput
 }
 
-type Brand {
-  id: ID!
-  name: String
-  materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
-  materialsCount(where: MaterialWhereInput! = {}): Int
-  company: Company
-  extraFields: JSON
-}
-
-input BrandWhereUniqueInput {
-  id: ID
-}
-
-input BrandWhereInput {
-  AND: [BrandWhereInput!]
-  OR: [BrandWhereInput!]
-  NOT: [BrandWhereInput!]
-  id: IDFilter
-  name: StringFilter
-  materials: MaterialManyRelationFilter
-  company: CompanyWhereInput
-}
-
-input MaterialManyRelationFilter {
-  every: MaterialWhereInput
-  some: MaterialWhereInput
-  none: MaterialWhereInput
-}
-
-input BrandOrderByInput {
-  id: OrderDirection
-  name: OrderDirection
-}
-
-input BrandUpdateInput {
-  name: String
-  materials: MaterialRelateToManyForUpdateInput
-  company: CompanyRelateToOneForUpdateInput
-  extraFields: JSON
-}
-
-input MaterialRelateToManyForUpdateInput {
-  disconnect: [MaterialWhereUniqueInput!]
-  set: [MaterialWhereUniqueInput!]
-  create: [MaterialCreateInput!]
-  connect: [MaterialWhereUniqueInput!]
-}
-
-input BrandUpdateArgs {
-  where: BrandWhereUniqueInput!
-  data: BrandUpdateInput!
-}
-
-input BrandCreateInput {
-  name: String
-  materials: MaterialRelateToManyForCreateInput
-  company: CompanyRelateToOneForCreateInput
-  extraFields: JSON
-}
-
-input MaterialRelateToManyForCreateInput {
-  create: [MaterialCreateInput!]
-  connect: [MaterialWhereUniqueInput!]
-}
-
 type Company {
   id: ID!
   name: String
@@ -1163,11 +1098,13 @@ input FileCreateInput {
 type Material {
   id: ID!
   name: String
+  nameLocalized: JSON
   components(where: AssemblyComponentWhereInput! = {}, orderBy: [AssemblyComponentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AssemblyComponentWhereUniqueInput): [AssemblyComponent!]
   componentsCount(where: AssemblyComponentWhereInput! = {}): Int
   assemblyComponents(where: AssemblyComponentWhereInput! = {}, orderBy: [AssemblyComponentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AssemblyComponentWhereUniqueInput): [AssemblyComponent!]
   assemblyComponentsCount(where: AssemblyComponentWhereInput! = {}): Int
   description: String
+  descriptionLocalized: JSON
   price: Decimal
   currentStock: Decimal
   length: Decimal
@@ -1183,7 +1120,6 @@ type Material {
   code: String
   ean: String
   tax: Decimal
-  brand: Brand
   suppliers(where: SupplierWhereInput! = {}, orderBy: [SupplierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: SupplierWhereUniqueInput): [Supplier!]
   suppliersCount(where: SupplierWhereInput! = {}): Int
   pricedBy: String
@@ -1194,8 +1130,6 @@ type Material {
   stockMovementsCount(where: StockMovementWhereInput! = {}): Int
   documentProducts(where: DocumentProductWhereInput! = {}, orderBy: [DocumentProductOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentProductWhereUniqueInput): [DocumentProduct!]
   documentProductsCount(where: DocumentProductWhereInput! = {}): Int
-  productCollections(where: ProductCollectionWhereInput! = {}, orderBy: [ProductCollectionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductCollectionWhereUniqueInput): [ProductCollection!]
-  productCollectionsCount(where: ProductCollectionWhereInput! = {}): Int
   stock(where: ShelfStockWhereInput! = {}, orderBy: [ShelfStockOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfStockWhereUniqueInput): [ShelfStock!]
   stockCount(where: ShelfStockWhereInput! = {}): Int
   earliestExpiration: DateTime
@@ -1231,14 +1165,12 @@ input MaterialWhereInput {
   code: StringFilter
   ean: StringFilter
   tax: DecimalFilter
-  brand: BrandWhereInput
   suppliers: SupplierManyRelationFilter
   pricedBy: StringNullableFilter
   type: StringFilter
   operations: OperationManyRelationFilter
   stockMovements: StockMovementManyRelationFilter
   documentProducts: DocumentProductManyRelationFilter
-  productCollections: ProductCollectionManyRelationFilter
   stock: ShelfStockManyRelationFilter
   earliestExpiration: DateTimeNullableFilter
   company: CompanyWhereInput
@@ -1275,12 +1207,6 @@ input StockMovementManyRelationFilter {
   none: StockMovementWhereInput
 }
 
-input ProductCollectionManyRelationFilter {
-  every: ProductCollectionWhereInput
-  some: ProductCollectionWhereInput
-  none: ProductCollectionWhereInput
-}
-
 input ShelfStockManyRelationFilter {
   every: ShelfStockWhereInput
   some: ShelfStockWhereInput
@@ -1315,9 +1241,11 @@ input MaterialOrderByInput {
 
 input MaterialUpdateInput {
   name: String
+  nameLocalized: JSON
   components: AssemblyComponentRelateToManyForUpdateInput
   assemblyComponents: AssemblyComponentRelateToManyForUpdateInput
   description: String
+  descriptionLocalized: JSON
   price: Decimal
   currentStock: Decimal
   length: Decimal
@@ -1331,14 +1259,12 @@ input MaterialUpdateInput {
   code: String
   ean: String
   tax: Decimal
-  brand: BrandRelateToOneForUpdateInput
   suppliers: SupplierRelateToManyForUpdateInput
   pricedBy: String
   type: String
   operations: OperationRelateToManyForUpdateInput
   stockMovements: StockMovementRelateToManyForUpdateInput
   documentProducts: DocumentProductRelateToManyForUpdateInput
-  productCollections: ProductCollectionRelateToManyForUpdateInput
   stock: ShelfStockRelateToManyForUpdateInput
   earliestExpiration: DateTime
   company: CompanyRelateToOneForUpdateInput
@@ -1358,12 +1284,6 @@ input WorkOrderRelateToManyForUpdateInput {
   set: [WorkOrderWhereUniqueInput!]
   create: [WorkOrderCreateInput!]
   connect: [WorkOrderWhereUniqueInput!]
-}
-
-input BrandRelateToOneForUpdateInput {
-  create: BrandCreateInput
-  connect: BrandWhereUniqueInput
-  disconnect: Boolean
 }
 
 input SupplierRelateToManyForUpdateInput {
@@ -1387,13 +1307,6 @@ input StockMovementRelateToManyForUpdateInput {
   connect: [StockMovementWhereUniqueInput!]
 }
 
-input ProductCollectionRelateToManyForUpdateInput {
-  disconnect: [ProductCollectionWhereUniqueInput!]
-  set: [ProductCollectionWhereUniqueInput!]
-  create: [ProductCollectionCreateInput!]
-  connect: [ProductCollectionWhereUniqueInput!]
-}
-
 input ShelfStockRelateToManyForUpdateInput {
   disconnect: [ShelfStockWhereUniqueInput!]
   set: [ShelfStockWhereUniqueInput!]
@@ -1415,9 +1328,11 @@ input MaterialUpdateArgs {
 
 input MaterialCreateInput {
   name: String
+  nameLocalized: JSON
   components: AssemblyComponentRelateToManyForCreateInput
   assemblyComponents: AssemblyComponentRelateToManyForCreateInput
   description: String
+  descriptionLocalized: JSON
   price: Decimal
   currentStock: Decimal
   length: Decimal
@@ -1431,14 +1346,12 @@ input MaterialCreateInput {
   code: String
   ean: String
   tax: Decimal
-  brand: BrandRelateToOneForCreateInput
   suppliers: SupplierRelateToManyForCreateInput
   pricedBy: String
   type: String
   operations: OperationRelateToManyForCreateInput
   stockMovements: StockMovementRelateToManyForCreateInput
   documentProducts: DocumentProductRelateToManyForCreateInput
-  productCollections: ProductCollectionRelateToManyForCreateInput
   stock: ShelfStockRelateToManyForCreateInput
   earliestExpiration: DateTime
   company: CompanyRelateToOneForCreateInput
@@ -1456,11 +1369,6 @@ input WorkOrderRelateToManyForCreateInput {
   connect: [WorkOrderWhereUniqueInput!]
 }
 
-input BrandRelateToOneForCreateInput {
-  create: BrandCreateInput
-  connect: BrandWhereUniqueInput
-}
-
 input SupplierRelateToManyForCreateInput {
   create: [SupplierCreateInput!]
   connect: [SupplierWhereUniqueInput!]
@@ -1474,11 +1382,6 @@ input OperationRelateToManyForCreateInput {
 input StockMovementRelateToManyForCreateInput {
   create: [StockMovementCreateInput!]
   connect: [StockMovementWhereUniqueInput!]
-}
-
-input ProductCollectionRelateToManyForCreateInput {
-  create: [ProductCollectionCreateInput!]
-  connect: [ProductCollectionWhereUniqueInput!]
 }
 
 input ShelfStockRelateToManyForCreateInput {
@@ -1779,53 +1682,6 @@ input PaymentCreateInput {
   reference: String
   type: String
   timestamp: DateTime
-  company: CompanyRelateToOneForCreateInput
-  extraFields: JSON
-}
-
-type ProductCollection {
-  id: ID!
-  name: String
-  products(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
-  productsCount(where: MaterialWhereInput! = {}): Int
-  company: Company
-  extraFields: JSON
-}
-
-input ProductCollectionWhereUniqueInput {
-  id: ID
-}
-
-input ProductCollectionWhereInput {
-  AND: [ProductCollectionWhereInput!]
-  OR: [ProductCollectionWhereInput!]
-  NOT: [ProductCollectionWhereInput!]
-  id: IDFilter
-  name: StringFilter
-  products: MaterialManyRelationFilter
-  company: CompanyWhereInput
-}
-
-input ProductCollectionOrderByInput {
-  id: OrderDirection
-  name: OrderDirection
-}
-
-input ProductCollectionUpdateInput {
-  name: String
-  products: MaterialRelateToManyForUpdateInput
-  company: CompanyRelateToOneForUpdateInput
-  extraFields: JSON
-}
-
-input ProductCollectionUpdateArgs {
-  where: ProductCollectionWhereUniqueInput!
-  data: ProductCollectionUpdateInput!
-}
-
-input ProductCollectionCreateInput {
-  name: String
-  products: MaterialRelateToManyForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
 }
@@ -2192,6 +2048,12 @@ input SupplierWhereInput {
   orderTime: IntNullableFilter
 }
 
+input MaterialManyRelationFilter {
+  every: MaterialWhereInput
+  some: MaterialWhereInput
+  none: MaterialWhereInput
+}
+
 input SupplierOrderByInput {
   id: OrderDirection
   name: OrderDirection
@@ -2216,6 +2078,13 @@ input SupplierUpdateInput {
   extraFields: JSON
 }
 
+input MaterialRelateToManyForUpdateInput {
+  disconnect: [MaterialWhereUniqueInput!]
+  set: [MaterialWhereUniqueInput!]
+  create: [MaterialCreateInput!]
+  connect: [MaterialWhereUniqueInput!]
+}
+
 input SupplierUpdateArgs {
   where: SupplierWhereUniqueInput!
   data: SupplierUpdateInput!
@@ -2235,10 +2104,17 @@ input SupplierCreateInput {
   extraFields: JSON
 }
 
+input MaterialRelateToManyForCreateInput {
+  create: [MaterialCreateInput!]
+  connect: [MaterialWhereUniqueInput!]
+}
+
 type Tag {
   id: ID!
   name: String
-  description: JSON
+  nameLocalized: JSON
+  description: String
+  descriptionLocalized: JSON
   materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
   materialsCount(where: MaterialWhereInput! = {}): Int
   parentTag: Tag
@@ -2260,6 +2136,7 @@ input TagWhereInput {
   NOT: [TagWhereInput!]
   id: IDFilter
   name: StringFilter
+  description: StringFilter
   materials: MaterialManyRelationFilter
   parentTag: TagWhereInput
   childTags: TagManyRelationFilter
@@ -2271,12 +2148,15 @@ input TagWhereInput {
 input TagOrderByInput {
   id: OrderDirection
   name: OrderDirection
+  description: OrderDirection
   type: OrderDirection
 }
 
 input TagUpdateInput {
   name: String
-  description: JSON
+  nameLocalized: JSON
+  description: String
+  descriptionLocalized: JSON
   materials: MaterialRelateToManyForUpdateInput
   parentTag: TagRelateToOneForUpdateInput
   childTags: TagRelateToManyForUpdateInput
@@ -2299,7 +2179,9 @@ input TagUpdateArgs {
 
 input TagCreateInput {
   name: String
-  description: JSON
+  nameLocalized: JSON
+  description: String
+  descriptionLocalized: JSON
   materials: MaterialRelateToManyForCreateInput
   parentTag: TagRelateToOneForCreateInput
   childTags: TagRelateToManyForCreateInput
@@ -2724,12 +2606,6 @@ type Mutation {
   updateAssemblyComponents(data: [AssemblyComponentUpdateArgs!]!): [AssemblyComponent]
   deleteAssemblyComponent(where: AssemblyComponentWhereUniqueInput!): AssemblyComponent
   deleteAssemblyComponents(where: [AssemblyComponentWhereUniqueInput!]!): [AssemblyComponent]
-  createBrand(data: BrandCreateInput!): Brand
-  createBrands(data: [BrandCreateInput!]!): [Brand]
-  updateBrand(where: BrandWhereUniqueInput!, data: BrandUpdateInput!): Brand
-  updateBrands(data: [BrandUpdateArgs!]!): [Brand]
-  deleteBrand(where: BrandWhereUniqueInput!): Brand
-  deleteBrands(where: [BrandWhereUniqueInput!]!): [Brand]
   createCompany(data: CompanyCreateInput!): Company
   createCompanies(data: [CompanyCreateInput!]!): [Company]
   updateCompany(where: CompanyWhereUniqueInput!, data: CompanyUpdateInput!): Company
@@ -2790,12 +2666,6 @@ type Mutation {
   updatePayments(data: [PaymentUpdateArgs!]!): [Payment]
   deletePayment(where: PaymentWhereUniqueInput!): Payment
   deletePayments(where: [PaymentWhereUniqueInput!]!): [Payment]
-  createProductCollection(data: ProductCollectionCreateInput!): ProductCollection
-  createProductCollections(data: [ProductCollectionCreateInput!]!): [ProductCollection]
-  updateProductCollection(where: ProductCollectionWhereUniqueInput!, data: ProductCollectionUpdateInput!): ProductCollection
-  updateProductCollections(data: [ProductCollectionUpdateArgs!]!): [ProductCollection]
-  deleteProductCollection(where: ProductCollectionWhereUniqueInput!): ProductCollection
-  deleteProductCollections(where: [ProductCollectionWhereUniqueInput!]!): [ProductCollection]
   createShelf(data: ShelfCreateInput!): Shelf
   createShelves(data: [ShelfCreateInput!]!): [Shelf]
   updateShelf(where: ShelfWhereUniqueInput!, data: ShelfUpdateInput!): Shelf
@@ -2883,9 +2753,6 @@ type Query {
   assemblyComponent(where: AssemblyComponentWhereUniqueInput!): AssemblyComponent
   assemblyComponents(where: AssemblyComponentWhereInput! = {}, orderBy: [AssemblyComponentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: AssemblyComponentWhereUniqueInput): [AssemblyComponent!]
   assemblyComponentsCount(where: AssemblyComponentWhereInput! = {}): Int
-  brand(where: BrandWhereUniqueInput!): Brand
-  brands(where: BrandWhereInput! = {}, orderBy: [BrandOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: BrandWhereUniqueInput): [Brand!]
-  brandsCount(where: BrandWhereInput! = {}): Int
   company(where: CompanyWhereUniqueInput!): Company
   companies(where: CompanyWhereInput! = {}, orderBy: [CompanyOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CompanyWhereUniqueInput): [Company!]
   companiesCount(where: CompanyWhereInput! = {}): Int
@@ -2916,9 +2783,6 @@ type Query {
   payment(where: PaymentWhereUniqueInput!): Payment
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
-  productCollection(where: ProductCollectionWhereUniqueInput!): ProductCollection
-  productCollections(where: ProductCollectionWhereInput! = {}, orderBy: [ProductCollectionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ProductCollectionWhereUniqueInput): [ProductCollection!]
-  productCollectionsCount(where: ProductCollectionWhereInput! = {}): Int
   shelf(where: ShelfWhereUniqueInput!): Shelf
   shelves(where: ShelfWhereInput! = {}, orderBy: [ShelfOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShelfWhereUniqueInput): [Shelf!]
   shelvesCount(where: ShelfWhereInput! = {}): Int

@@ -403,42 +403,6 @@ var lists = {
       extraFields: (0, import_fields.json)()
     }
   }),
-  Brand: (0, import_core.list)({
-    access: {
-      filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
-      },
-      operation: {
-        create: isEmployee,
-        query: isUser,
-        update: isEmployee,
-        delete: isGlobalAdmin
-      }
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      materials: (0, import_fields.relationship)({ ref: "Material.brand", many: true }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
   Company: (0, import_core.list)({
     access: {
       operation: {
@@ -1110,6 +1074,7 @@ var lists = {
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
+      nameLocalized: (0, import_fields.json)(),
       components: (0, import_fields.relationship)({
         ref: "AssemblyComponent.assembly",
         many: true
@@ -1119,6 +1084,7 @@ var lists = {
         many: true
       }),
       description: (0, import_fields.text)(),
+      descriptionLocalized: (0, import_fields.json)(),
       price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       currentStock: (0, import_fields.decimal)({ defaultValue: "0" }),
       length: (0, import_fields.decimal)({}),
@@ -1142,10 +1108,6 @@ var lists = {
       code: (0, import_fields.text)(),
       ean: (0, import_fields.text)(),
       tax: (0, import_fields.decimal)({ defaultValue: "21", validation: { isRequired: true, min: "0" } }),
-      brand: (0, import_fields.relationship)({
-        ref: "Brand.materials",
-        many: false
-      }),
       suppliers: (0, import_fields.relationship)({
         ref: "Supplier.materials",
         many: true
@@ -1171,10 +1133,6 @@ var lists = {
       }),
       documentProducts: (0, import_fields.relationship)({
         ref: "DocumentProduct.product",
-        many: true
-      }),
-      productCollections: (0, import_fields.relationship)({
-        ref: "ProductCollection.products",
         many: true
       }),
       stock: (0, import_fields.relationship)({
@@ -1419,27 +1377,6 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
-      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
-      extraFields: (0, import_fields.json)()
-    }
-  }),
-  ProductCollection: (0, import_core.list)({
-    access: {
-      filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
-      },
-      operation: {
-        create: isCompanyAdmin,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee
-      }
-    },
-    fields: {
-      name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      products: (0, import_fields.relationship)({ ref: "Material.productCollections", many: true }),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
@@ -1751,7 +1688,9 @@ var lists = {
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      description: (0, import_fields.json)(),
+      nameLocalized: (0, import_fields.json)(),
+      description: (0, import_fields.text)(),
+      descriptionLocalized: (0, import_fields.json)(),
       materials: (0, import_fields.relationship)({ ref: "Material.tags", many: true }),
       parentTag: (0, import_fields.relationship)({
         ref: "Tag.childTags",

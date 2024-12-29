@@ -65,17 +65,6 @@ model AssemblyComponent {
   @@index([companyId])
 }
 
-model Brand {
-  id          String     @id @default(cuid())
-  name        String     @default("")
-  materials   Material[] @relation("Material_brand")
-  company     Company?   @relation("Brand_company", fields: [companyId], references: [id])
-  companyId   String?    @map("company")
-  extraFields Json?
-
-  @@index([companyId])
-}
-
 model Company {
   id                              String               @id @default(cuid())
   name                            String               @default("")
@@ -105,7 +94,6 @@ model Company {
   monthlyReports                  Boolean              @default(false)
   from_Address_company            Address[]            @relation("Address_company")
   from_AssemblyComponent_company  AssemblyComponent[]  @relation("AssemblyComponent_company")
-  from_Brand_company              Brand[]              @relation("Brand_company")
   from_Document_company           Document[]           @relation("Document_company")
   from_DocumentProduct_company    DocumentProduct[]    @relation("DocumentProduct_company")
   from_File_company               File[]               @relation("File_company")
@@ -114,7 +102,6 @@ model Company {
   from_Notification_company       Notification[]       @relation("Notification_company")
   from_Operation_company          Operation[]          @relation("Operation_company")
   from_Payment_company            Payment[]            @relation("Payment_company")
-  from_ProductCollection_company  ProductCollection[]  @relation("ProductCollection_company")
   from_Shelf_company              Shelf[]              @relation("Shelf_company")
   from_ShelfStock_company         ShelfStock[]         @relation("ShelfStock_company")
   from_StockMovement_company      StockMovement[]      @relation("StockMovement_company")
@@ -244,41 +231,39 @@ model File {
 }
 
 model Material {
-  id                 String              @id @default(cuid())
-  name               String              @default("")
-  components         AssemblyComponent[] @relation("AssemblyComponent_assembly")
-  assemblyComponents AssemblyComponent[] @relation("AssemblyComponent_material")
-  description        String              @default("")
-  price              Decimal             @postgresql.Decimal(18, 4)
-  currentStock       Decimal?            @default("0") @postgresql.Decimal(18, 4)
-  length             Decimal?            @postgresql.Decimal(18, 4)
-  width              Decimal?            @postgresql.Decimal(18, 4)
-  height             Decimal?            @postgresql.Decimal(18, 4)
-  weight             Decimal?            @postgresql.Decimal(18, 4)
-  area               Decimal?            @postgresql.Decimal(18, 4)
-  status             String?             @default("passive")
-  files              File[]              @relation("Material_files")
-  workOrders         WorkOrder[]         @relation("Material_workOrders")
-  code               String              @default("")
-  ean                String              @default("")
-  tax                Decimal             @default("21") @postgresql.Decimal(18, 4)
-  brand              Brand?              @relation("Material_brand", fields: [brandId], references: [id])
-  brandId            String?             @map("brand")
-  suppliers          Supplier[]          @relation("Material_suppliers")
-  pricedBy           String?             @default("amount")
-  type               String              @default("product")
-  operations         Operation[]         @relation("Operation_material")
-  stockMovements     StockMovement[]     @relation("StockMovement_material")
-  documentProducts   DocumentProduct[]   @relation("DocumentProduct_product")
-  productCollections ProductCollection[] @relation("Material_productCollections")
-  stock              ShelfStock[]        @relation("ShelfStock_material")
-  earliestExpiration DateTime?
-  company            Company?            @relation("Material_company", fields: [companyId], references: [id])
-  companyId          String?             @map("company")
-  tags               Tag[]               @relation("Material_tags")
-  extraFields        Json?
+  id                   String              @id @default(cuid())
+  name                 String              @default("")
+  nameLocalized        Json?
+  components           AssemblyComponent[] @relation("AssemblyComponent_assembly")
+  assemblyComponents   AssemblyComponent[] @relation("AssemblyComponent_material")
+  description          String              @default("")
+  descriptionLocalized Json?
+  price                Decimal             @postgresql.Decimal(18, 4)
+  currentStock         Decimal?            @default("0") @postgresql.Decimal(18, 4)
+  length               Decimal?            @postgresql.Decimal(18, 4)
+  width                Decimal?            @postgresql.Decimal(18, 4)
+  height               Decimal?            @postgresql.Decimal(18, 4)
+  weight               Decimal?            @postgresql.Decimal(18, 4)
+  area                 Decimal?            @postgresql.Decimal(18, 4)
+  status               String?             @default("passive")
+  files                File[]              @relation("Material_files")
+  workOrders           WorkOrder[]         @relation("Material_workOrders")
+  code                 String              @default("")
+  ean                  String              @default("")
+  tax                  Decimal             @default("21") @postgresql.Decimal(18, 4)
+  suppliers            Supplier[]          @relation("Material_suppliers")
+  pricedBy             String?             @default("amount")
+  type                 String              @default("product")
+  operations           Operation[]         @relation("Operation_material")
+  stockMovements       StockMovement[]     @relation("StockMovement_material")
+  documentProducts     DocumentProduct[]   @relation("DocumentProduct_product")
+  stock                ShelfStock[]        @relation("ShelfStock_material")
+  earliestExpiration   DateTime?
+  company              Company?            @relation("Material_company", fields: [companyId], references: [id])
+  companyId            String?             @map("company")
+  tags                 Tag[]               @relation("Material_tags")
+  extraFields          Json?
 
-  @@index([brandId])
   @@index([companyId])
 }
 
@@ -346,17 +331,6 @@ model Payment {
   extraFields Json?
 
   @@index([creatorId])
-  @@index([companyId])
-}
-
-model ProductCollection {
-  id          String     @id @default(cuid())
-  name        String     @default("")
-  products    Material[] @relation("Material_productCollections")
-  company     Company?   @relation("ProductCollection_company", fields: [companyId], references: [id])
-  companyId   String?    @map("company")
-  extraFields Json?
-
   @@index([companyId])
 }
 
@@ -455,19 +429,21 @@ model Supplier {
 }
 
 model Tag {
-  id          String     @id @default(cuid())
-  name        String     @default("")
-  description Json?
-  materials   Material[] @relation("Material_tags")
-  parentTag   Tag?       @relation("Tag_parentTag", fields: [parentTagId], references: [id])
-  parentTagId String?    @map("parentTag")
-  childTags   Tag[]      @relation("Tag_parentTag")
-  type        String     @default("category")
-  image       File?      @relation("Tag_image", fields: [imageId], references: [id])
-  imageId     String?    @map("image")
-  company     Company?   @relation("Tag_company", fields: [companyId], references: [id])
-  companyId   String?    @map("company")
-  extraFields Json?
+  id                   String     @id @default(cuid())
+  name                 String     @default("")
+  nameLocalized        Json?
+  description          String     @default("")
+  descriptionLocalized Json?
+  materials            Material[] @relation("Material_tags")
+  parentTag            Tag?       @relation("Tag_parentTag", fields: [parentTagId], references: [id])
+  parentTagId          String?    @map("parentTag")
+  childTags            Tag[]      @relation("Tag_parentTag")
+  type                 String     @default("category")
+  image                File?      @relation("Tag_image", fields: [imageId], references: [id])
+  imageId              String?    @map("image")
+  company              Company?   @relation("Tag_company", fields: [companyId], references: [id])
+  companyId            String?    @map("company")
+  extraFields          Json?
 
   @@index([parentTagId])
   @@index([imageId])
