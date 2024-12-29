@@ -144,42 +144,6 @@ export const lists: Lists = {
       extraFields: json(),
     },
   }),
-  Brand: list({
-    access: {
-      filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
-      },
-      operation: {
-        create: isEmployee,
-        query: isUser,
-        update: isEmployee,
-        delete: isGlobalAdmin,
-      },
-    },
-    hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id,
-              },
-            };
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      materials: relationship({ ref: "Material.brand", many: true }),
-      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
-      extraFields: json(),
-    },
-  }),
   Company: list({
     access: {
       operation: {
@@ -875,7 +839,7 @@ export const lists: Lists = {
         ref: "AssemblyComponent.material",
         many: true,
       }),
-      description: text(),
+      description: json(),
       price: decimal({ validation: { isRequired: true, min: "0" } }),
       currentStock: decimal({ defaultValue: "0" }),
       length: decimal({}),
@@ -899,10 +863,6 @@ export const lists: Lists = {
       code: text(),
       ean: text(),
       tax: decimal({ defaultValue: "21", validation: { isRequired: true, min: "0" } }),
-      brand: relationship({
-        ref: "Brand.materials",
-        many: false,
-      }),
       suppliers: relationship({
         ref: "Supplier.materials",
         many: true,
@@ -928,10 +888,6 @@ export const lists: Lists = {
       }),
       documentProducts: relationship({
         ref: "DocumentProduct.product",
-        many: true,
-      }),
-      productCollections: relationship({
-        ref: "ProductCollection.products",
         many: true,
       }),
       stock: relationship({
@@ -1176,27 +1132,6 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
-      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
-      extraFields: json(),
-    },
-  }),
-  ProductCollection: list({
-    access: {
-      filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
-      },
-      operation: {
-        create: isCompanyAdmin,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isEmployee,
-      },
-    },
-    fields: {
-      name: text({ validation: { isRequired: true } }),
-      products: relationship({ ref: "Material.productCollections", many: true }),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: json(),
     },
@@ -1601,7 +1536,9 @@ export const lists: Lists = {
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      description: json(),
+      nameLocalized: json(),
+      description: text(),
+      descriptionLocalized: json(),
       materials: relationship({ ref: "Material.tags", many: true }),
       parentTag: relationship({
         ref: "Tag.childTags",
