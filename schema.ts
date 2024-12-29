@@ -831,7 +831,14 @@ export const lists: Lists = {
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      nameLocalized: json(),
+      nameLocalized: json({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: "",
+        },
+      }),
       components: relationship({
         ref: "AssemblyComponent.assembly",
         many: true,
@@ -841,7 +848,14 @@ export const lists: Lists = {
         many: true,
       }),
       description: text(),
-      descriptionLocalized: json(),
+      descriptionLocalized: json({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: "",
+        },
+      }),
       price: decimal({ validation: { isRequired: true, min: "0" } }),
       currentStock: decimal({ defaultValue: "0" }),
       length: decimal({}),
@@ -1538,9 +1552,23 @@ export const lists: Lists = {
     },
     fields: {
       name: text({ validation: { isRequired: true } }),
-      nameLocalized: json(),
+      nameLocalized: json({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: "",
+        },
+      }),
       description: text(),
-      descriptionLocalized: json(),
+      descriptionLocalized: json({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: "",
+        },
+      }),
       materials: relationship({ ref: "Material.tags", many: true }),
       parentTag: relationship({
         ref: "Tag.childTags",
