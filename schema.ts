@@ -652,13 +652,20 @@ export const lists: Lists = {
                 query: "taxIncluded",
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
-                calculateTotalWithoutTaxAfterReduction({
+                calculateTotalWithTaxAfterReduction({
                   price: Number(item.price),
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                })
+                }) -
+                  calculateTotalWithoutTaxAfterReduction({
+                    price: Number(item.price),
+                    amount: Number(item.amount),
+                    tax: Number(item.tax),
+                    reduction: Number(item.reduction) ?? 0,
+                    taxIncluded,
+                  })
               );
             } catch (e) {
               return new Decimal(0);
@@ -677,12 +684,19 @@ export const lists: Lists = {
                 query: "taxIncluded",
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
-                calculateTotalWithoutTaxBeforeReduction({
+                calculateTotalWithTaxBeforeReduction({
                   price: Number(item.price),
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   taxIncluded,
-                })
+                }) -
+                  calculateTotalWithTaxAfterReduction({
+                    price: Number(item.price),
+                    amount: Number(item.amount),
+                    tax: Number(item.tax),
+                    reduction: Number(item.reduction) ?? 0,
+                    taxIncluded,
+                  })
               );
             } catch (e) {
               return new Decimal(0);
