@@ -895,7 +895,13 @@ var lists = {
                 query: "taxIncluded"
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
-                calculateTotalWithoutTaxAfterReduction({
+                calculateTotalWithTaxAfterReduction({
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
+                  taxIncluded
+                }) - calculateTotalWithoutTaxAfterReduction({
                   price: Number(item.price),
                   amount: Number(item.amount),
                   tax: Number(item.tax),
@@ -920,10 +926,16 @@ var lists = {
                 query: "taxIncluded"
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
-                calculateTotalWithoutTaxBeforeReduction({
+                calculateTotalWithTaxBeforeReduction({
                   price: Number(item.price),
                   amount: Number(item.amount),
                   tax: Number(item.tax),
+                  taxIncluded
+                }) - calculateTotalWithTaxAfterReduction({
+                  price: Number(item.price),
+                  amount: Number(item.amount),
+                  tax: Number(item.tax),
+                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded
                 })
               );
@@ -1074,7 +1086,14 @@ var lists = {
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      nameLocalized: (0, import_fields.json)(),
+      nameLocalized: (0, import_fields.json)({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: ""
+        }
+      }),
       components: (0, import_fields.relationship)({
         ref: "AssemblyComponent.assembly",
         many: true
@@ -1084,7 +1103,14 @@ var lists = {
         many: true
       }),
       description: (0, import_fields.text)(),
-      descriptionLocalized: (0, import_fields.json)(),
+      descriptionLocalized: (0, import_fields.json)({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: ""
+        }
+      }),
       price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       currentStock: (0, import_fields.decimal)({ defaultValue: "0" }),
       length: (0, import_fields.decimal)({}),
@@ -1688,9 +1714,23 @@ var lists = {
     },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
-      nameLocalized: (0, import_fields.json)(),
+      nameLocalized: (0, import_fields.json)({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: ""
+        }
+      }),
       description: (0, import_fields.text)(),
-      descriptionLocalized: (0, import_fields.json)(),
+      descriptionLocalized: (0, import_fields.json)({
+        defaultValue: {
+          en: "",
+          nl: "",
+          fr: "",
+          de: ""
+        }
+      }),
       materials: (0, import_fields.relationship)({ ref: "Material.tags", many: true }),
       parentTag: (0, import_fields.relationship)({
         ref: "Tag.childTags",

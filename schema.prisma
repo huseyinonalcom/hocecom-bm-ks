@@ -233,11 +233,11 @@ model File {
 model Material {
   id                   String              @id @default(cuid())
   name                 String              @default("")
-  nameLocalized        Json?
+  nameLocalized        Json?               @default("{\"en\":\"\",\"nl\":\"\",\"fr\":\"\",\"de\":\"\"}")
   components           AssemblyComponent[] @relation("AssemblyComponent_assembly")
   assemblyComponents   AssemblyComponent[] @relation("AssemblyComponent_material")
   description          String              @default("")
-  descriptionLocalized Json?
+  descriptionLocalized Json?               @default("{\"en\":\"\",\"nl\":\"\",\"fr\":\"\",\"de\":\"\"}")
   price                Decimal             @postgresql.Decimal(18, 4)
   currentStock         Decimal?            @default("0") @postgresql.Decimal(18, 4)
   length               Decimal?            @postgresql.Decimal(18, 4)
@@ -431,9 +431,9 @@ model Supplier {
 model Tag {
   id                   String     @id @default(cuid())
   name                 String     @default("")
-  nameLocalized        Json?
+  nameLocalized        Json?      @default("{\"en\":\"\",\"nl\":\"\",\"fr\":\"\",\"de\":\"\"}")
   description          String     @default("")
-  descriptionLocalized Json?
+  descriptionLocalized Json?      @default("{\"en\":\"\",\"nl\":\"\",\"fr\":\"\",\"de\":\"\"}")
   materials            Material[] @relation("Material_tags")
   parentTag            Tag?       @relation("Tag_parentTag", fields: [parentTagId], references: [id])
   parentTagId          String?    @map("parentTag")
