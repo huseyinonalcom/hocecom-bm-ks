@@ -1660,6 +1660,7 @@ export const lists: Lists = {
         isIndexed: "unique",
         validation: { isRequired: true },
       }),
+      email2: text(),
       isBlocked: checkbox({ defaultValue: false }),
       phone: text(),
       role: select({
