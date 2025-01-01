@@ -1,49 +1,15 @@
+import { KeystoneContext } from "@keystone-6/core/types";
 import { eutaxes } from "./eutaxes";
 import { generateInvoiceOut } from "./invoiceoutpdf";
 import { generateRandomString } from "./random";
 import { sendMail } from "./sendmail";
+import { transformEmail } from "./utils";
 
 const bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 
 const bolApiUrl = "https://api.bol.com/retailer";
 
 let bolTokens: { clientId: string; token: string; expiration: Date }[] = [];
-
-export const createDocumentsFromBolOrders = async (context) => {
-  await context
-    .sudo()
-    .query.Company.findMany({
-      query: "id bolClientID bolClientSecret name owner { id } establishments { id }",
-      where: {
-        isActive: {
-          equals: true,
-        },
-      },
-    })
-    .then(async (res) => {
-      let companiesToSync = res.filter(
-        (company: { id: string; bolClientID: string; bolClientSecret: string }) => company.bolClientID && company.bolClientSecret
-      );
-      for (let i = 0; i < companiesToSync.length; i++) {
-        const currCompany = companiesToSync[i];
-        getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
-          if (orders && orders.length > 0) {
-            const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
-            for (let i = 0; i < orders.length; i++) {
-              try {
-                await getBolComOrder(sortedOrders[i].orderId, currCompany.bolClientID, currCompany.bolClientSecret).then(async (orderDetails) => {
-                  orderDetails && (await saveDocument(orderDetails, currCompany, context));
-                });
-              } catch (error) {
-                console.error("Error fetching order details for orderId: ", sortedOrders[i], error);
-              }
-            }
-          }
-        });
-      }
-    });
-  console.log("Finished Cron Job for Bol Orders");
-};
 
 function bolHeaders(headersType: string, clientId: string) {
   const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
@@ -106,14 +72,55 @@ async function authenticateBolCom(clientId: string, clientSecret: string) {
   }
 }
 
+export const syncBolOrders = async ({ context }: { context: KeystoneContext }) => {
+  const companiesToSync = await findCompaniesToSync({ context });
+  for (let currCompany of companiesToSync) {
+    let orders = await getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret);
+    if (orders && orders.length > 0) {
+      for (let order of orders) {
+        const orderExists = await checkIfOrderExists({ orderId: order.orderId, company: currCompany, context });
+        if (!orderExists) {
+          const orderDetails = await getBolComOrder({
+            orderId: order.orderId,
+            bolClientID: currCompany.bolClientID,
+            bolClientSecret: currCompany.bolClientSecret,
+          });
+          await saveDocument({ bolDoc: orderDetails, company: currCompany, context });
+        }
+      }
+    }
+  }
+};
+
+const findCompaniesToSync = async ({ context }: { context: KeystoneContext }) => {
+  return await context.sudo().query.Company.findMany({
+    query: "id bolClientID bolClientSecret name owner { id } establishments { id }",
+    where: {
+      isActive: {
+        equals: true,
+      },
+      bolClientID: {
+        not: {
+          equals: "",
+        },
+      },
+      bolClientSecret: {
+        not: {
+          equals: "",
+        },
+      },
+    },
+  });
+};
+
 async function getBolComOrders(bolClientID: string, bolClientSecret: string) {
   await authenticateBolCom(bolClientID, bolClientSecret);
 
+  let orders: any[] = [];
+  let today = new Date();
   const dateString = (date: Date) => date.toISOString().split("T")[0];
 
   try {
-    let orders: any[] = [];
-    let today = new Date();
     today.setDate(today.getDate() - 3);
     for (let i = 0; i < 3; i++) {
       today.setDate(today.getDate() + 1);
@@ -130,15 +137,35 @@ async function getBolComOrders(bolClientID: string, bolClientSecret: string) {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-
-    return orders;
   } catch (error) {
     console.error(error);
-    return null;
   }
+  const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
+
+  return sortedOrders;
 }
 
-async function getBolComOrder(orderId: string, bolClientID: string, bolClientSecret: string) {
+async function checkIfOrderExists({ orderId, company, context }: { orderId: string; company: any; context: KeystoneContext }) {
+  const existingDoc = await context.sudo().query.Document.findMany({
+    query: "id",
+    where: {
+      company: {
+        id: {
+          equals: company.id,
+        },
+      },
+      externalId: {
+        equals: orderId,
+      },
+    },
+  });
+  if (existingDoc.length > 0) {
+    return true;
+  }
+  return false;
+}
+
+async function getBolComOrder({ orderId, bolClientID, bolClientSecret }: { orderId: string; bolClientID: string; bolClientSecret: string }) {
   await authenticateBolCom(bolClientID, bolClientSecret);
 
   try {
@@ -160,279 +187,69 @@ async function getBolComOrder(orderId: string, bolClientID: string, bolClientSec
   }
 }
 
-const saveDocument = async (bolDoc, company, context) => {
-  try {
-    const existingDoc = await context.sudo().query.Document.findMany({
-      query: "id",
-      where: {
-        company: {
-          id: {
-            equals: company.id,
-          },
-        },
-        externalId: {
-          equals: bolDoc.orderId,
+async function findProduct({ ean, company, context }: { ean: string; company: any; context: KeystoneContext }) {
+  return await context.sudo().query.Material.findOne({
+    query: "ean id",
+    where: {
+      ean: {
+        equals: ean,
+      },
+      company: {
+        id: {
+          equals: company.id,
         },
       },
-    });
-    if (existingDoc.length > 0) {
-      return;
-    }
+    },
+  });
+}
 
-    let docAddress = null;
-    let delAddress = null;
-
-    const transformEmail = (email: string) => {
-      let parts = email.split("@");
-      let localPart = parts[0].split("+")[0];
-      let domainPart = parts[1];
-      return localPart + "+" + company.id + "@" + domainPart;
-    };
-
-    const existingCustomer = await context.sudo().query.User.findMany({
-      query: "id email customerAddresses { id street door zip city country } firstName lastName",
-      where: {
-        company: {
-          id: {
-            equals: company.id,
-          },
-        },
-        role: {
-          equals: "customer",
-        },
-        email: {
-          equals: transformEmail(bolDoc.billingDetails.email),
-        },
+async function createProduct({ productDetails, company, context }: { productDetails: any; company: any; context: KeystoneContext }) {
+  console.log(productDetails);
+  let product: Record<string, any> = {
+    ean: productDetails.product.ean,
+    name: productDetails.product.title,
+    tax: "21.0000",
+    price: productDetails.unitPrice.toFixed(4),
+    company: {
+      connect: {
+        id: company.id,
       },
-    });
+    },
+  };
+  const newProduct = await context.sudo().query.Material.createOne({
+    data: product,
+    query: "id ean name tax price",
+  });
+  return newProduct;
+}
 
-    let customer;
-    if (existingCustomer.length > 0) {
-      customer = existingCustomer.at(0);
-
-      if (customer.customerAddresses && customer.customerAddresses.length > 0) {
-        for (let i = 0; i < customer.customerAddresses.length; i++) {
-          if (
-            customer.customerAddresses[i].street === bolDoc.shipmentDetails.streetName &&
-            customer.customerAddresses[i].door === bolDoc.shipmentDetails.houseNumber &&
-            customer.customerAddresses[i].zip === bolDoc.shipmentDetails.zipCode &&
-            customer.customerAddresses[i].city === bolDoc.shipmentDetails.city &&
-            customer.customerAddresses[i].country === bolDoc.shipmentDetails.countryCode
-          ) {
-            delAddress = customer.customerAddresses[i];
-          }
-          if (
-            customer.customerAddresses[i].street === bolDoc.billingDetails.streetName &&
-            customer.customerAddresses[i].door === bolDoc.billingDetails.houseNumber &&
-            customer.customerAddresses[i].zip === bolDoc.billingDetails.zipCode &&
-            customer.customerAddresses[i].city === bolDoc.billingDetails.city &&
-            customer.customerAddresses[i].country === bolDoc.billingDetails.countryCode
-          ) {
-            docAddress = customer.customerAddresses[i];
-          }
-        }
-      }
-    } else {
-      const newUser = await context.sudo().query.User.createOne({
-        data: {
-          email: bolDoc.billingDetails.email,
-          preferredLanguage: bolDoc.shipmentDetails.language,
-          phone: bolDoc.shipmentDetails.phone,
-          password: generateRandomString(24),
-          role: "customer",
-          firstName: bolDoc.billingDetails.firstName,
-          lastName: bolDoc.billingDetails.surname,
-          name: bolDoc.billingDetails.firstName + " " + bolDoc.billingDetails.surname,
-          company: {
-            connect: {
-              id: company.id,
-            },
-          },
-        },
-      });
-      customer = newUser;
-      delAddress = await context.sudo().query.Address.createOne({
-        query: "id street door zip city country",
-        data: {
-          street: bolDoc.shipmentDetails.streetName,
-          door: bolDoc.shipmentDetails.houseNumber,
-          zip: bolDoc.shipmentDetails.zipCode,
-          city: bolDoc.shipmentDetails.city,
-          country: bolDoc.shipmentDetails.countryCode,
-          company: {
-            connect: {
-              id: company.id,
-            },
-          },
-          customer: {
-            connect: {
-              id: customer.id,
-            },
-          },
-        },
-      });
-      if (bolDoc.shipmentDetails.streetName !== bolDoc.billingDetails.streetName) {
-        docAddress = await context.sudo().query.Address.createOne({
-          query: "id street door zip city country",
-          data: {
-            street: bolDoc.billingDetails.streetName,
-            door: bolDoc.billingDetails.houseNumber,
-            zip: bolDoc.billingDetails.zipCode,
-            city: bolDoc.billingDetails.city,
-            country: bolDoc.billingDetails.countryCode,
-            company: {
-              connect: {
-                id: company.id,
-              },
-            },
-            customer: {
-              connect: {
-                id: customer.id,
-              },
-            },
-          },
-        });
-      } else {
-        docAddress = delAddress;
-      }
-    }
-    if (!delAddress) {
-      delAddress = await context.sudo().query.Address.createOne({
-        query: "id street door zip city country",
-        data: {
-          street: bolDoc.shipmentDetails.streetName,
-          door: bolDoc.shipmentDetails.houseNumber,
-          zip: bolDoc.shipmentDetails.zipCode,
-          city: bolDoc.shipmentDetails.city,
-          country: bolDoc.shipmentDetails.countryCode,
-          customer: {
-            connect: {
-              id: customer.id,
-            },
-          },
-          company: {
-            connect: {
-              id: company.id,
-            },
-          },
-        },
-      });
-    }
-    if (!docAddress) {
-      docAddress = await context.sudo().query.Address.createOne({
-        query: "id street door zip city country",
-        data: {
-          street: bolDoc.billingDetails.streetName,
-          door: bolDoc.billingDetails.houseNumber,
-          zip: bolDoc.billingDetails.zipCode,
-          city: bolDoc.billingDetails.city,
-          country: bolDoc.billingDetails.countryCode,
-          customer: {
-            connect: {
-              id: customer.id,
-            },
-          },
-          company: {
-            connect: {
-              id: company.id,
-            },
-          },
-        },
-      });
-    }
-
-    const document = await context.sudo().query.Document.createOne({
-      data: {
-        number: bolDoc.orderId,
-        date: bolDoc.orderPlacedDateTime,
-        customer: {
-          connect: {
-            id: customer.id,
-          },
-        },
-        company: {
-          connect: {
-            id: company.id,
-          },
-        },
-        externalId: bolDoc.orderId,
-        delAddress: {
-          connect: {
-            id: delAddress.id,
-          },
-        },
-        docAddress: {
-          connect: {
-            id: docAddress.id,
-          },
-        },
-        creator: {
-          connect: {
-            id: company.owner.id as number,
-          },
-        },
-
-        establishment: {
-          connect: {
-            id: company.establishments.at(0).id as number,
-          },
-        },
-        type: "invoice",
+const saveDocument = async ({ bolDoc, company, context }: { bolDoc: any; company: any; context: KeystoneContext }) => {
+  let document: Record<string, any> = {
+    externalId: bolDoc.orderId,
+    date: bolDoc.orderPlacedDateTime,
+    company: {
+      connect: {
+        id: company.id,
       },
-    });
-
-    for (let i = 0; i < bolDoc.orderItems.length; i++) {
-      const products = await context.sudo().query.Material.findMany({
-        query: "ean id",
-        where: {
-          ean: {
-            equals: bolDoc.orderItems[i].product.ean,
-          },
-          company: {
-            id: {
-              equals: company.id,
-            },
-          },
-        },
-      });
-      await context.sudo().query.DocumentProduct.createOne({
-        data: {
-          price: bolDoc.orderItems[i].unitPrice.toFixed(4),
-          company: {
-            connect: {
-              id: company.id,
-            },
-          },
-          document: {
-            connect: {
-              id: document.id as number,
-            },
-          },
-          product:
-            products && products.length > 0
-              ? {
-                  connect: {
-                    id: products[0].id as number,
-                  },
-                }
-              : null,
-          amount: bolDoc.orderItems[i].quantity.toFixed(4),
-          tax: eutaxes.find((t) => t.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
-          name: products && products.length > 0 ? products[0].name : bolDoc.orderItems[i].product.title,
-        },
-      });
-    }
-
-    await context.sudo().query.Payment.createOne({
-      data: {
-        value: bolDoc.orderItems.reduce((acc: number, dp) => acc + dp.unitPrice, 0).toFixed(4),
+    },
+    products: {
+      create: [],
+    },
+    creator: {
+      connect: {
+        id: company.owner.id as number,
+      },
+    },
+    establishment: {
+      connect: {
+        id: company.establishments.at(0).id as number,
+      },
+    },
+    payment: {
+      create: {
+        value: bolDoc.orderItems.reduce((acc: number, dp: { unitPrice: number }) => acc + dp.unitPrice, 0).toFixed(4),
         type: "online",
         isVerified: true,
-        document: {
-          connect: {
-            id: document.id,
-          },
-        },
         timestamp: bolDoc.orderPlacedDateTime,
         company: {
           connect: {
@@ -445,20 +262,202 @@ const saveDocument = async (bolDoc, company, context) => {
           },
         },
       },
+    },
+    type: "invoice",
+  };
+
+  try {
+    let customer = await getCustomer({ email: bolDoc.billingDetails.email, company, context });
+    if (!customer) {
+      customer = await createCustomer({ orderDetails: bolDoc, company, context });
+    }
+    document.customer = {
+      connect: {
+        id: customer!.id,
+      },
+    };
+
+    let docAddress = customer!.customerAddresses.find(
+      (address: { street: any; door: any; zip: any; city: any; country: any }) =>
+        address.street.toLowerCase() == bolDoc.billingDetails.streetName.toLowerCase() &&
+        address.door.toLowerCase() == bolDoc.billingDetails.houseNumber.toLowerCase() + (bolDoc.billingDetails.houseNumberExtension ?? "").toLowerCase() &&
+        address.zip.toLowerCase() == bolDoc.billingDetails.zipCode.toLowerCase() &&
+        address.city.toLowerCase() == bolDoc.billingDetails.city.toLowerCase() &&
+        address.country.toLowerCase() == bolDoc.billingDetails.countryCode.toLowerCase()
+    );
+
+    document.docAddress = {
+      connect: {
+        id: docAddress!.id,
+      },
+    };
+
+    let delAddress = customer!.customerAddresses.find(
+      (address: { street: any; door: any; zip: any; city: any; country: any }) =>
+        address.street.toLowerCase() == bolDoc.shipmentDetails.streetName.toLowerCase() &&
+        address.door.toLowerCase().includes(bolDoc.shipmentDetails.houseNumber.toLowerCase()) &&
+        address.zip.toLowerCase() == bolDoc.shipmentDetails.zipCode.toLowerCase() &&
+        address.city.toLowerCase() == bolDoc.shipmentDetails.city.toLowerCase() &&
+        address.country.toLowerCase() == bolDoc.shipmentDetails.countryCode.toLowerCase()
+    );
+
+    document.delAddress = {
+      connect: {
+        id: delAddress!.id,
+      },
+    };
+
+    for (let orderProduct of bolDoc.orderItems) {
+      console.log(orderProduct);
+      let product = await findProduct({ ean: orderProduct.product.ean, company, context });
+      if (!product) {
+        product = await createProduct({ productDetails: orderProduct, company, context });
+      }
+      document.products.create.push({
+        price: orderProduct.unitPrice.toFixed(4),
+        company: {
+          connect: {
+            id: company.id,
+          },
+        },
+        product: {
+          connect: {
+            id: product.id,
+          },
+        },
+        amount: orderProduct.quantity.toFixed(4),
+        tax: eutaxes.find((t) => t.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
+        name: product.name,
+      });
+    }
+
+    const postedDocument = await context.sudo().query.Document.createOne({
+      data: document,
+      query: "id ",
     });
 
     try {
       sendMail({
         recipient: "test@huseyinonal.com",
-        subject: `Bestelling ${document.prefix ?? ""}${document.number}`,
+        subject: `Bestelling ${postedDocument.prefix ?? ""}${postedDocument.number}`,
         company: company,
-        attachments: [await generateInvoiceOut({ document: document })],
+        attachments: [await generateInvoiceOut({ document: postedDocument })],
         html: `<p>Beste ${
-          customer.firstName + " " + customer.lastName
-        },</p><p>In bijlage vindt u het factuur voor uw laatste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${company.name}</p>`,
+          customer!.firstName + " " + customer!.lastName
+        },</p><p>In bijlage vindt u het factuur voor uw recentste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${company.name}</p>`,
       });
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+    }
   } catch (error) {
     console.error(error);
+  }
+};
+
+const getCustomer = async ({ email, company, context }: { email: string; company: any; context: KeystoneContext }) => {
+  try {
+    const existingCustomer = await context.sudo().query.User.findMany({
+      query: "id email customerAddresses { id street door zip city country } firstName lastName",
+      where: {
+        company: {
+          id: {
+            equals: company.id,
+          },
+        },
+        role: {
+          equals: "customer",
+        },
+        email: {
+          equals: transformEmail({
+            email: email,
+            companyId: company.id,
+          }),
+        },
+      },
+    });
+    if (existingCustomer.length > 0) {
+      return existingCustomer.at(0);
+    } else {
+      return null;
+    }
+  } catch (error) {
+    return null;
+  }
+};
+
+const compareAddresses = ({ docAddress, delAddress }: { docAddress: any; delAddress: any }) => {
+  if (
+    docAddress.streetName.toLowerCase() === delAddress.streetName.toLowerCase() &&
+    docAddress.houseNumber.toLowerCase() === delAddress.houseNumber.toLowerCase() &&
+    docAddress.zipCode.toLowerCase() === delAddress.zipCode.toLowerCase() &&
+    docAddress.city.toLowerCase() === delAddress.city.toLowerCase() &&
+    docAddress.countryCode.toLowerCase() === delAddress.countryCode.toLowerCase()
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+const createCustomer = async ({ orderDetails, company, context }: { orderDetails: any; company: any; context: KeystoneContext }) => {
+  let customer: Record<string, any> = {
+    email: orderDetails.billingDetails.email,
+    firstName: orderDetails.billingDetails.firstName,
+    lastName: orderDetails.billingDetails.surname,
+    name: orderDetails.billingDetails.firstName + " " + orderDetails.billingDetails.surname,
+    password: generateRandomString(24),
+    role: "customer",
+    company: {
+      connect: {
+        id: company.id,
+      },
+    },
+  };
+  let docAddress = orderDetails.billingDetails;
+  let delAddress = orderDetails.shipmentDetails;
+  customer.customerAddresses = {
+    create: [
+      {
+        street: docAddress.streetName,
+        door: docAddress.houseNumber,
+        zip: docAddress.zipCode,
+        city: docAddress.city,
+        country: docAddress.countryCode,
+        company: {
+          connect: {
+            id: company.id,
+          },
+        },
+      },
+    ],
+  };
+  if (docAddress.houseNumberExtension) {
+    customer.customerAddresses.create.at(0).door = customer.customerAddresses.create.at(0).door + docAddress.houseNumberExtension;
+  }
+  const areAddressesSame = compareAddresses({ docAddress, delAddress });
+  if (!areAddressesSame) {
+    customer.customerAddresses.create.push({
+      street: delAddress.streetName,
+      door: delAddress.houseNumber,
+      zip: delAddress.zipCode,
+      city: delAddress.city,
+      country: delAddress.countryCode,
+      company: {
+        connect: {
+          id: company.id,
+        },
+      },
+    });
+  }
+
+  try {
+    const newUser = await context.sudo().query.User.createOne({
+      data: customer,
+      query: "id customerAddresses { id street door zip city country } firstName lastName email",
+    });
+    return newUser;
+  } catch (error) {
+    console.error(error);
+    return null;
   }
 };

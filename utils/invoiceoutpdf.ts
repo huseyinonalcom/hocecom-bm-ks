@@ -76,10 +76,10 @@ export async function generateInvoiceOut({
             position,
             item.name,
             item.description,
-            formatCurrency(item.value.toFixed(2)),
+            formatCurrency(item.price.toFixed(2)),
             item.amount,
-            formatCurrency(Number(item.subTotalTax).toFixed(2)),
-            formatCurrency(Number(item.subTotal).toFixed(2))
+            formatCurrency(Number(item.totalTax).toFixed(2)),
+            formatCurrency(Number(item.totalWithTaxAfterReduction).toFixed(2))
           );
         }
         return invoiceTableTop + (documentProducts.length + 1) * 40;
@@ -141,7 +141,7 @@ export async function generateInvoiceOut({
         doc.fillColor("black");
 
         payments.forEach((payment, i) => {
-          doc.text(dateFormatBe(payment.date), x + 10, y + 20 * (i + 1));
+          doc.text(dateFormatBe(payment.timestamp), x + 10, y + 20 * (i + 1));
           doc.text(payment.type, x + 85, y + 20 * (i + 1));
           doc.text(formatCurrency(payment.value.toFixed(2)), x + 150, y + 20 * (i + 1), {
             width: 80,
@@ -162,13 +162,13 @@ export async function generateInvoiceOut({
         taxRates = taxRates.sort((a, b) => a - b);
 
         doc.fontSize(10).text("Total Tax:", x, y + 50);
-        doc.text(formatCurrency(documentProducts.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)), x + 80, y + 50);
+        doc.text(formatCurrency(documentProducts.reduce((acc, dp) => acc + Number(dp.totalTax), 0)), x + 80, y + 50);
 
         taxRates.map((taxRate, index) => {
           doc
             .text("Total Tax " + taxRate + "%:", x, y + 50 + (index + 1) * 15)
             .text(
-              formatCurrency(documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)),
+              formatCurrency(documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)),
               x + 80,
               y + 50 + (index + 1) * 15
             );
@@ -234,26 +234,15 @@ export async function generateInvoiceOut({
 
       let totalsX = 410;
       doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(
-        formatCurrency(
-          documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0) - documentProducts.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)
-        ),
-        totalsX + 70,
-        y + 50
-      );
+      doc.text(formatCurrency(documentProducts.reduce((acc, docProd) => acc + Number(docProd.totalWithoutTaxAfterReduction), 0)), totalsX + 70, y + 50);
       doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0)), totalsX + 70, y + 65);
+      let total = documentProducts.reduce((acc, docProd) => acc + Number(docProd.totalWithTaxAfterReduction), 0);
+      doc.text(formatCurrency(total), totalsX + 70, y + 65);
       doc.text("Already Paid:", totalsX, y + 80);
-      doc.text(formatCurrency(payments.filter((p) => p.isVerified && !p.isDeleted).reduce((acc, dp) => acc + Number(dp.value), 0)), totalsX + 70, y + 80);
+      let totalPaid = payments.filter((payment) => payment.isVerified && !payment.isDeleted).reduce((acc, payment) => acc + Number(payment.value), 0);
+      doc.text(formatCurrency(totalPaid), totalsX + 70, y + 80);
       doc.text("To Pay:", totalsX, y + 95);
-      doc.text(
-        formatCurrency(
-          documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0) -
-            payments.filter((p) => p.isVerified && !p.isDeleted).reduce((acc, dp) => acc + Number(dp.value), 0)
-        ),
-        totalsX + 70,
-        y + 95
-      );
+      doc.text(formatCurrency(total - totalPaid), totalsX + 70, y + 95);
 
       doc.end();
       doc.on("end", () => {

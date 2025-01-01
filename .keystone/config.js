@@ -1,9 +1,7 @@
 "use strict";
-var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -17,14 +15,6 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // keystone.ts
@@ -33,61 +23,6 @@ __export(keystone_exports, {
   default: () => keystone_default
 });
 module.exports = __toCommonJS(keystone_exports);
-
-// utils/bulkdocumentsenderstart.ts
-var import_worker_threads = require("worker_threads");
-var import_path = __toESM(require("path"));
-async function fetchCompany(companyID, context) {
-  let company;
-  await context.sudo().query.Company.findOne({
-    query: "id name accountantEmail logo { url } emailHost emailPort emailUser emailPassword",
-    where: { id: companyID }
-  }).then((res) => {
-    company = res;
-  });
-  return company;
-}
-async function fetchDocuments(companyID, docTypes, month, year, context) {
-  const fetchedDocuments = await context.sudo().query.Document.findMany({
-    orderBy: [{ date: "desc" }],
-    query: "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name amount totalWithTaxAfterReduction tax }",
-    where: {
-      company: {
-        id: {
-          equals: companyID
-        }
-      },
-      type: {
-        in: docTypes
-      },
-      date: {
-        gte: new Date(year, month - 1, 1),
-        lte: new Date(year, month, 1)
-      }
-    }
-  });
-  return Array.from(fetchedDocuments);
-}
-async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context }) {
-  const documents = await fetchDocuments(companyID, docTypes, month, year, context);
-  if (documents.length === 0) {
-    console.log("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
-    return;
-  }
-  const company = await fetchCompany(companyID, context);
-  const workerData = { documents, company };
-  new import_worker_threads.Worker(import_path.default.resolve("./utils/bulkdocumentsenderworker.ts"), {
-    execArgv: ["-r", "ts-node/register"],
-    workerData
-  });
-}
-var bulkSendDocuments = ({ companyID, docTypes, month, year, context }) => {
-  try {
-    startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context });
-  } catch (error) {
-    console.error("Error occurred while starting bulkdocumentsender with params: ", companyID, docTypes, month, year, "error: ", error);
-  }
-};
 
 // utils/fileupload.ts
 var import_client_s3 = require("@aws-sdk/client-s3");
@@ -338,7 +273,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -383,7 +318,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -471,7 +406,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
         try {
           if (operation === "delete") {
@@ -733,7 +668,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
         try {
           if (operation === "delete") {
@@ -979,7 +914,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1040,7 +975,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1081,7 +1016,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1200,7 +1135,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1283,7 +1218,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1338,7 +1273,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1433,7 +1368,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1482,7 +1417,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       },
       afterOperation: async ({ operation, item, inputData, context, resolvedData }) => {
@@ -1589,7 +1524,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       },
       afterOperation: async ({ operation, context, item }) => {
@@ -1666,7 +1601,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1709,7 +1644,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1775,7 +1710,7 @@ var lists = {
           return;
         }
         try {
-          if (operation === "create" || operation === "update") {
+          if (operation === "create") {
             resolvedData.company = {
               connect: {
                 id: context.session.data.company.id
@@ -1783,7 +1718,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
         try {
           if (operation === "create" || operation === "update") {
@@ -1791,11 +1726,9 @@ var lists = {
               throw new Error("Company is required");
             }
             let mail = inputData.email;
-            console.log(mail);
             let mailPart1 = mail.split("@").at(0);
             let mailPart2 = mail.split("@").at(-1);
             resolvedData.email = mailPart1 + "+" + resolvedData.company?.connect?.id + "@" + mailPart2;
-            console.log(resolvedData.email);
           }
         } catch (error) {
           console.error(error);
@@ -1895,7 +1828,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
       }
     },
@@ -1958,7 +1891,7 @@ var lists = {
             };
           }
         } catch (error) {
-          console.error(error);
+          console.error("Company hook error:", error);
         }
         try {
           if (operation === "update") {
@@ -2052,6 +1985,364 @@ var lists = {
 
 // keystone.ts
 var import_config2 = require("dotenv/config");
+
+// utils/random.ts
+function generateRandomString(length) {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+// utils/utils.ts
+var transformEmail = ({ email, companyId }) => {
+  let parts = email.split("@");
+  let localPart = parts[0].split("+")[0];
+  let domainPart = parts[1];
+  return localPart + "+" + companyId + "@" + domainPart;
+};
+
+// utils/bol-offer-sync.ts
+var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
+var bolApiUrl = "https://api.bol.com/retailer";
+var bolTokens = [];
+function bolHeaders(headersType, clientId) {
+  const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  if (!tokenEntry) {
+    return;
+  }
+  const contentType = headersType === "json" ? "application/vnd.retailer.v10+json" : "application/vnd.retailer.v10+csv";
+  return {
+    "Content-Type": contentType,
+    Accept: contentType,
+    Authorization: `Bearer ${tokenEntry.token}`
+  };
+}
+async function authenticateBolCom(clientId, clientSecret) {
+  const existingTokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  if (existingTokenEntry && /* @__PURE__ */ new Date() < existingTokenEntry.expiration) {
+    return existingTokenEntry.token;
+  }
+  let auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  const authHeader = `Basic ${auth}`;
+  try {
+    const response = await fetch(bolAuthUrl, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      }
+    });
+    if (!response.ok) {
+      console.error("bol auth error:", await response.text());
+      return false;
+    }
+    const data = await response.json();
+    const newToken = {
+      clientId,
+      token: data["access_token"],
+      expiration: new Date((/* @__PURE__ */ new Date()).getTime() + data["expires_in"] * 1e3)
+    };
+    if (existingTokenEntry) {
+      existingTokenEntry.token = newToken.token;
+      existingTokenEntry.expiration = newToken.expiration;
+    } else {
+      bolTokens.push(newToken);
+    }
+    return newToken.token;
+  } catch (error) {
+    console.error("bol token error:", error);
+    return false;
+  }
+}
+var syncBolOrders = async ({ context }) => {
+  const companiesToSync = await findCompaniesToSync({ context });
+  for (let currCompany of companiesToSync) {
+    let orders = await getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret);
+    if (orders && orders.length > 0) {
+      for (let order of orders) {
+        const orderExists = await checkIfOrderExists({ orderId: order.orderId, company: currCompany, context });
+        if (!orderExists) {
+          const orderDetails = await getBolComOrder({
+            orderId: order.orderId,
+            bolClientID: currCompany.bolClientID,
+            bolClientSecret: currCompany.bolClientSecret
+          });
+          await saveDocument({ bolDoc: orderDetails, company: currCompany, context });
+        }
+      }
+    }
+  }
+};
+var findCompaniesToSync = async ({ context }) => {
+  return await context.sudo().query.Company.findMany({
+    query: "id bolClientID bolClientSecret name owner { id } establishments { id }",
+    where: {
+      isActive: {
+        equals: true
+      },
+      bolClientID: {
+        not: {
+          equals: ""
+        }
+      },
+      bolClientSecret: {
+        not: {
+          equals: ""
+        }
+      }
+    }
+  });
+};
+async function getBolComOrders(bolClientID, bolClientSecret) {
+  await authenticateBolCom(bolClientID, bolClientSecret);
+  let orders = [];
+  let today = /* @__PURE__ */ new Date();
+  const dateString = (date) => date.toISOString().split("T")[0];
+  try {
+    today.setDate(today.getDate() - 3);
+    for (let i = 0; i < 3; i++) {
+      today.setDate(today.getDate() + 1);
+      const response = await fetch(`${bolApiUrl}/orders?fulfilment-method=ALL&status=ALL&latest-change-date=${dateString(today)}&page=1`, {
+        method: "GET",
+        headers: bolHeaders("json", bolClientID)
+      });
+      if (!response.ok) {
+        console.error(await response.text());
+      } else {
+        const answer = await response.json();
+        orders = orders.concat(answer.orders);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1e3));
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
+  return sortedOrders;
+}
+async function checkIfOrderExists({ orderId, company, context }) {
+  const existingDoc = await context.sudo().query.Document.findMany({
+    query: "id",
+    where: {
+      company: {
+        id: {
+          equals: company.id
+        }
+      },
+      externalId: {
+        equals: orderId
+      }
+    }
+  });
+  if (existingDoc.length > 0) {
+    return true;
+  }
+  return false;
+}
+async function getBolComOrder({ orderId, bolClientID, bolClientSecret }) {
+  await authenticateBolCom(bolClientID, bolClientSecret);
+  try {
+    const response = await fetch(`${bolApiUrl}/orders/${orderId}`, {
+      method: "GET",
+      headers: bolHeaders("json", bolClientID)
+    });
+    if (!response.ok) {
+      console.error(await response.text());
+      return null;
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+var saveDocument = async ({ bolDoc, company, context }) => {
+  let document = {
+    externalId: bolDoc.orderId,
+    date: bolDoc.orderPlacedDateTime,
+    company: {
+      connect: {
+        id: company.id
+      }
+    },
+    products: {
+      create: []
+    },
+    creator: {
+      connect: {
+        id: company.owner.id
+      }
+    },
+    establishment: {
+      connect: {
+        id: company.establishments.at(0).id
+      }
+    },
+    payment: {
+      create: {
+        value: bolDoc.orderItems.reduce((acc, dp) => acc + dp.unitPrice, 0).toFixed(4),
+        type: "online",
+        isVerified: true,
+        timestamp: bolDoc.orderPlacedDateTime,
+        company: {
+          connect: {
+            id: company.id
+          }
+        },
+        creator: {
+          connect: {
+            id: company.owner.id
+          }
+        }
+      }
+    },
+    type: "invoice"
+  };
+  try {
+    let customer = await getCustomer({ email: bolDoc.billingDetails.email, company, context });
+    if (!customer) {
+      customer = await createCustomer({ orderDetails: bolDoc, company, context });
+    }
+    try {
+      document.customer = {
+        connect: {
+          id: customer.id
+        }
+      };
+      let docAddress = customer.customerAddresses.find(
+        (address) => address.street.toLowerCase() == bolDoc.billingDetails.streetName.toLowerCase() && address.door.toLowerCase() == bolDoc.billingDetails.houseNumber.toLowerCase() + (bolDoc.billingDetails.houseNumberExtension ?? "").toLowerCase() && address.zip.toLowerCase() == bolDoc.billingDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.billingDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.billingDetails.countryCode.toLowerCase()
+      );
+      document.docAddress = {
+        connect: {
+          id: docAddress.id
+        }
+      };
+      let delAddress = customer.customerAddresses.find(
+        (address) => address.street.toLowerCase() == bolDoc.shipmentDetails.streetName.toLowerCase() && address.door.toLowerCase().includes(bolDoc.shipmentDetails.houseNumber.toLowerCase()) && address.zip.toLowerCase() == bolDoc.shipmentDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.shipmentDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.shipmentDetails.countryCode.toLowerCase()
+      );
+      document.delAddress = {
+        connect: {
+          id: delAddress.id
+        }
+      };
+    } catch (error) {
+      console.error(error);
+      console.log(customer);
+      console.log(bolDoc);
+    }
+    for (let product of bolDoc.orderItems) {
+      console.log(product);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+var getCustomer = async ({ email, company, context }) => {
+  try {
+    const existingCustomer = await context.sudo().query.User.findMany({
+      query: "id email customerAddresses { id street door zip city country } firstName lastName",
+      where: {
+        company: {
+          id: {
+            equals: company.id
+          }
+        },
+        role: {
+          equals: "customer"
+        },
+        email: {
+          equals: transformEmail({
+            email,
+            companyId: company.id
+          })
+        }
+      }
+    });
+    if (existingCustomer.length > 0) {
+      return existingCustomer.at(0);
+    } else {
+      return null;
+    }
+  } catch (error) {
+    return null;
+  }
+};
+var compareAddresses = ({ docAddress, delAddress }) => {
+  if (docAddress.streetName.toLowerCase() === delAddress.streetName.toLowerCase() && docAddress.houseNumber.toLowerCase() === delAddress.houseNumber.toLowerCase() && docAddress.zipCode.toLowerCase() === delAddress.zipCode.toLowerCase() && docAddress.city.toLowerCase() === delAddress.city.toLowerCase() && docAddress.countryCode.toLowerCase() === delAddress.countryCode.toLowerCase()) {
+    return true;
+  } else {
+    return false;
+  }
+};
+var createCustomer = async ({ orderDetails, company, context }) => {
+  let customer = {
+    email: orderDetails.billingDetails.email,
+    firstName: orderDetails.billingDetails.firstName,
+    lastName: orderDetails.billingDetails.surname,
+    name: orderDetails.billingDetails.firstName + " " + orderDetails.billingDetails.surname,
+    password: generateRandomString(24),
+    role: "customer",
+    company: {
+      connect: {
+        id: company.id
+      }
+    }
+  };
+  let docAddress = orderDetails.billingDetails;
+  let delAddress = orderDetails.shipmentDetails;
+  customer.customerAddresses = {
+    create: [
+      {
+        street: docAddress.streetName,
+        door: docAddress.houseNumber,
+        zip: docAddress.zipCode,
+        city: docAddress.city,
+        country: docAddress.countryCode,
+        company: {
+          connect: {
+            id: company.id
+          }
+        }
+      }
+    ]
+  };
+  if (docAddress.houseNumberExtension) {
+    customer.customerAddresses.create.at(0).door = customer.customerAddresses.create.at(0).door + docAddress.houseNumberExtension;
+  }
+  const areAddressesSame = compareAddresses({ docAddress, delAddress });
+  if (!areAddressesSame) {
+    customer.customerAddresses.create.push({
+      street: delAddress.streetName,
+      door: delAddress.houseNumber,
+      zip: delAddress.zipCode,
+      city: delAddress.city,
+      country: delAddress.countryCode,
+      company: {
+        connect: {
+          id: company.id
+        }
+      }
+    });
+  }
+  try {
+    const newUser = await context.sudo().query.User.createOne({
+      data: customer,
+      query: "id customerAddresses { id street door zip city country } firstName lastName email"
+    });
+    return newUser;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+// keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
@@ -2126,91 +2417,12 @@ var keystone_default = withAuth(
             return;
           }
         });
-        const sendDocumentsToAccountant = async () => {
-          try {
-            let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
-              where: {
-                monthlyReports: {
-                  equals: true
-                }
-              }
-            });
-            console.log(companiesWithMonthlyReportsActive);
-            let currentYear = (/* @__PURE__ */ new Date()).getFullYear();
-            for (let company of companiesWithMonthlyReportsActive) {
-              bulkSendDocuments({
-                companyID: company.id,
-                docTypes: ["purchase"],
-                month: (/* @__PURE__ */ new Date()).getMonth() - 5,
-                // last month
-                year: currentYear,
-                // Current year
-                context
-              });
-              bulkSendDocuments({
-                companyID: company.id,
-                docTypes: ["purchase"],
-                month: (/* @__PURE__ */ new Date()).getMonth() - 4,
-                // last month
-                year: currentYear,
-                // Current year
-                context
-              });
-              bulkSendDocuments({
-                companyID: company.id,
-                docTypes: ["purchase"],
-                month: (/* @__PURE__ */ new Date()).getMonth() - 3,
-                // last month
-                year: currentYear,
-                // Current year
-                context
-              });
-              bulkSendDocuments({
-                companyID: company.id,
-                docTypes: ["purchase"],
-                month: (/* @__PURE__ */ new Date()).getMonth() - 2,
-                // last month
-                year: currentYear,
-                // Current year
-                context
-              });
-              bulkSendDocuments({
-                companyID: company.id,
-                docTypes: ["purchase"],
-                month: (/* @__PURE__ */ new Date()).getMonth() - 1,
-                // last month
-                year: currentYear,
-                // Current year
-                context
-              });
-              bulkSendDocuments({
-                companyID: company.id,
-                docTypes: ["purchase"],
-                month: (/* @__PURE__ */ new Date()).getMonth(),
-                // last month
-                year: currentYear,
-                // Current year
-                context
-              });
-            }
-          } catch (error) {
-            console.error("Error starting bulk document sender", error);
-          }
-        };
-        cron.schedule("0 0 2 * *", async () => {
-          try {
-            let companiesWithMonthlyReportsActive = await context.sudo().query.companies.findMany({
-              where: {
-                monthlyReports: {
-                  equals: true
-                }
-              }
-            });
-            let currentYear = (/* @__PURE__ */ new Date()).getFullYear();
-          } catch (error) {
-            console.error("Error starting bulk document sender", error);
-          }
-        });
+        try {
+          console.log("Running Cron Job for Bol Orders");
+          syncBolOrders({ context });
+        } catch (error) {
+          console.error("Error running cron job", error);
+        }
       }
     },
     lists,

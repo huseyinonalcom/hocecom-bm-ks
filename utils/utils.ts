@@ -18,3 +18,10 @@ export const calculateDate = ({ number, unit, startDate }: { number: number; uni
   }
   return date;
 };
+
+export const transformEmail = ({ email, companyId }: { email: string; companyId: string }) => {
+  let parts = email.split("@");
+  let localPart = parts[0].split("+")[0];
+  let domainPart = parts[1];
+  return localPart + "+" + companyId + "@" + domainPart;
+};
