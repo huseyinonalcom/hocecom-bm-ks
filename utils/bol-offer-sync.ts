@@ -9,6 +9,42 @@ const bolApiUrl = "https://api.bol.com/retailer";
 
 let bolTokens: { clientId: string; token: string; expiration: Date }[] = [];
 
+export const createDocumentsFromBolOrders = async (context) => {
+  await context
+    .sudo()
+    .query.Company.findMany({
+      query: "id bolClientID bolClientSecret name owner { id } establishments { id }",
+      where: {
+        isActive: {
+          equals: true,
+        },
+      },
+    })
+    .then(async (res) => {
+      let companiesToSync = res.filter(
+        (company: { id: string; bolClientID: string; bolClientSecret: string }) => company.bolClientID && company.bolClientSecret
+      );
+      for (let i = 0; i < companiesToSync.length; i++) {
+        const currCompany = companiesToSync[i];
+        getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
+          if (orders && orders.length > 0) {
+            const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
+            for (let i = 0; i < orders.length; i++) {
+              try {
+                await getBolComOrder(sortedOrders[i].orderId, currCompany.bolClientID, currCompany.bolClientSecret).then(async (orderDetails) => {
+                  orderDetails && (await saveDocument(orderDetails, currCompany, context));
+                });
+              } catch (error) {
+                console.error("Error fetching order details for orderId: ", sortedOrders[i], error);
+              }
+            }
+          }
+        });
+      }
+    });
+  console.log("Finished Cron Job for Bol Orders");
+};
+
 function bolHeaders(headersType: string, clientId: string) {
   const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
   if (!tokenEntry) {
@@ -70,42 +106,6 @@ async function authenticateBolCom(clientId: string, clientSecret: string) {
   }
 }
 
-export const createDocumentsFromBolOrders = async (context) => {
-  await context
-    .sudo()
-    .query.Company.findMany({
-      query: "id bolClientID bolClientSecret name owner { id } establishments { id }",
-      where: {
-        isActive: {
-          equals: true,
-        },
-      },
-    })
-    .then(async (res) => {
-      let companiesToSync = res.filter(
-        (company: { id: string; bolClientID: string; bolClientSecret: string }) => company.bolClientID && company.bolClientSecret
-      );
-      for (let i = 0; i < companiesToSync.length; i++) {
-        const currCompany = companiesToSync[i];
-        getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret).then(async (orders) => {
-          if (orders && orders.length > 0) {
-            const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
-            for (let i = 0; i < orders.length; i++) {
-              try {
-                await getBolComOrder(sortedOrders[i].orderId, currCompany.bolClientID, currCompany.bolClientSecret).then(async (orderDetails) => {
-                  orderDetails && (await saveDocument(orderDetails, currCompany, context));
-                });
-              } catch (error) {
-                console.error("Error fetching order details for orderId: ", sortedOrders[i], error);
-              }
-            }
-          }
-        });
-      }
-    });
-  console.log("Finished Cron Job for Bol Orders");
-};
-
 async function getBolComOrders(bolClientID: string, bolClientSecret: string) {
   await authenticateBolCom(bolClientID, bolClientSecret);
 
@@ -114,8 +114,8 @@ async function getBolComOrders(bolClientID: string, bolClientSecret: string) {
   try {
     let orders: any[] = [];
     let today = new Date();
-    today.setDate(today.getDate() - 7);
-    for (let i = 0; i < 7; i++) {
+    today.setDate(today.getDate() - 3);
+    for (let i = 0; i < 3; i++) {
       today.setDate(today.getDate() + 1);
       const response = await fetch(`${bolApiUrl}/orders?fulfilment-method=ALL&status=ALL&latest-change-date=${dateString(today)}&page=1`, {
         method: "GET",
@@ -163,14 +163,14 @@ async function getBolComOrder(orderId: string, bolClientID: string, bolClientSec
 const saveDocument = async (bolDoc, company, context) => {
   try {
     const existingDoc = await context.sudo().query.Document.findMany({
-      query: "references id",
+      query: "id",
       where: {
         company: {
           id: {
             equals: company.id,
           },
         },
-        references: {
+        externalId: {
           equals: bolDoc.orderId,
         },
       },
@@ -206,29 +206,29 @@ const saveDocument = async (bolDoc, company, context) => {
       },
     });
 
-    let user;
+    let customer;
     if (existingCustomer.length > 0) {
-      user = existingCustomer.at(0);
+      customer = existingCustomer.at(0);
 
-      if (user.customerAddresses && user.customerAddresses.length > 0) {
-        for (let i = 0; i < user.customerAddresses.length; i++) {
+      if (customer.customerAddresses && customer.customerAddresses.length > 0) {
+        for (let i = 0; i < customer.customerAddresses.length; i++) {
           if (
-            user.customerAddresses[i].street === bolDoc.shipmentDetails.streetName &&
-            user.customerAddresses[i].door === bolDoc.shipmentDetails.houseNumber &&
-            user.customerAddresses[i].zip === bolDoc.shipmentDetails.zipCode &&
-            user.customerAddresses[i].city === bolDoc.shipmentDetails.city &&
-            user.customerAddresses[i].country === bolDoc.shipmentDetails.countryCode
+            customer.customerAddresses[i].street === bolDoc.shipmentDetails.streetName &&
+            customer.customerAddresses[i].door === bolDoc.shipmentDetails.houseNumber &&
+            customer.customerAddresses[i].zip === bolDoc.shipmentDetails.zipCode &&
+            customer.customerAddresses[i].city === bolDoc.shipmentDetails.city &&
+            customer.customerAddresses[i].country === bolDoc.shipmentDetails.countryCode
           ) {
-            delAddress = user.customerAddresses[i];
+            delAddress = customer.customerAddresses[i];
           }
           if (
-            user.customerAddresses[i].street === bolDoc.billingDetails.streetName &&
-            user.customerAddresses[i].door === bolDoc.billingDetails.houseNumber &&
-            user.customerAddresses[i].zip === bolDoc.billingDetails.zipCode &&
-            user.customerAddresses[i].city === bolDoc.billingDetails.city &&
-            user.customerAddresses[i].country === bolDoc.billingDetails.countryCode
+            customer.customerAddresses[i].street === bolDoc.billingDetails.streetName &&
+            customer.customerAddresses[i].door === bolDoc.billingDetails.houseNumber &&
+            customer.customerAddresses[i].zip === bolDoc.billingDetails.zipCode &&
+            customer.customerAddresses[i].city === bolDoc.billingDetails.city &&
+            customer.customerAddresses[i].country === bolDoc.billingDetails.countryCode
           ) {
-            docAddress = user.customerAddresses[i];
+            docAddress = customer.customerAddresses[i];
           }
         }
       }
@@ -250,7 +250,7 @@ const saveDocument = async (bolDoc, company, context) => {
           },
         },
       });
-      user = newUser;
+      customer = newUser;
       delAddress = await context.sudo().query.Address.createOne({
         query: "id street door zip city country",
         data: {
@@ -266,7 +266,7 @@ const saveDocument = async (bolDoc, company, context) => {
           },
           customer: {
             connect: {
-              id: user.id,
+              id: customer.id,
             },
           },
         },
@@ -287,7 +287,7 @@ const saveDocument = async (bolDoc, company, context) => {
             },
             customer: {
               connect: {
-                id: user.id,
+                id: customer.id,
               },
             },
           },
@@ -307,7 +307,7 @@ const saveDocument = async (bolDoc, company, context) => {
           country: bolDoc.shipmentDetails.countryCode,
           customer: {
             connect: {
-              id: user.id,
+              id: customer.id,
             },
           },
           company: {
@@ -329,7 +329,7 @@ const saveDocument = async (bolDoc, company, context) => {
           country: bolDoc.billingDetails.countryCode,
           customer: {
             connect: {
-              id: user.id,
+              id: customer.id,
             },
           },
           company: {
@@ -347,7 +347,7 @@ const saveDocument = async (bolDoc, company, context) => {
         date: bolDoc.orderPlacedDateTime,
         customer: {
           connect: {
-            id: user.id,
+            id: customer.id,
           },
         },
         company: {
@@ -355,7 +355,7 @@ const saveDocument = async (bolDoc, company, context) => {
             id: company.id,
           },
         },
-        references: bolDoc.orderId,
+        externalId: bolDoc.orderId,
         delAddress: {
           connect: {
             id: delAddress.id,
@@ -430,7 +430,7 @@ const saveDocument = async (bolDoc, company, context) => {
         isVerified: true,
         document: {
           connect: {
-            id: document.id as number,
+            id: document.id,
           },
         },
         timestamp: bolDoc.orderPlacedDateTime,
@@ -441,16 +441,15 @@ const saveDocument = async (bolDoc, company, context) => {
         },
         creator: {
           connect: {
-            id: company.owner.id as number,
+            id: company.owner.id,
           },
         },
       },
     });
 
     try {
-      const customer = user;
       sendMail({
-        recipient: "contact@huseyinonal.com",
+        recipient: "test@huseyinonal.com",
         subject: `Bestelling ${document.prefix ?? ""}${document.number}`,
         company: company,
         attachments: [await generateInvoiceOut({ document: document })],

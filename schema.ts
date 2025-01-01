@@ -263,6 +263,7 @@ export const lists: Lists = {
           update: isEmployee,
         },
       }),
+      externalId: text(),
       deliveryDate: timestamp({
         isOrderable: true,
         access: {

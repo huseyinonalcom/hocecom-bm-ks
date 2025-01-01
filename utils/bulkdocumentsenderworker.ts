@@ -12,6 +12,38 @@ import os from "os";
 const documents = workerData.documents;
 const company = workerData.company;
 
+const run = async () => {
+  try {
+    const tempDir = path.join(os.tmpdir(), "pdf_temp" + company.id + dateFormatOnlyDate(documents.at(0).date));
+    await fs.emptyDir(tempDir);
+    await writeAllXmlsToTempDir(tempDir, documents);
+    const zipPath = path.join(
+      tempDir,
+      "documents_" +
+        company.name.replaceAll(" ", "_") +
+        "_" +
+        dateFormatOnlyDate(documents.at(0).date) +
+        "_" +
+        dateFormatOnlyDate(documents.at(-1).date) +
+        ".zip"
+    );
+    await createZip(tempDir, zipPath);
+    await sendEmailWithAttachment(zipPath);
+    console.log(
+      "Worker for dates",
+      dateFormatOnlyDate(documents.at(0).date),
+      "to",
+      dateFormatOnlyDate(documents.at(-1).date),
+      "for company",
+      company.name,
+      "finished"
+    );
+  } catch (error) {
+    console.log(documents.at(0));
+    console.error("An error occurred:", error);
+  }
+};
+
 async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): Promise<string[]> {
   const response = await fetch(documents.at(0).establishment.logo.url);
   let logoBuffer = await Buffer.from(await response.arrayBuffer());
@@ -119,37 +151,5 @@ async function sendEmailWithAttachment(zipPath: string): Promise<void> {
     }.</p>`,
   });
 }
-
-const run = async () => {
-  try {
-    const tempDir = path.join(os.tmpdir(), "pdf_temp" + company.id + dateFormatOnlyDate(documents.at(0).date));
-    await fs.emptyDir(tempDir);
-    await writeAllXmlsToTempDir(tempDir, documents);
-    const zipPath = path.join(
-      tempDir,
-      "documents_" +
-        company.name.replaceAll(" ", "_") +
-        "_" +
-        dateFormatOnlyDate(documents.at(0).date) +
-        "_" +
-        dateFormatOnlyDate(documents.at(-1).date) +
-        ".zip"
-    );
-    await createZip(tempDir, zipPath);
-    await sendEmailWithAttachment(zipPath);
-    console.log(
-      "Worker for dates",
-      dateFormatOnlyDate(documents.at(0).date),
-      "to",
-      dateFormatOnlyDate(documents.at(-1).date),
-      "for company",
-      company.name,
-      "finished"
-    );
-  } catch (error) {
-    console.log(documents.at(0));
-    console.error("An error occurred:", error);
-  }
-};
 
 run();
