@@ -521,6 +521,7 @@ var lists = {
           update: isEmployee
         }
       }),
+      externalId: (0, import_fields.text)(),
       deliveryDate: (0, import_fields.timestamp)({
         isOrderable: true,
         access: {
@@ -1807,6 +1808,7 @@ var lists = {
         isIndexed: "unique",
         validation: { isRequired: true }
       }),
+      email2: (0, import_fields.text)(),
       isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
       phone: (0, import_fields.text)(),
       role: (0, import_fields.select)({

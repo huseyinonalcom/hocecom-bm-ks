@@ -508,6 +508,7 @@ input AccountancyRelateToOneForCreateInput {
 type Document {
   id: ID!
   date: DateTime
+  externalId: String
   deliveryDate: DateTime
   createdAt: DateTime
   type: String
@@ -556,6 +557,7 @@ input DocumentWhereInput {
   NOT: [DocumentWhereInput!]
   id: IDFilter
   date: DateTimeNullableFilter
+  externalId: StringFilter
   deliveryDate: DateTimeNullableFilter
   createdAt: DateTimeNullableFilter
   type: StringFilter
@@ -614,6 +616,7 @@ input PaymentManyRelationFilter {
 input DocumentOrderByInput {
   id: OrderDirection
   date: OrderDirection
+  externalId: OrderDirection
   deliveryDate: OrderDirection
   createdAt: OrderDirection
   type: OrderDirection
@@ -630,6 +633,7 @@ input DocumentOrderByInput {
 
 input DocumentUpdateInput {
   date: DateTime
+  externalId: String
   deliveryDate: DateTime
   createdAt: DateTime
   type: String
@@ -709,6 +713,7 @@ input DocumentUpdateArgs {
 
 input DocumentCreateInput {
   date: DateTime
+  externalId: String
   deliveryDate: DateTime
   createdAt: DateTime
   type: String
@@ -2200,6 +2205,7 @@ type User {
   id: ID!
   name: String
   email: String
+  email2: String
   isBlocked: Boolean
   phone: String
   role: String
@@ -2256,6 +2262,7 @@ input UserWhereInput {
   id: IDFilter
   name: StringFilter
   email: StringFilter
+  email2: StringFilter
   isBlocked: BooleanFilter
   phone: StringFilter
   role: StringFilter
@@ -2296,6 +2303,7 @@ input UserOrderByInput {
   id: OrderDirection
   name: OrderDirection
   email: OrderDirection
+  email2: OrderDirection
   isBlocked: OrderDirection
   phone: OrderDirection
   role: OrderDirection
@@ -2311,6 +2319,7 @@ input UserOrderByInput {
 input UserUpdateInput {
   name: String
   email: String
+  email2: String
   isBlocked: Boolean
   phone: String
   role: String
@@ -2360,6 +2369,7 @@ input UserUpdateArgs {
 input UserCreateInput {
   name: String
   email: String
+  email2: String
   isBlocked: Boolean
   phone: String
   role: String

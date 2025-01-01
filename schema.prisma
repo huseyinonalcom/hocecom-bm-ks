@@ -117,6 +117,7 @@ model Company {
 model Document {
   id              String            @id @default(cuid())
   date            DateTime?         @default(now())
+  externalId      String            @default("")
   deliveryDate    DateTime?
   createdAt       DateTime?         @default(now())
   type            String
@@ -454,6 +455,7 @@ model User {
   id                String          @id @default(cuid())
   name              String          @default("")
   email             String          @unique @default("")
+  email2            String          @default("")
   isBlocked         Boolean         @default(false)
   phone             String          @default("")
   role              String          @default("customer")
