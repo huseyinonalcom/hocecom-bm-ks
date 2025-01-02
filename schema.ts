@@ -273,6 +273,7 @@ export const lists: Lists = {
           update: isEmployee,
         },
       }),
+      origin: text(),
       externalId: text(),
       deliveryDate: timestamp({
         isOrderable: true,
