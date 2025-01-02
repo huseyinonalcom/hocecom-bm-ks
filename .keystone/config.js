@@ -466,6 +466,7 @@ var lists = {
           update: isEmployee
         }
       }),
+      origin: (0, import_fields.text)(),
       externalId: (0, import_fields.text)(),
       deliveryDate: (0, import_fields.timestamp)({
         isOrderable: true,

@@ -508,6 +508,7 @@ input AccountancyRelateToOneForCreateInput {
 type Document {
   id: ID!
   date: DateTime
+  origin: String
   externalId: String
   deliveryDate: DateTime
   createdAt: DateTime
@@ -557,6 +558,7 @@ input DocumentWhereInput {
   NOT: [DocumentWhereInput!]
   id: IDFilter
   date: DateTimeNullableFilter
+  origin: StringFilter
   externalId: StringFilter
   deliveryDate: DateTimeNullableFilter
   createdAt: DateTimeNullableFilter
@@ -616,6 +618,7 @@ input PaymentManyRelationFilter {
 input DocumentOrderByInput {
   id: OrderDirection
   date: OrderDirection
+  origin: OrderDirection
   externalId: OrderDirection
   deliveryDate: OrderDirection
   createdAt: OrderDirection
@@ -633,6 +636,7 @@ input DocumentOrderByInput {
 
 input DocumentUpdateInput {
   date: DateTime
+  origin: String
   externalId: String
   deliveryDate: DateTime
   createdAt: DateTime
@@ -713,6 +717,7 @@ input DocumentUpdateArgs {
 
 input DocumentCreateInput {
   date: DateTime
+  origin: String
   externalId: String
   deliveryDate: DateTime
   createdAt: DateTime

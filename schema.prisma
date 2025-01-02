@@ -117,6 +117,7 @@ model Company {
 model Document {
   id              String            @id @default(cuid())
   date            DateTime?         @default(now())
+  origin          String            @default("")
   externalId      String            @default("")
   deliveryDate    DateTime?
   createdAt       DateTime?         @default(now())
