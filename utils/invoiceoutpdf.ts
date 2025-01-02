@@ -76,7 +76,7 @@ export async function generateInvoiceOut({
             position,
             item.name,
             item.description,
-            formatCurrency(item.price.toFixed(2)),
+            formatCurrency(Number(item.price).toFixed(2)),
             item.amount,
             formatCurrency(Number(item.totalTax).toFixed(2)),
             formatCurrency(Number(item.totalWithTaxAfterReduction).toFixed(2))
@@ -143,7 +143,7 @@ export async function generateInvoiceOut({
         payments.forEach((payment, i) => {
           doc.text(dateFormatBe(payment.timestamp), x + 10, y + 20 * (i + 1));
           doc.text(payment.type, x + 85, y + 20 * (i + 1));
-          doc.text(formatCurrency(payment.value.toFixed(2)), x + 150, y + 20 * (i + 1), {
+          doc.text(formatCurrency(Number(payment.value).toFixed(2)), x + 150, y + 20 * (i + 1), {
             width: 80,
             align: "right",
           });

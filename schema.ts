@@ -79,7 +79,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -124,7 +124,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -212,7 +212,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
 
         try {
@@ -233,20 +233,30 @@ export const lists: Lists = {
             } else {
               const docs = await context.query.Document.findMany({
                 orderBy: { number: "desc" },
-                where: { type: { equals: inputData.type } },
+                where: {
+                  type: { equals: inputData.type },
+                  company: { id: { equals: resolvedData.company!.connect!.id } },
+                  establishment: { id: { equals: resolvedData.establishment!.connect!.id } },
+                },
                 query: "id number",
               });
               const lastDocument = docs.at(0);
+              let year = new Date().getFullYear();
+              if (typeof resolvedData.date === "string") {
+                year = new Date(resolvedData.date).getFullYear();
+              } else if (resolvedData.date instanceof Date) {
+                year = resolvedData.date.getFullYear();
+              }
               if (lastDocument) {
-                const lastNumber = lastDocument.number.split("-")[1];
-                const lastYear = lastDocument.number.split("-")[0];
-                if (lastYear == new Date().getFullYear()) {
-                  resolvedData.number = `${lastYear}-${(parseInt(lastNumber) + 1).toFixed(0).padStart(7, "0")}`;
+                const lastDocumentNumber = lastDocument.number.split("-")[1];
+                const lastDocumentYear = lastDocument.number.split("-")[0];
+                if (lastDocumentYear == year) {
+                  resolvedData.number = `${lastDocumentYear}-${(parseInt(lastDocumentNumber) + 1).toFixed(0).padStart(7, "0")}`;
                 } else {
-                  resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(7, "0")}`;
+                  resolvedData.number = `${year}-${(1).toFixed(0).padStart(7, "0")}`;
                 }
               } else {
-                resolvedData.number = `${new Date().getFullYear()}-${(1).toFixed(0).padStart(7, "0")}`;
+                resolvedData.number = `${year}-${(1).toFixed(0).padStart(7, "0")}`;
               }
             }
           }
@@ -475,7 +485,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
         try {
           if (operation === "delete") {
@@ -738,7 +748,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -799,7 +809,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -840,7 +850,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -959,7 +969,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -1042,7 +1052,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -1097,7 +1107,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -1192,7 +1202,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -1241,7 +1251,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
       afterOperation: async ({ operation, item, inputData, context, resolvedData }) => {
@@ -1350,7 +1360,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
       afterOperation: async ({ operation, context, item }) => {
@@ -1518,7 +1528,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -1561,7 +1571,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -1635,7 +1645,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
         try {
           if (operation === "create" || operation === "update") {
@@ -1746,7 +1756,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
       },
     },
@@ -1809,7 +1819,7 @@ export const lists: Lists = {
             };
           }
         } catch (error) {
-          console.error("Company hook error:", error);
+          console.error("Company hook error");
         }
         try {
           if (operation === "update") {

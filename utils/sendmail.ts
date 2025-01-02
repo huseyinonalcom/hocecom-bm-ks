@@ -2,6 +2,7 @@ export const sendMail = async ({
   recipient,
   bcc,
   company,
+  establishment,
   subject,
   html,
   attachments,
@@ -9,6 +10,7 @@ export const sendMail = async ({
   recipient: string;
   bcc?: string;
   company: any;
+  establishment: any;
   subject: string;
   html: string;
   attachments?: any;
@@ -34,14 +36,13 @@ export const sendMail = async ({
       subject: subject,
       html: templatedMail({
         content: html,
-        img64: company.logo!.url,
+        img64: establishment.logo!.url,
       }),
     };
 
     transporter.sendMail(mailOptionsClient, (error: any) => {
       if (error) {
-        console.log("mail error");
-        console.log(error);
+        console.log("mail error", error);
         return true;
       } else {
         console.log("mail sent");
@@ -49,8 +50,7 @@ export const sendMail = async ({
       }
     });
   } catch (e) {
-    console.log("mail error");
-    console.log(e);
+    console.log("mail error", e);
     return false;
   }
 };

@@ -78,14 +78,19 @@ export const syncBolOrders = async ({ context }: { context: KeystoneContext }) =
     let orders = await getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret);
     if (orders && orders.length > 0) {
       for (let order of orders) {
-        const orderExists = await checkIfOrderExists({ orderId: order.orderId, company: currCompany, context });
-        if (!orderExists) {
-          const orderDetails = await getBolComOrder({
-            orderId: order.orderId,
-            bolClientID: currCompany.bolClientID,
-            bolClientSecret: currCompany.bolClientSecret,
-          });
-          await saveDocument({ bolDoc: orderDetails, company: currCompany, context });
+        try {
+          const orderExists = await checkIfOrderExists({ orderId: order.orderId, company: currCompany, context });
+          if (!orderExists) {
+            const orderDetails = await getBolComOrder({
+              orderId: order.orderId,
+              bolClientID: currCompany.bolClientID,
+              bolClientSecret: currCompany.bolClientSecret,
+            });
+            await saveDocument({ bolDoc: orderDetails, company: currCompany, context });
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        } catch (error) {
+          console.error(error);
         }
       }
     }
@@ -94,7 +99,7 @@ export const syncBolOrders = async ({ context }: { context: KeystoneContext }) =
 
 const findCompaniesToSync = async ({ context }: { context: KeystoneContext }) => {
   return await context.sudo().query.Company.findMany({
-    query: "id bolClientID bolClientSecret name owner { id } establishments { id }",
+    query: "id bolClientID bolClientSecret emailHost emailPort emailUser emailPassword name owner { id } establishments { id }",
     where: {
       isActive: {
         equals: true,
@@ -117,14 +122,13 @@ async function getBolComOrders(bolClientID: string, bolClientSecret: string) {
   await authenticateBolCom(bolClientID, bolClientSecret);
 
   let orders: any[] = [];
-  let today = new Date();
   const dateString = (date: Date) => date.toISOString().split("T")[0];
 
   try {
-    today.setDate(today.getDate() - 3);
     for (let i = 0; i < 3; i++) {
-      today.setDate(today.getDate() + 1);
-      const response = await fetch(`${bolApiUrl}/orders?fulfilment-method=ALL&status=ALL&latest-change-date=${dateString(today)}&page=1`, {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const response = await fetch(`${bolApiUrl}/orders?fulfilment-method=ALL&status=ALL&latest-change-date=${dateString(date)}&page=1`, {
         method: "GET",
         headers: bolHeaders("json", bolClientID),
       });
@@ -132,7 +136,9 @@ async function getBolComOrders(bolClientID: string, bolClientSecret: string) {
         console.error(await response.text());
       } else {
         const answer = await response.json();
-        orders = orders.concat(answer.orders);
+        if (answer.orders) {
+          orders = orders.concat(answer.orders);
+        }
       }
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -188,8 +194,8 @@ async function getBolComOrder({ orderId, bolClientID, bolClientSecret }: { order
 }
 
 async function findProduct({ ean, company, context }: { ean: string; company: any; context: KeystoneContext }) {
-  return await context.sudo().query.Material.findOne({
-    query: "ean id",
+  let products = await context.sudo().query.Material.findMany({
+    query: "ean id name tax price",
     where: {
       ean: {
         equals: ean,
@@ -201,10 +207,14 @@ async function findProduct({ ean, company, context }: { ean: string; company: an
       },
     },
   });
+  if (products.length > 0) {
+    return products.at(0);
+  } else {
+    return null;
+  }
 }
 
 async function createProduct({ productDetails, company, context }: { productDetails: any; company: any; context: KeystoneContext }) {
-  console.log(productDetails);
   let product: Record<string, any> = {
     ean: productDetails.product.ean,
     name: productDetails.product.title,
@@ -245,23 +255,25 @@ const saveDocument = async ({ bolDoc, company, context }: { bolDoc: any; company
         id: company.establishments.at(0).id as number,
       },
     },
-    payment: {
-      create: {
-        value: bolDoc.orderItems.reduce((acc: number, dp: { unitPrice: number }) => acc + dp.unitPrice, 0).toFixed(4),
-        type: "online",
-        isVerified: true,
-        timestamp: bolDoc.orderPlacedDateTime,
-        company: {
-          connect: {
-            id: company.id,
+    payments: {
+      create: [
+        {
+          value: bolDoc.orderItems.reduce((acc: number, dp: { unitPrice: number }) => acc + dp.unitPrice, 0).toFixed(4),
+          type: "online",
+          isVerified: true,
+          timestamp: bolDoc.orderPlacedDateTime,
+          company: {
+            connect: {
+              id: company.id,
+            },
+          },
+          creator: {
+            connect: {
+              id: company.owner.id,
+            },
           },
         },
-        creator: {
-          connect: {
-            id: company.owner.id,
-          },
-        },
-      },
+      ],
     },
     type: "invoice",
   };
@@ -308,7 +320,6 @@ const saveDocument = async ({ bolDoc, company, context }: { bolDoc: any; company
     };
 
     for (let orderProduct of bolDoc.orderItems) {
-      console.log(orderProduct);
       let product = await findProduct({ ean: orderProduct.product.ean, company, context });
       if (!product) {
         product = await createProduct({ productDetails: orderProduct, company, context });
@@ -333,18 +344,22 @@ const saveDocument = async ({ bolDoc, company, context }: { bolDoc: any; company
 
     const postedDocument = await context.sudo().query.Document.createOne({
       data: document,
-      query: "id ",
+      query:
+        "number date deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city country } docAddress { street door zip city country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city country } logo { url } }",
     });
 
     try {
       sendMail({
+        establishment: postedDocument.establishment,
         recipient: "test@huseyinonal.com",
         subject: `Bestelling ${postedDocument.prefix ?? ""}${postedDocument.number}`,
         company: company,
         attachments: [await generateInvoiceOut({ document: postedDocument })],
         html: `<p>Beste ${
-          customer!.firstName + " " + customer!.lastName
-        },</p><p>In bijlage vindt u het factuur voor uw recentste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${company.name}</p>`,
+          postedDocument.customer!.firstName + " " + postedDocument.customer!.lastName
+        },</p><p>In bijlage vindt u het factuur voor uw recentste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${
+          postedDocument.establishment.name
+        }</p>`,
       });
     } catch (error) {
       console.error(error);
@@ -359,11 +374,6 @@ const getCustomer = async ({ email, company, context }: { email: string; company
     const existingCustomer = await context.sudo().query.User.findMany({
       query: "id email customerAddresses { id street door zip city country } firstName lastName",
       where: {
-        company: {
-          id: {
-            equals: company.id,
-          },
-        },
         role: {
           equals: "customer",
         },

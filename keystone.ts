@@ -89,21 +89,21 @@ export default withAuth(
           }
         });
 
-        // cron.schedule("*/5 * * * *", async () => {
-        //   try {
-        //     console.log("Running Cron Job for Bol Orders");
-        //     syncBolOrders(context);
-        //   } catch (error) {
-        //     console.error("Error running cron job", error);
-        //   }
-        // });
+        cron.schedule("*/5 * * * *", async () => {
+          try {
+            console.log("Running Cron Job for Bol Orders");
+            syncBolOrders({ context });
+          } catch (error) {
+            console.error("Error running cron job", error);
+          }
+        });
 
-        // try {
-        //   console.log("Running Cron Job for Bol Orders");
-        //   syncBolOrders({ context });
-        // } catch (error) {
-        //   console.error("Error running cron job", error);
-        // }
+         try {
+           console.log("Running Cron Job for Bol Orders");
+           syncBolOrders({ context });
+         } catch (error) {
+           console.error("Error running cron job", error);
+         }
 
         // const sendDocumentsToAccountant = async () => {
         //   try {
