@@ -1775,6 +1775,9 @@ export const lists: Lists = {
       },
     },
     fields: {
+      datePlanned: timestamp(),
+      dateStarted: timestamp(),
+      dateFinished: timestamp(),
       number: text({ validation: { isRequired: true } }),
       materials: relationship({
         ref: "Material.workOrders",
@@ -1784,9 +1787,6 @@ export const lists: Lists = {
         ref: "WorkOrderOperation.workOrder",
         many: true,
       }),
-      datePlanned: timestamp(),
-      dateStarted: timestamp(),
-      dateFinished: timestamp(),
       creator: relationship({
         ref: "User.workOrders",
         many: false,
