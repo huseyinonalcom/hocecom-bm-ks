@@ -1638,7 +1638,7 @@ export const lists: Lists = {
           return;
         }
         try {
-          if (operation === "create") {
+          if (operation === "create" || operation == "update") {
             resolvedData.company = {
               connect: {
                 id: context.session.data.company.id,
