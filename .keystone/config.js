@@ -3003,6 +3003,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
         id: company.id
       }
     },
+    origin: "BOL.COM",
     products: {
       create: []
     },
