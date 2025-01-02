@@ -242,6 +242,7 @@ const saveDocument = async ({ bolDoc, company, context }: { bolDoc: any; company
         id: company.id,
       },
     },
+    origin: "BOL.COM",
     products: {
       create: [],
     },
