@@ -449,7 +449,7 @@ export const lists: Lists = {
               });
               let totalPaid = 0;
               payments.forEach((payment) => {
-                totalPaid += payment.value;
+                totalPaid += Number(payment.value);
               });
               let total = totalValue - totalPaid;
               if (total < 0.02 && total > -0.02) {
