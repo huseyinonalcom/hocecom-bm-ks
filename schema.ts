@@ -415,7 +415,7 @@ export const lists: Lists = {
               });
               let total = 0;
               payments.forEach((payment) => {
-                total += payment.value;
+                total += Number(payment.value);
               });
               return new Decimal(total);
             } catch (e) {
