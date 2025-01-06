@@ -365,9 +365,9 @@ export const lists: Lists = {
               let total = 0;
               materials.forEach((docProd) => {
                 total += calculateTotalWithTaxBeforeReduction({
-                  price: docProd.price,
-                  amount: docProd.amount,
-                  tax: docProd.tax,
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
                   taxIncluded: item.taxIncluded,
                 });
               });
@@ -390,10 +390,10 @@ export const lists: Lists = {
               let total = 0;
               materials.forEach((docProd) => {
                 total += calculateTotalWithTaxAfterReduction({
-                  price: docProd.price,
-                  amount: docProd.amount,
-                  reduction: docProd.reduction ?? 0,
-                  tax: docProd.tax,
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
                 });
               });
@@ -436,10 +436,10 @@ export const lists: Lists = {
               let totalValue = 0;
               materials.forEach((docProd) => {
                 totalValue += calculateTotalWithTaxAfterReduction({
-                  price: docProd.price,
-                  amount: docProd.amount,
-                  reduction: docProd.reduction ?? 0,
-                  tax: docProd.tax,
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
                 });
               });
@@ -456,6 +456,39 @@ export const lists: Lists = {
                 total = 0;
               }
               return new Decimal(total);
+            } catch (e) {
+              return new Decimal(0);
+            }
+          },
+        }),
+      }),
+      totalTax: virtual({
+        field: graphql.field({
+          type: graphql.Decimal,
+          async resolve(item, args, context): Promise<Decimal> {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "price amount reduction tax",
+              });
+              let totalValue = 0;
+              materials.forEach((docProd) => {
+                totalValue += calculateTotalWithTaxAfterReduction({
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
+                  taxIncluded: item.taxIncluded,
+                });
+                totalValue -= calculateTotalWithoutTaxAfterReduction({
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
+                  taxIncluded: item.taxIncluded,
+                });
+              });
+              return new Decimal(totalValue);
             } catch (e) {
               return new Decimal(0);
             }
