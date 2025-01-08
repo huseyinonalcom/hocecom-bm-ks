@@ -1,6 +1,7 @@
 import { text, relationship, password, timestamp, select, multiselect, virtual, checkbox, integer, json, decimal } from "@keystone-6/core/fields";
 import { allowAll, denyAll } from "@keystone-6/core/access";
 import { graphql, list } from "@keystone-6/core";
+import { Decimal } from "@keystone-6/core/types";
 import type { Lists } from ".keystone/types";
 import {
   calculateTotalWithoutTaxAfterReduction,
@@ -20,7 +21,6 @@ import {
   isAdminAccountantIntern,
   isIntern,
 } from "./functions";
-import { Decimal } from "@keystone-6/core/types";
 
 const companyFilter = ({ session }: { session?: any }) => {
   if (isGlobalAdmin({ session })) {
@@ -39,6 +39,26 @@ export const lists: Lists = {
         delete: isSuperAdmin,
       },
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create" || operation === "update") {
+            const pin = resolvedData.pincode;
+            const pinCheck = await context.sudo().query.Company.findOne({
+              where: {
+                pincode: String(pin),
+              },
+              query: "id",
+            });
+            if (pinCheck) {
+              throw new Error("Pincode already in use");
+            }
+          }
+        } catch (error) {
+          console.error("Pin check error:", error);
+        }
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       isActive: checkbox({ defaultValue: false, access: { update: isAdminAccountantManager } }),
@@ -46,6 +66,7 @@ export const lists: Lists = {
         ref: "File",
         many: false,
       }),
+      pincode: text({ validation: { isRequired: true }, isIndexed: "unique" }),
       companies: relationship({ ref: "Company.accountancy", many: true }),
       users: relationship({ ref: "User.accountancy", many: true }),
       extraFields: json(),
@@ -151,6 +172,26 @@ export const lists: Lists = {
         query: isWorker,
         update: isCompanyAdmin,
         delete: denyAll,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create" || operation === "update") {
+            const pin = resolvedData.pincode;
+            const pinCheck = await context.sudo().query.Accountancy.findOne({
+              where: {
+                pincode: String(pin),
+              },
+              query: "id",
+            });
+            if (pinCheck) {
+              throw new Error("Pincode already in use");
+            }
+          }
+        } catch (error) {
+          console.error("Pin check error:", error);
+        }
       },
     },
     fields: {
@@ -1667,7 +1708,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        if (!isAdminAccountantManager({ session: context.session })) {
+        if (isSuperAdmin({ session: context.session })) {
+          console.info("operation on user by superadmin");
+        } else if (!isAdminAccountantManager({ session: context.session })) {
           try {
             if (operation === "create" || operation == "update") {
               resolvedData.company = {
@@ -1679,17 +1722,37 @@ export const lists: Lists = {
           } catch (error) {
             console.error("Company hook error");
           }
+        } else {
+          try {
+            if (operation === "create" || operation == "update") {
+              resolvedData.accountancy = {
+                connect: {
+                  id: context.session.data.accountancy.id,
+                },
+              };
+            }
+          } catch (error) {
+            console.error("Accountancy hook error");
+          }
         }
         try {
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
-              throw new Error("Company is required");
+              if (!resolvedData.accountancy) {
+                throw new Error("Company or Accountancy is required");
+              }
             }
             let mail = inputData.email!;
 
             let mailPart1 = mail.split("@").at(0);
             let mailPart2 = mail.split("@").at(-1);
-            resolvedData.email = mailPart1 + "+" + resolvedData.company?.connect?.id + "@" + mailPart2;
+            let idPart;
+            if (resolvedData.company) {
+              idPart = resolvedData.company!.connect!.id;
+            } else {
+              idPart = resolvedData.accountancy!.connect!.id;
+            }
+            resolvedData.email = mailPart1 + "+" + idPart + "@" + mailPart2;
           }
         } catch (error) {
           console.error(error);

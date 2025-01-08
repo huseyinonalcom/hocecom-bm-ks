@@ -80,6 +80,15 @@ export default withAuth(
             if (pinCheck) {
               res.status(200).json({ id: pinCheck.id });
             } else {
+              const pinCheckAccountancy = await context.sudo().query.Accountancy.findOne({
+                where: {
+                  pincode: String(pin),
+                },
+                query: "id",
+              });
+              if (pinCheckAccountancy) {
+                res.status(200).json({ id: pinCheckAccountancy.id });
+              }
               res.status(404).json({ message: "Bad pin" });
             }
           } catch (error) {
@@ -98,12 +107,12 @@ export default withAuth(
           }
         });
 
-         try {
-           console.log("Running Cron Job for Bol Orders");
-           syncBolOrders({ context });
-         } catch (error) {
-           console.error("Error running cron job", error);
-         }
+        try {
+          console.log("Running Cron Job for Bol Orders");
+          syncBolOrders({ context });
+        } catch (error) {
+          console.error("Error running cron job", error);
+        }
 
         // const sendDocumentsToAccountant = async () => {
         //   try {
