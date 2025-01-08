@@ -6,6 +6,7 @@ type Accountancy {
   name: String
   isActive: Boolean
   logo: File
+  pincode: String
   companies(where: CompanyWhereInput! = {}, orderBy: [CompanyOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: CompanyWhereUniqueInput): [Company!]
   companiesCount(where: CompanyWhereInput! = {}): Int
   users(where: UserWhereInput! = {}, orderBy: [UserOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: UserWhereUniqueInput): [User!]
@@ -15,6 +16,7 @@ type Accountancy {
 
 input AccountancyWhereUniqueInput {
   id: ID
+  pincode: String
 }
 
 input AccountancyWhereInput {
@@ -25,6 +27,7 @@ input AccountancyWhereInput {
   name: StringFilter
   isActive: BooleanFilter
   logo: FileWhereInput
+  pincode: StringFilter
   companies: CompanyManyRelationFilter
   users: UserManyRelationFilter
 }
@@ -95,6 +98,7 @@ input AccountancyOrderByInput {
   id: OrderDirection
   name: OrderDirection
   isActive: OrderDirection
+  pincode: OrderDirection
 }
 
 enum OrderDirection {
@@ -106,6 +110,7 @@ input AccountancyUpdateInput {
   name: String
   isActive: Boolean
   logo: FileRelateToOneForUpdateInput
+  pincode: String
   companies: CompanyRelateToManyForUpdateInput
   users: UserRelateToManyForUpdateInput
   extraFields: JSON
@@ -140,6 +145,7 @@ input AccountancyCreateInput {
   name: String
   isActive: Boolean
   logo: FileRelateToOneForCreateInput
+  pincode: String
   companies: CompanyRelateToManyForCreateInput
   users: UserRelateToManyForCreateInput
   extraFields: JSON

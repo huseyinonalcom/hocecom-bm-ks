@@ -17,6 +17,7 @@ model Accountancy {
   isActive    Boolean   @default(false)
   logo        File?     @relation("Accountancy_logo", fields: [logoId], references: [id])
   logoId      String?   @map("logo")
+  pincode     String    @unique @default("")
   companies   Company[] @relation("Company_accountancy")
   users       User[]    @relation("User_accountancy")
   extraFields Json?

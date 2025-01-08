@@ -70,7 +70,7 @@ if (!sessionSecret && process.env.NODE_ENV !== "production") {
 var { withAuth } = (0, import_auth.createAuth)({
   listKey: "User",
   identityField: "email",
-  sessionData: "id role permissions isBlocked company { id }",
+  sessionData: "id role permissions isBlocked company { id } accountancy { id }",
   secretField: "password",
   initFirstItem: {
     fields: ["name", "role", "email", "password"]
@@ -89,6 +89,7 @@ var import_core2 = require("@keystone-6/core");
 var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
+var import_types = require("@keystone-6/core/types");
 
 // utils/calculations/documentproducts.ts
 var calculateBaseTotal = ({
@@ -215,7 +216,6 @@ var isUser = ({ session: session2 }) => {
 };
 
 // schema.ts
-var import_types = require("@keystone-6/core/types");
 var companyFilter = ({ session: session2 }) => {
   if (isGlobalAdmin({ session: session2 })) {
     return {};
@@ -233,6 +233,26 @@ var lists = {
         delete: isSuperAdmin
       }
     },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create" || operation === "update") {
+            const pin = resolvedData.pincode;
+            const pinCheck = await context.sudo().query.Company.findOne({
+              where: {
+                pincode: String(pin)
+              },
+              query: "id"
+            });
+            if (pinCheck) {
+              throw new Error("Pincode already in use");
+            }
+          }
+        } catch (error) {
+          console.error("Pin check error:", error);
+        }
+      }
+    },
     fields: {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       isActive: (0, import_fields.checkbox)({ defaultValue: false, access: { update: isAdminAccountantManager } }),
@@ -240,6 +260,7 @@ var lists = {
         ref: "File",
         many: false
       }),
+      pincode: (0, import_fields.text)({ validation: { isRequired: true }, isIndexed: "unique" }),
       companies: (0, import_fields.relationship)({ ref: "Company.accountancy", many: true }),
       users: (0, import_fields.relationship)({ ref: "User.accountancy", many: true }),
       extraFields: (0, import_fields.json)()
@@ -345,6 +366,26 @@ var lists = {
         query: isWorker,
         update: isCompanyAdmin,
         delete: import_access.denyAll
+      }
+    },
+    hooks: {
+      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+        try {
+          if (operation === "create" || operation === "update") {
+            const pin = resolvedData.pincode;
+            const pinCheck = await context.sudo().query.Accountancy.findOne({
+              where: {
+                pincode: String(pin)
+              },
+              query: "id"
+            });
+            if (pinCheck) {
+              throw new Error("Pincode already in use");
+            }
+          }
+        } catch (error) {
+          console.error("Pin check error:", error);
+        }
       }
     },
     fields: {
@@ -1750,7 +1791,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        if (!isAdminAccountantManager({ session: context.session })) {
+        if (isSuperAdmin({ session: context.session })) {
+          console.info("operation on user by superadmin");
+        } else if (!isAdminAccountantManager({ session: context.session })) {
           try {
             if (operation === "create" || operation == "update") {
               resolvedData.company = {
@@ -1762,16 +1805,36 @@ var lists = {
           } catch (error) {
             console.error("Company hook error");
           }
+        } else {
+          try {
+            if (operation === "create" || operation == "update") {
+              resolvedData.accountancy = {
+                connect: {
+                  id: context.session.data.accountancy.id
+                }
+              };
+            }
+          } catch (error) {
+            console.error("Accountancy hook error");
+          }
         }
         try {
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
-              throw new Error("Company is required");
+              if (!resolvedData.accountancy) {
+                throw new Error("Company or Accountancy is required");
+              }
             }
             let mail = inputData.email;
             let mailPart12 = mail.split("@").at(0);
             let mailPart22 = mail.split("@").at(-1);
-            resolvedData.email = mailPart12 + "+" + resolvedData.company?.connect?.id + "@" + mailPart22;
+            let idPart;
+            if (resolvedData.company) {
+              idPart = resolvedData.company.connect.id;
+            } else {
+              idPart = resolvedData.accountancy.connect.id;
+            }
+            resolvedData.email = mailPart12 + "+" + idPart + "@" + mailPart22;
           }
         } catch (error) {
           console.error(error);
@@ -3300,6 +3363,15 @@ var keystone_default = withAuth(
             if (pinCheck) {
               res.status(200).json({ id: pinCheck.id });
             } else {
+              const pinCheckAccountancy = await context.sudo().query.Accountancy.findOne({
+                where: {
+                  pincode: String(pin)
+                },
+                query: "id"
+              });
+              if (pinCheckAccountancy) {
+                res.status(200).json({ id: pinCheckAccountancy.id });
+              }
               res.status(404).json({ message: "Bad pin" });
             }
           } catch (error) {
