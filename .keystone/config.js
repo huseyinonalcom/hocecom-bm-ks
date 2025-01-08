@@ -221,20 +221,10 @@ var companyFilter = ({ session: session2 }) => {
     if (isGlobalAdmin({ session: session2 })) {
       return true;
     } else {
-      return { company: { id: { equals: session2.data.company.id } } };
+      return { OR: [{ company: { id: { equals: session2.data.company?.id ?? "" } } }, { accountancy: { id: { equals: session2.data.accountancy?.id ?? "" } } }] };
     }
   } catch (error) {
-    return false;
-  }
-};
-var accountancyFilter = ({ session: session2 }) => {
-  try {
-    if (isGlobalAdmin({ session: session2 })) {
-      return true;
-    } else {
-      return { accountancy: { id: { equals: session2.data.accountancy.id } } };
-    }
-  } catch (error) {
+    console.log("Company filter error", error);
     return false;
   }
 };
@@ -1793,9 +1783,9 @@ var lists = {
   User: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter || accountancyFilter,
-        update: companyFilter || accountancyFilter,
-        delete: companyFilter || accountancyFilter
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
       },
       operation: {
         query: isUser,

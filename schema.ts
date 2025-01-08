@@ -27,21 +27,10 @@ const companyFilter = ({ session }: { session?: any }) => {
     if (isGlobalAdmin({ session })) {
       return true;
     } else {
-      return { company: { id: { equals: session.data.company.id } } };
+      return { OR: [{ company: { id: { equals: session.data.company?.id ?? "" } } }, { accountancy: { id: { equals: session.data.accountancy?.id ?? "" } } }] };
     }
   } catch (error) {
-    return false;
-  }
-};
-
-const accountancyFilter = ({ session }: { session?: any }) => {
-  try {
-    if (isGlobalAdmin({ session })) {
-      return true;
-    } else {
-      return { accountancy: { id: { equals: session.data.accountancy.id } } };
-    }
-  } catch (error) {
+    console.log("Company filter error", error);
     return false;
   }
 };
@@ -1712,9 +1701,9 @@ export const lists: Lists = {
   User: list({
     access: {
       filter: {
-        query: companyFilter || accountancyFilter,
-        update: companyFilter || accountancyFilter,
-        delete: companyFilter || accountancyFilter,
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter,
       },
       operation: {
         query: isUser,
