@@ -1290,7 +1290,7 @@ export const lists: Lists = {
       },
       afterOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
-          if (operation === "create" || operation === "update" || operation === "delete") {
+          if (operation === "create" || operation === "update") {
             const relatedShelfStocks = await context.query.ShelfStock.findMany({
               where: {
                 material: {
@@ -1667,19 +1667,18 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        if (isSuperAdmin({ session: context.session })) {
-          return;
-        }
-        try {
-          if (operation === "create" || operation == "update") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id,
-              },
-            };
+        if (!isAdminAccountantManager({ session: context.session })) {
+          try {
+            if (operation === "create" || operation == "update") {
+              resolvedData.company = {
+                connect: {
+                  id: context.session.data.company.id,
+                },
+              };
+            }
+          } catch (error) {
+            console.error("Company hook error");
           }
-        } catch (error) {
-          console.error("Company hook error");
         }
         try {
           if (operation === "create" || operation === "update") {

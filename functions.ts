@@ -38,7 +38,7 @@ export const isSuperAdmin = ({ session }: { session?: Session }) => {
 export const isGlobalAdmin = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isSuperAdmin({ session }) || session.data.role == "global_admin") return !session.data.isBlocked;
+  if (session.data.role == "global_admin" || isSuperAdmin({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -46,7 +46,7 @@ export const isGlobalAdmin = ({ session }: { session?: Session }) => {
 export const isAdminAccountantOwner = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isGlobalAdmin({ session }) || session.data.role == "admin_accountant") return !session.data.isBlocked;
+  if (session.data.role == "admin_accountant" || isGlobalAdmin({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -54,14 +54,14 @@ export const isAdminAccountantOwner = ({ session }: { session?: Session }) => {
 export const isAdminAccountantManager = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isAdminAccountantOwner({ session }) || session.data.role == "admin_accountant_manager") return !session.data.isBlocked;
+  if (session.data.role == "admin_accountant_manager" || isAdminAccountantOwner({ session })) return !session.data.isBlocked;
 
   return false;
 };
 export const isOwner = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isAdminAccountantManager({ session }) || session.data.role == "owner") return !session.data.isBlocked;
+  if (session.data.role == "owner" || isAdminAccountantManager({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -69,14 +69,14 @@ export const isOwner = ({ session }: { session?: Session }) => {
 export const isCompanyAdmin = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isOwner({ session }) || session.data.role == "company_admin") return !session.data.isBlocked;
+  if (session.data.role == "company_admin" || isOwner({ session })) return !session.data.isBlocked;
 
   return false;
 };
 export const isAdminAccountantEmployee = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isAdminAccountantManager({ session }) || session.data.role == "admin_accountant_employee") return !session.data.isBlocked;
+  if (session.data.role == "admin_accountant_employee" || isAdminAccountantManager({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -84,14 +84,14 @@ export const isAdminAccountantEmployee = ({ session }: { session?: Session }) =>
 export const isGeneralManager = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isCompanyAdmin({ session }) || session.data.role == "general_manager") return !session.data.isBlocked;
+  if (session.data.role == "general_manager" || isCompanyAdmin({ session })) return !session.data.isBlocked;
 
   return false;
 };
 export const isManager = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isGeneralManager({ session }) || session.data.role == "manager") return !session.data.isBlocked;
+  if (session.data.role == "manager" || isGeneralManager({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -99,7 +99,7 @@ export const isManager = ({ session }: { session?: Session }) => {
 export const isAccountant = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isManager({ session }) || session.data.role == "accountant") return !session.data.isBlocked;
+  if (session.data.role == "accountant" || isManager({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -107,7 +107,7 @@ export const isAccountant = ({ session }: { session?: Session }) => {
 export const isAdminAccountantIntern = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isAdminAccountantEmployee({ session }) || session.data.role == "admin_accountant_intern") return !session.data.isBlocked;
+  if (session.data.role == "admin_accountant_intern" || isAdminAccountantEmployee({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -115,7 +115,7 @@ export const isAdminAccountantIntern = ({ session }: { session?: Session }) => {
 export const isEmployee = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isAccountant({ session }) || session.data.role == "employee") return !session.data.isBlocked;
+  if (session.data.role == "employee" || isAccountant({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -123,7 +123,7 @@ export const isEmployee = ({ session }: { session?: Session }) => {
 export const isIntern = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isEmployee({ session }) || session.data.role == "intern") return !session.data.isBlocked;
+  if (session.data.role == "intern" || isEmployee({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -131,7 +131,7 @@ export const isIntern = ({ session }: { session?: Session }) => {
 export const isWorker = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isIntern({ session }) || session.data.role == "worker") return !session.data.isBlocked;
+  if (session.data.role == "worker" || isIntern({ session })) return !session.data.isBlocked;
 
   return false;
 };
@@ -139,7 +139,7 @@ export const isWorker = ({ session }: { session?: Session }) => {
 export const isUser = ({ session }: { session?: Session }) => {
   if (!session) return false;
 
-  if (isWorker({ session }) || session.data.role == "customer") return !session.data.isBlocked;
+  if (session.data.role == "customer" || isWorker({ session })) return !session.data.isBlocked;
 
   return false;
 };
