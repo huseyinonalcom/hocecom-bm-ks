@@ -223,6 +223,13 @@ var companyFilter = ({ session: session2 }) => {
     return { company: { id: { equals: session2.data.company.id } } };
   }
 };
+var accountancyFilter = ({ session: session2 }) => {
+  if (isGlobalAdmin({ session: session2 })) {
+    return {};
+  } else {
+    return { accountancy: { id: { equals: session2.data.accountancy.id } } };
+  }
+};
 var lists = {
   Accountancy: (0, import_core.list)({
     access: {
@@ -1778,9 +1785,9 @@ var lists = {
   User: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter
       },
       operation: {
         query: isUser,
@@ -3371,8 +3378,9 @@ var keystone_default = withAuth(
               });
               if (pinCheckAccountancy) {
                 res.status(200).json({ id: pinCheckAccountancy.id });
+              } else {
+                res.status(404).json({ message: "Bad pin" });
               }
-              res.status(404).json({ message: "Bad pin" });
             }
           } catch (error) {
             console.error("Pin check error:", error);
@@ -3388,12 +3396,6 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
-        try {
-          console.log("Running Cron Job for Bol Orders");
-          syncBolOrders({ context });
-        } catch (error) {
-          console.error("Error running cron job", error);
-        }
       }
     },
     lists,

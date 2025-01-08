@@ -29,6 +29,15 @@ const companyFilter = ({ session }: { session?: any }) => {
     return { company: { id: { equals: session.data.company.id } } };
   }
 };
+
+const accountancyFilter = ({ session }: { session?: any }) => {
+  if (isGlobalAdmin({ session })) {
+    return {};
+  } else {
+    return { accountancy: { id: { equals: session.data.accountancy.id } } };
+  }
+};
+
 export const lists: Lists = {
   Accountancy: list({
     access: {
@@ -1695,9 +1704,9 @@ export const lists: Lists = {
   User: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         query: isUser,
