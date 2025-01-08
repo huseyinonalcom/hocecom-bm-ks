@@ -23,12 +23,18 @@ import {
 } from "./functions";
 
 const companyFilter = ({ session }: { session?: any }) => {
-  if (isGlobalAdmin({ session })) {
-    return true;
-  } else {
-    return { company: { id: { equals: session.data.company.id } } };
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else {
+      return { OR: [{ company: { id: { equals: session.data.company?.id ?? "a" } } }, { accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } } }] };
+    }
+  } catch (error) {
+    console.log("Company filter error", error);
+    return false;
   }
 };
+
 export const lists: Lists = {
   Accountancy: list({
     access: {
