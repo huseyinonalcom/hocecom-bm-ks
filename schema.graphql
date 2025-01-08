@@ -535,6 +535,7 @@ type Document {
   total: Decimal
   totalPaid: Decimal
   totalToPay: Decimal
+  totalTax: Decimal
   comments: String
   references: String
   managerNotes: String
@@ -2414,14 +2415,14 @@ input AddressRelateToManyForCreateInput {
 
 type WorkOrder {
   id: ID!
+  datePlanned: DateTime
+  dateStarted: DateTime
+  dateFinished: DateTime
   number: String
   materials(where: MaterialWhereInput! = {}, orderBy: [MaterialOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: MaterialWhereUniqueInput): [Material!]
   materialsCount(where: MaterialWhereInput! = {}): Int
   operations(where: WorkOrderOperationWhereInput! = {}, orderBy: [WorkOrderOperationOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WorkOrderOperationWhereUniqueInput): [WorkOrderOperation!]
   operationsCount(where: WorkOrderOperationWhereInput! = {}): Int
-  datePlanned: DateTime
-  dateStarted: DateTime
-  dateFinished: DateTime
   creator: User
   company: Company
   extraFields: JSON
@@ -2436,31 +2437,31 @@ input WorkOrderWhereInput {
   OR: [WorkOrderWhereInput!]
   NOT: [WorkOrderWhereInput!]
   id: IDFilter
-  number: StringFilter
-  materials: MaterialManyRelationFilter
-  operations: WorkOrderOperationManyRelationFilter
   datePlanned: DateTimeNullableFilter
   dateStarted: DateTimeNullableFilter
   dateFinished: DateTimeNullableFilter
+  number: StringFilter
+  materials: MaterialManyRelationFilter
+  operations: WorkOrderOperationManyRelationFilter
   creator: UserWhereInput
   company: CompanyWhereInput
 }
 
 input WorkOrderOrderByInput {
   id: OrderDirection
-  number: OrderDirection
   datePlanned: OrderDirection
   dateStarted: OrderDirection
   dateFinished: OrderDirection
+  number: OrderDirection
 }
 
 input WorkOrderUpdateInput {
-  number: String
-  materials: MaterialRelateToManyForUpdateInput
-  operations: WorkOrderOperationRelateToManyForUpdateInput
   datePlanned: DateTime
   dateStarted: DateTime
   dateFinished: DateTime
+  number: String
+  materials: MaterialRelateToManyForUpdateInput
+  operations: WorkOrderOperationRelateToManyForUpdateInput
   creator: UserRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
@@ -2472,12 +2473,12 @@ input WorkOrderUpdateArgs {
 }
 
 input WorkOrderCreateInput {
-  number: String
-  materials: MaterialRelateToManyForCreateInput
-  operations: WorkOrderOperationRelateToManyForCreateInput
   datePlanned: DateTime
   dateStarted: DateTime
   dateFinished: DateTime
+  number: String
+  materials: MaterialRelateToManyForCreateInput
+  operations: WorkOrderOperationRelateToManyForCreateInput
   creator: UserRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON

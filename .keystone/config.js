@@ -145,72 +145,72 @@ var isSuperAdmin = ({ session: session2 }) => {
 };
 var isGlobalAdmin = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isSuperAdmin({ session: session2 }) || session2.data.role == "global_admin") return !session2.data.isBlocked;
+  if (session2.data.role == "global_admin" || isSuperAdmin({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isAdminAccountantOwner = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isGlobalAdmin({ session: session2 }) || session2.data.role == "admin_accountant") return !session2.data.isBlocked;
+  if (session2.data.role == "admin_accountant" || isGlobalAdmin({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isAdminAccountantManager = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantOwner({ session: session2 }) || session2.data.role == "admin_accountant_manager") return !session2.data.isBlocked;
+  if (session2.data.role == "admin_accountant_manager" || isAdminAccountantOwner({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isOwner = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "owner") return !session2.data.isBlocked;
+  if (session2.data.role == "owner" || isAdminAccountantManager({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isCompanyAdmin = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isOwner({ session: session2 }) || session2.data.role == "company_admin") return !session2.data.isBlocked;
+  if (session2.data.role == "company_admin" || isOwner({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isAdminAccountantEmployee = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantManager({ session: session2 }) || session2.data.role == "admin_accountant_employee") return !session2.data.isBlocked;
+  if (session2.data.role == "admin_accountant_employee" || isAdminAccountantManager({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isGeneralManager = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isCompanyAdmin({ session: session2 }) || session2.data.role == "general_manager") return !session2.data.isBlocked;
+  if (session2.data.role == "general_manager" || isCompanyAdmin({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isManager = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isGeneralManager({ session: session2 }) || session2.data.role == "manager") return !session2.data.isBlocked;
+  if (session2.data.role == "manager" || isGeneralManager({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isAccountant = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isManager({ session: session2 }) || session2.data.role == "accountant") return !session2.data.isBlocked;
+  if (session2.data.role == "accountant" || isManager({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isAdminAccountantIntern = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAdminAccountantEmployee({ session: session2 }) || session2.data.role == "admin_accountant_intern") return !session2.data.isBlocked;
+  if (session2.data.role == "admin_accountant_intern" || isAdminAccountantEmployee({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isEmployee = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isAccountant({ session: session2 }) || session2.data.role == "employee") return !session2.data.isBlocked;
+  if (session2.data.role == "employee" || isAccountant({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isIntern = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isEmployee({ session: session2 }) || session2.data.role == "intern") return !session2.data.isBlocked;
+  if (session2.data.role == "intern" || isEmployee({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isWorker = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isIntern({ session: session2 }) || session2.data.role == "worker") return !session2.data.isBlocked;
+  if (session2.data.role == "worker" || isIntern({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isUser = ({ session: session2 }) => {
   if (!session2) return false;
-  if (isWorker({ session: session2 }) || session2.data.role == "customer") return !session2.data.isBlocked;
+  if (session2.data.role == "customer" || isWorker({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 
@@ -558,9 +558,9 @@ var lists = {
               let total = 0;
               materials.forEach((docProd) => {
                 total += calculateTotalWithTaxBeforeReduction({
-                  price: docProd.price,
-                  amount: docProd.amount,
-                  tax: docProd.tax,
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
                   taxIncluded: item.taxIncluded
                 });
               });
@@ -583,10 +583,10 @@ var lists = {
               let total = 0;
               materials.forEach((docProd) => {
                 total += calculateTotalWithTaxAfterReduction({
-                  price: docProd.price,
-                  amount: docProd.amount,
-                  reduction: docProd.reduction ?? 0,
-                  tax: docProd.tax,
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded
                 });
               });
@@ -608,7 +608,7 @@ var lists = {
               });
               let total = 0;
               payments.forEach((payment) => {
-                total += payment.value;
+                total += Number(payment.value);
               });
               return new import_types.Decimal(total);
             } catch (e) {
@@ -629,10 +629,10 @@ var lists = {
               let totalValue = 0;
               materials.forEach((docProd) => {
                 totalValue += calculateTotalWithTaxAfterReduction({
-                  price: docProd.price,
-                  amount: docProd.amount,
-                  reduction: docProd.reduction ?? 0,
-                  tax: docProd.tax,
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded
                 });
               });
@@ -642,13 +642,46 @@ var lists = {
               });
               let totalPaid = 0;
               payments.forEach((payment) => {
-                totalPaid += payment.value;
+                totalPaid += Number(payment.value);
               });
               let total = totalValue - totalPaid;
               if (total < 0.02 && total > -0.02) {
                 total = 0;
               }
               return new import_types.Decimal(total);
+            } catch (e) {
+              return new import_types.Decimal(0);
+            }
+          }
+        })
+      }),
+      totalTax: (0, import_fields.virtual)({
+        field: import_core.graphql.field({
+          type: import_core.graphql.Decimal,
+          async resolve(item, args, context) {
+            try {
+              const materials = await context.query.DocumentProduct.findMany({
+                where: { document: { id: { equals: item.id } } },
+                query: "price amount reduction tax"
+              });
+              let totalValue = 0;
+              materials.forEach((docProd) => {
+                totalValue += calculateTotalWithTaxAfterReduction({
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
+                  taxIncluded: item.taxIncluded
+                });
+                totalValue -= calculateTotalWithoutTaxAfterReduction({
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
+                  taxIncluded: item.taxIncluded
+                });
+              });
+              return new import_types.Decimal(totalValue);
             } catch (e) {
               return new import_types.Decimal(0);
             }
@@ -1433,7 +1466,7 @@ var lists = {
       },
       afterOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
-          if (operation === "create" || operation === "update" || operation === "delete") {
+          if (operation === "create" || operation === "update") {
             const relatedShelfStocks = await context.query.ShelfStock.findMany({
               where: {
                 material: {
@@ -1717,19 +1750,18 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        if (isSuperAdmin({ session: context.session })) {
-          return;
-        }
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
+        if (!isAdminAccountantManager({ session: context.session })) {
+          try {
+            if (operation === "create" || operation == "update") {
+              resolvedData.company = {
+                connect: {
+                  id: context.session.data.company.id
+                }
+              };
+            }
+          } catch (error) {
+            console.error("Company hook error");
           }
-        } catch (error) {
-          console.error("Company hook error");
         }
         try {
           if (operation === "create" || operation === "update") {
@@ -1857,6 +1889,9 @@ var lists = {
       }
     },
     fields: {
+      datePlanned: (0, import_fields.timestamp)(),
+      dateStarted: (0, import_fields.timestamp)(),
+      dateFinished: (0, import_fields.timestamp)(),
       number: (0, import_fields.text)({ validation: { isRequired: true } }),
       materials: (0, import_fields.relationship)({
         ref: "Material.workOrders",
@@ -1866,9 +1901,6 @@ var lists = {
         ref: "WorkOrderOperation.workOrder",
         many: true
       }),
-      datePlanned: (0, import_fields.timestamp)(),
-      dateStarted: (0, import_fields.timestamp)(),
-      dateFinished: (0, import_fields.timestamp)(),
       creator: (0, import_fields.relationship)({
         ref: "User.workOrders",
         many: false

@@ -494,12 +494,12 @@ model User {
 
 model WorkOrder {
   id           String               @id @default(cuid())
-  number       String               @default("")
-  materials    Material[]           @relation("Material_workOrders")
-  operations   WorkOrderOperation[] @relation("WorkOrderOperation_workOrder")
   datePlanned  DateTime?
   dateStarted  DateTime?
   dateFinished DateTime?
+  number       String               @default("")
+  materials    Material[]           @relation("Material_workOrders")
+  operations   WorkOrderOperation[] @relation("WorkOrderOperation_workOrder")
   creator      User?                @relation("WorkOrder_creator", fields: [creatorId], references: [id])
   creatorId    String?              @map("creator")
   company      Company?             @relation("WorkOrder_company", fields: [companyId], references: [id])
