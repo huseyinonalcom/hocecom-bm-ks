@@ -27,7 +27,7 @@ const companyFilter = ({ session }: { session?: any }) => {
     if (isGlobalAdmin({ session })) {
       return true;
     } else {
-      return { OR: [{ company: { id: { equals: session.data.company?.id ?? "" } } }, { accountancy: { id: { equals: session.data.accountancy?.id ?? "" } } }] };
+      return { OR: [{ company: { id: { equals: session.data.company?.id ?? "a" } } }, { accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } } }] };
     }
   } catch (error) {
     console.log("Company filter error", error);

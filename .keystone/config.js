@@ -221,7 +221,7 @@ var companyFilter = ({ session: session2 }) => {
     if (isGlobalAdmin({ session: session2 })) {
       return true;
     } else {
-      return { OR: [{ company: { id: { equals: session2.data.company?.id ?? "" } } }, { accountancy: { id: { equals: session2.data.accountancy?.id ?? "" } } }] };
+      return { OR: [{ company: { id: { equals: session2.data.company?.id ?? "a" } } }, { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } }] };
     }
   } catch (error) {
     console.log("Company filter error", error);
