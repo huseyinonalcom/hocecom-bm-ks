@@ -88,8 +88,9 @@ export default withAuth(
               });
               if (pinCheckAccountancy) {
                 res.status(200).json({ id: pinCheckAccountancy.id });
+              } else {
+                res.status(404).json({ message: "Bad pin" });
               }
-              res.status(404).json({ message: "Bad pin" });
             }
           } catch (error) {
             console.error("Pin check error:", error);
@@ -106,13 +107,6 @@ export default withAuth(
             console.error("Error running cron job", error);
           }
         });
-
-        try {
-          console.log("Running Cron Job for Bol Orders");
-          syncBolOrders({ context });
-        } catch (error) {
-          console.error("Error running cron job", error);
-        }
 
         // const sendDocumentsToAccountant = async () => {
         //   try {
