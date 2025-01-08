@@ -36,6 +36,7 @@ const companyFilter = ({ session }: { session?: any }) => {
 };
 
 const accountancyFilter = ({ session }: { session?: any }) => {
+  console.log("accountancyFilter session:", session.data);
   try {
     if (isGlobalAdmin({ session })) {
       return true;
