@@ -23,18 +23,26 @@ import {
 } from "./functions";
 
 const companyFilter = ({ session }: { session?: any }) => {
-  if (isGlobalAdmin({ session })) {
-    return {};
-  } else {
-    return { company: { id: { equals: session.data.company.id } } };
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else {
+      return { company: { id: { equals: session.data.company.id } } };
+    }
+  } catch (error) {
+    return false;
   }
 };
 
 const accountancyFilter = ({ session }: { session?: any }) => {
-  if (isGlobalAdmin({ session })) {
-    return {};
-  } else {
-    return { accountancy: { id: { equals: session.data.accountancy.id } } };
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else {
+      return { accountancy: { id: { equals: session.data.accountancy.id } } };
+    }
+  } catch (error) {
+    return false;
   }
 };
 

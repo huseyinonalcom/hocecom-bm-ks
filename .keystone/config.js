@@ -217,17 +217,25 @@ var isUser = ({ session: session2 }) => {
 
 // schema.ts
 var companyFilter = ({ session: session2 }) => {
-  if (isGlobalAdmin({ session: session2 })) {
-    return {};
-  } else {
-    return { company: { id: { equals: session2.data.company.id } } };
+  try {
+    if (isGlobalAdmin({ session: session2 })) {
+      return true;
+    } else {
+      return { company: { id: { equals: session2.data.company.id } } };
+    }
+  } catch (error) {
+    return false;
   }
 };
 var accountancyFilter = ({ session: session2 }) => {
-  if (isGlobalAdmin({ session: session2 })) {
-    return {};
-  } else {
-    return { accountancy: { id: { equals: session2.data.accountancy.id } } };
+  try {
+    if (isGlobalAdmin({ session: session2 })) {
+      return true;
+    } else {
+      return { accountancy: { id: { equals: session2.data.accountancy.id } } };
+    }
+  } catch (error) {
+    return false;
   }
 };
 var lists = {
