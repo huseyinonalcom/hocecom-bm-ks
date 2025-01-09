@@ -642,7 +642,7 @@ export const lists: Lists = {
       name: text({ validation: { isRequired: true } }),
       description: text(),
       tax: decimal({ validation: { isRequired: true, min: "0" } }),
-      price: decimal({ validation: { isRequired: true, min: "0" } }),
+      price: decimal({ validation: { isRequired: true } }),
       pricedBy: select({
         type: "string",
         options: ["amount", "volume", "length", "weight", "area"],
