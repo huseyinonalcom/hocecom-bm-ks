@@ -225,15 +225,21 @@ var companyFilter = ({ session: session2 }) => {
     }
   } catch (error) {
     console.log("companyFilter error:", error);
-    return false;
+    return accountancyFilter({ session: session2 });
   }
 };
 var accountancyFilter = ({ session: session2 }) => {
+  console.log("accountancyFilter session:", session2.data);
   try {
     if (isGlobalAdmin({ session: session2 })) {
       return true;
     } else {
-      return { accountancy: { id: { equals: session2.data.accountancy.id } } };
+      return {
+        OR: [
+          { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } },
+          { company: { accountancy: { id: { equals: session2.data.accoutnancy?.id ?? "a" } } } }
+        ]
+      };
     }
   } catch (error) {
     console.log("accountancyFilter error:", error);
@@ -480,7 +486,6 @@ var lists = {
           }
           if (operation === "create") {
             if (inputData.number) {
-              return;
             } else {
               const docs = await context.query.Document.findMany({
                 orderBy: { number: "desc" },
@@ -509,6 +514,14 @@ var lists = {
               } else {
                 resolvedData.number = `${year}-${1 .toFixed(0).padStart(7, "0")}`;
               }
+            }
+            if (inputData.prefix) {
+            } else {
+              const establishment = await context.query.Establishment.findOne({
+                where: { id: resolvedData.establishment.connect.id },
+                query: "defaultPrefixes"
+              });
+              resolvedData.prefix = establishment.defaultPrefixes[resolvedData.type];
             }
           }
         } catch (error) {
@@ -817,7 +830,7 @@ var lists = {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       description: (0, import_fields.text)(),
       tax: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
-      price: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
+      price: (0, import_fields.decimal)({ validation: { isRequired: true } }),
       pricedBy: (0, import_fields.select)({
         type: "string",
         options: ["amount", "volume", "length", "weight", "area"],
@@ -1042,6 +1055,16 @@ var lists = {
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
       documents: (0, import_fields.relationship)({ ref: "Document.establishment", many: true }),
       company: (0, import_fields.relationship)({ ref: "Company.establishments", many: false }),
+      defaultPrefixes: (0, import_fields.json)({
+        defaultValue: {
+          quote: "",
+          sale: "",
+          dispatch: "",
+          invoice: "",
+          credit_note: "",
+          debit_note: ""
+        }
+      }),
       featureFlags: (0, import_fields.json)({
         defaultValue: {
           documents: true,
@@ -1085,6 +1108,7 @@ var lists = {
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       url: (0, import_fields.text)(),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      accountancy: (0, import_fields.relationship)({ ref: "Accountancy", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)({
         defaultValue: {
           isCover: false,
@@ -1795,9 +1819,9 @@ var lists = {
   User: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter || accountancyFilter,
-        update: companyFilter || accountancyFilter,
-        delete: companyFilter || accountancyFilter
+        query: companyFilter,
+        update: companyFilter,
+        delete: companyFilter
       },
       operation: {
         query: isUser,

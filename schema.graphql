@@ -945,6 +945,7 @@ type Establishment {
   documents(where: DocumentWhereInput! = {}, orderBy: [DocumentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: DocumentWhereUniqueInput): [Document!]
   documentsCount(where: DocumentWhereInput! = {}): Int
   company: Company
+  defaultPrefixes: JSON
   featureFlags: JSON
   extraFields: JSON
 }
@@ -1013,6 +1014,7 @@ input EstablishmentUpdateInput {
   address: AddressRelateToOneForUpdateInput
   documents: DocumentRelateToManyForUpdateInput
   company: CompanyRelateToOneForUpdateInput
+  defaultPrefixes: JSON
   featureFlags: JSON
   extraFields: JSON
 }
@@ -1051,6 +1053,7 @@ input EstablishmentCreateInput {
   address: AddressRelateToOneForCreateInput
   documents: DocumentRelateToManyForCreateInput
   company: CompanyRelateToOneForCreateInput
+  defaultPrefixes: JSON
   featureFlags: JSON
   extraFields: JSON
 }
@@ -1070,6 +1073,7 @@ type File {
   name: String
   url: String
   company: Company
+  accountancy: Accountancy
   extraFields: JSON
 }
 
@@ -1085,6 +1089,7 @@ input FileWhereInput {
   name: StringFilter
   url: StringFilter
   company: CompanyWhereInput
+  accountancy: AccountancyWhereInput
 }
 
 input FileOrderByInput {
@@ -1097,6 +1102,7 @@ input FileUpdateInput {
   name: String
   url: String
   company: CompanyRelateToOneForUpdateInput
+  accountancy: AccountancyRelateToOneForUpdateInput
   extraFields: JSON
 }
 
@@ -1109,6 +1115,7 @@ input FileCreateInput {
   name: String
   url: String
   company: CompanyRelateToOneForCreateInput
+  accountancy: AccountancyRelateToOneForCreateInput
   extraFields: JSON
 }
 

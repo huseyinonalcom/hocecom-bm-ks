@@ -12,15 +12,16 @@ generator client {
 }
 
 model Accountancy {
-  id          String    @id @default(cuid())
-  name        String    @default("")
-  isActive    Boolean   @default(false)
-  logo        File?     @relation("Accountancy_logo", fields: [logoId], references: [id])
-  logoId      String?   @map("logo")
-  pincode     String    @unique @default("")
-  companies   Company[] @relation("Company_accountancy")
-  users       User[]    @relation("User_accountancy")
-  extraFields Json?
+  id                    String    @id @default(cuid())
+  name                  String    @default("")
+  isActive              Boolean   @default(false)
+  logo                  File?     @relation("Accountancy_logo", fields: [logoId], references: [id])
+  logoId                String?   @map("logo")
+  pincode               String    @unique @default("")
+  companies             Company[] @relation("Company_accountancy")
+  users                 User[]    @relation("User_accountancy")
+  extraFields           Json?
+  from_File_accountancy File[]    @relation("File_accountancy")
 
   @@index([logoId])
 }
@@ -206,6 +207,7 @@ model Establishment {
   documents       Document[] @relation("Document_establishment")
   company         Company?   @relation("Establishment_company", fields: [companyId], references: [id])
   companyId       String?    @map("company")
+  defaultPrefixes Json?      @default("{\"quote\":\"\",\"sale\":\"\",\"dispatch\":\"\",\"invoice\":\"\",\"credit_note\":\"\",\"debit_note\":\"\"}")
   featureFlags    Json?      @default("{\"documents\":true,\"stock\":true,\"drive\":true}")
   extraFields     Json?
 
@@ -220,6 +222,8 @@ model File {
   url                           String               @default("")
   company                       Company?             @relation("File_company", fields: [companyId], references: [id])
   companyId                     String?              @map("company")
+  accountancy                   Accountancy?         @relation("File_accountancy", fields: [accountancyId], references: [id])
+  accountancyId                 String?              @map("accountancy")
   extraFields                   Json?                @default("{\"isCover\":false,\"order\":1}")
   from_Accountancy_logo         Accountancy[]        @relation("Accountancy_logo")
   from_Company_logo             Company[]            @relation("Company_logo")
@@ -231,6 +235,7 @@ model File {
   from_WorkOrderOperation_files WorkOrderOperation[] @relation("WorkOrderOperation_files")
 
   @@index([companyId])
+  @@index([accountancyId])
 }
 
 model Material {
