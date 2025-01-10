@@ -30,8 +30,8 @@ const companyFilter = ({ session }: { session?: any }) => {
       return { company: { id: { equals: session.data.company.id } } };
     }
   } catch (error) {
-    console.log("companyFilter || accountancyFilter error:", error);
-    return false;
+    console.log("companyFilter error:", error);
+    return accountancyFilter({ session });
   }
 };
 
