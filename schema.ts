@@ -295,7 +295,6 @@ export const lists: Lists = {
           }
           if (operation === "create") {
             if (inputData.number) {
-              return;
             } else {
               const docs = await context.query.Document.findMany({
                 orderBy: { number: "desc" },
@@ -324,6 +323,14 @@ export const lists: Lists = {
               } else {
                 resolvedData.number = `${year}-${(1).toFixed(0).padStart(7, "0")}`;
               }
+            }
+            if (inputData.prefix) {
+            } else {
+              const establishment = await context.query.Establishment.findOne({
+                where: { id: resolvedData.establishment!.connect!.id },
+                query: "defaultPrefixes",
+              });
+              resolvedData.prefix = establishment.defaultPrefixes[resolvedData.type!];
             }
           }
         } catch (error) {
@@ -874,6 +881,16 @@ export const lists: Lists = {
       address: relationship({ ref: "Address", many: false }),
       documents: relationship({ ref: "Document.establishment", many: true }),
       company: relationship({ ref: "Company.establishments", many: false }),
+      defaultPrefixes: json({
+        defaultValue: {
+          quote: "",
+          sale: "",
+          dispatch: "",
+          invoice: "",
+          credit_note: "",
+          debit_note: "",
+        },
+      }),
       featureFlags: json({
         defaultValue: {
           documents: true,
