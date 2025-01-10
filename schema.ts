@@ -30,7 +30,7 @@ const companyFilter = ({ session }: { session?: any }) => {
       return { company: { id: { equals: session.data.company.id } } };
     }
   } catch (error) {
-    console.log("companyFilter error:", error);
+    console.log("companyFilter || accountancyFilter error:", error);
     return false;
   }
 };
@@ -98,9 +98,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isUser,
@@ -143,9 +143,9 @@ export const lists: Lists = {
   AssemblyComponent: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isManager,
@@ -251,9 +251,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -618,9 +618,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -821,9 +821,9 @@ export const lists: Lists = {
   Establishment: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isAdminAccountantManager,
@@ -882,9 +882,9 @@ export const lists: Lists = {
   File: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -923,9 +923,9 @@ export const lists: Lists = {
   Material: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isManager,
@@ -1042,9 +1042,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -1084,9 +1084,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isGlobalAdmin,
@@ -1125,9 +1125,9 @@ export const lists: Lists = {
   Operation: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -1180,9 +1180,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -1275,9 +1275,9 @@ export const lists: Lists = {
   Shelf: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isCompanyAdmin,
@@ -1324,9 +1324,9 @@ export const lists: Lists = {
   ShelfStock: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isWorker,
@@ -1433,9 +1433,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -1601,9 +1601,9 @@ export const lists: Lists = {
   Supplier: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isManager,
@@ -1644,9 +1644,9 @@ export const lists: Lists = {
   Tag: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -1715,9 +1715,9 @@ export const lists: Lists = {
   User: list({
     access: {
       filter: {
-        query: companyFilter || accountancyFilter,
-        update: companyFilter || accountancyFilter,
-        delete: companyFilter || accountancyFilter,
+        query: companyFilter || accountancyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter || accountancyFilter,
       },
       operation: {
         query: isUser,
@@ -1878,9 +1878,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
@@ -1913,9 +1913,9 @@ export const lists: Lists = {
   WorkOrderOperation: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: companyFilter || accountancyFilter,
+        update: companyFilter || accountancyFilter,
+        delete: companyFilter || accountancyFilter,
       },
       operation: {
         create: isEmployee,
