@@ -917,6 +917,7 @@ export const lists: Lists = {
       name: text({ validation: { isRequired: true } }),
       url: text(),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      accountancy: relationship({ ref: "Accountancy", many: false, access: { update: isSuperAdmin } }),
       extraFields: json({
         defaultValue: {
           isCover: false,
