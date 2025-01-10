@@ -42,7 +42,10 @@ const accountancyFilter = ({ session }: { session?: any }) => {
       return true;
     } else {
       return {
-        OR: [{ accountancy: { id: { equals: session.data.accountancy.id } } }, { company: { accountancy: { id: { equals: session.data.accoutnancy.id } } } }],
+        OR: [
+          { accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } } },
+          { company: { accountancy: { id: { equals: session.data.accoutnancy?.id ?? "a" } } } },
+        ],
       };
     }
   } catch (error) {
