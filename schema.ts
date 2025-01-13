@@ -38,13 +38,12 @@ const companyFilter = ({
       return { company: { id: { equals: session.data.company.id } } };
     }
   } catch (error) {
-    console.log("companyFilter error:", error);
+    console.error("companyFilter error:", error);
     return accountancyFilter({ session, accountancyCheckType });
   }
 };
 
 const companyCompanyFilter = ({ session }: { session?: any }) => {
-  console.log(session.data);
   try {
     if (isGlobalAdmin({ session })) {
       return true;
@@ -56,7 +55,7 @@ const companyCompanyFilter = ({ session }: { session?: any }) => {
       };
     }
   } catch (error) {
-    console.log("companyCompanyFilter error:", error);
+    console.error("companyCompanyFilter error:", error);
     return accountancyFilter({ session, accountancyCheckType: "onAccountancy" });
   }
 };
@@ -90,7 +89,7 @@ const accountancyFilter = ({
       }
     }
   } catch (error) {
-    console.log("accountancyFilter error:", error);
+    console.error("accountancyFilter error:", error);
     return false;
   }
 };

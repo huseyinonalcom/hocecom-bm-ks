@@ -229,12 +229,11 @@ var companyFilter = ({
       return { company: { id: { equals: session2.data.company.id } } };
     }
   } catch (error) {
-    console.log("companyFilter error:", error);
+    console.error("companyFilter error:", error);
     return accountancyFilter({ session: session2, accountancyCheckType });
   }
 };
 var companyCompanyFilter = ({ session: session2 }) => {
-  console.log(session2.data);
   try {
     if (isGlobalAdmin({ session: session2 })) {
       return true;
@@ -246,7 +245,7 @@ var companyCompanyFilter = ({ session: session2 }) => {
       };
     }
   } catch (error) {
-    console.log("companyCompanyFilter error:", error);
+    console.error("companyCompanyFilter error:", error);
     return accountancyFilter({ session: session2, accountancyCheckType: "onAccountancy" });
   }
 };
@@ -276,7 +275,7 @@ var accountancyFilter = ({
       }
     }
   } catch (error) {
-    console.log("accountancyFilter error:", error);
+    console.error("accountancyFilter error:", error);
     return false;
   }
 };
