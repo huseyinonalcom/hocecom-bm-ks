@@ -1855,22 +1855,24 @@ var lists = {
   User: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onAccountancyAndCompany" }),
         update: companyFilter,
-        delete: companyFilter
+        delete: isGlobalAdmin
       },
       operation: {
         query: isUser,
         create: isManager,
         update: isManager,
-        delete: isGlobalAdmin
+        delete: () => {
+          return true;
+        }
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        if (isSuperAdmin({ session: context.session })) {
-          console.info("operation on user by superadmin");
-        } else if (!isAdminAccountantManager({ session: context.session })) {
+      beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
+        if (isAdminAccountantManager({ session: context.session })) {
+          console.info("operation on user by admin accountant manager");
+        } else {
           try {
             if (operation === "create" || operation == "update") {
               resolvedData.company = {
@@ -1881,18 +1883,6 @@ var lists = {
             }
           } catch (error) {
             console.error("Company hook error");
-          }
-        } else {
-          try {
-            if (operation === "create" || operation == "update") {
-              resolvedData.accountancy = {
-                connect: {
-                  id: context.session.data.accountancy.id
-                }
-              };
-            }
-          } catch (error) {
-            console.error("Accountancy hook error");
           }
         }
         try {
