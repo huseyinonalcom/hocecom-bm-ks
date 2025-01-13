@@ -1781,7 +1781,7 @@ export const lists: Lists = {
   User: list({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onAccountancy" }),
         update: companyFilter,
         delete: isGlobalAdmin,
       },
