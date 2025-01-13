@@ -1783,20 +1783,22 @@ export const lists: Lists = {
       filter: {
         query: companyFilter,
         update: companyFilter,
-        delete: companyFilter,
+        delete: isGlobalAdmin,
       },
       operation: {
         query: isUser,
         create: isManager,
         update: isManager,
-        delete: isGlobalAdmin,
+        delete: () => {
+          return true;
+        },
       },
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        if (isSuperAdmin({ session: context.session })) {
-          console.info("operation on user by superadmin");
-        } else if (!isAdminAccountantManager({ session: context.session })) {
+      beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
+        if (isAdminAccountantManager({ session: context.session })) {
+          console.info("operation on user by admin accountant manager");
+        } else {
           try {
             if (operation === "create" || operation == "update") {
               resolvedData.company = {
@@ -1807,18 +1809,6 @@ export const lists: Lists = {
             }
           } catch (error) {
             console.error("Company hook error");
-          }
-        } else {
-          try {
-            if (operation === "create" || operation == "update") {
-              resolvedData.accountancy = {
-                connect: {
-                  id: context.session.data.accountancy.id,
-                },
-              };
-            }
-          } catch (error) {
-            console.error("Accountancy hook error");
           }
         }
         try {
