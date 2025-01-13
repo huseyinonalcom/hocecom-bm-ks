@@ -22,31 +22,72 @@ import {
   isIntern,
 } from "./functions";
 
-const companyFilter = ({ session }: { session?: any }) => {
+const companyFilter = ({
+  session,
+  accountancyCheckType,
+}: {
+  session?: any;
+  accountancyCheckType?: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
+}) => {
   try {
     if (isGlobalAdmin({ session })) {
       return true;
+    } else if (!session.data.company) {
+      return accountancyFilter({ session, accountancyCheckType });
     } else {
       return { company: { id: { equals: session.data.company.id } } };
     }
   } catch (error) {
     console.log("companyFilter error:", error);
-    return accountancyFilter({ session });
+    return accountancyFilter({ session, accountancyCheckType });
   }
 };
 
-const accountancyFilter = ({ session }: { session?: any }) => {
-  console.log("accountancyFilter session:", session.data);
+const companyCompanyFilter = ({ session }: { session?: any }) => {
+  console.log(session.data);
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else if (!session.data.company) {
+      return accountancyFilter({ session, accountancyCheckType: "onAccountancy" });
+    } else {
+      return {
+        OR: [{ users: { some: { id: { equals: session.data.id } } } }, { owner: { id: { equals: session.data.id } } }],
+      };
+    }
+  } catch (error) {
+    console.log("companyCompanyFilter error:", error);
+    return accountancyFilter({ session, accountancyCheckType: "onAccountancy" });
+  }
+};
+
+const accountancyFilter = ({
+  session,
+  accountancyCheckType,
+}: {
+  session?: any;
+  accountancyCheckType?: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
+}) => {
   try {
     if (isGlobalAdmin({ session })) {
       return true;
     } else {
-      return {
-        OR: [
-          { accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } } },
-          { company: { accountancy: { id: { equals: session.data.accoutnancy?.id ?? "a" } } } },
-        ],
-      };
+      if (accountancyCheckType === "onAccountancy") {
+        return {
+          accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } },
+        };
+      } else if (accountancyCheckType === "onAccountancyAndCompany") {
+        return {
+          OR: [
+            { accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } } },
+            { company: { accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } } } },
+          ],
+        };
+      } else {
+        return {
+          company: { accountancy: { id: { equals: session.data.accountancy?.id ?? "a" } } },
+        };
+      }
     }
   } catch (error) {
     console.log("accountancyFilter error:", error);
@@ -80,7 +121,7 @@ export const lists: Lists = {
             }
           }
         } catch (error) {
-          console.error("Pin check error:", error);
+          console.error("Pin set error:", error);
         }
       },
     },
@@ -103,7 +144,7 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },
@@ -192,6 +233,9 @@ export const lists: Lists = {
   }),
   Company: list({
     access: {
+      filter: {
+        query: ({ session }) => companyCompanyFilter({ session }),
+      },
       operation: {
         create: isAdminAccountantManager,
         query: isWorker,
@@ -256,7 +300,7 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },
@@ -630,7 +674,7 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },
@@ -833,7 +877,7 @@ export const lists: Lists = {
   Establishment: list({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },
@@ -904,7 +948,7 @@ export const lists: Lists = {
   File: list({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },
@@ -946,7 +990,7 @@ export const lists: Lists = {
   Material: list({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },
@@ -1203,7 +1247,7 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },
@@ -1624,7 +1668,7 @@ export const lists: Lists = {
   Supplier: list({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter,
       },

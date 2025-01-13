@@ -216,30 +216,64 @@ var isUser = ({ session: session2 }) => {
 };
 
 // schema.ts
-var companyFilter = ({ session: session2 }) => {
+var companyFilter = ({
+  session: session2,
+  accountancyCheckType
+}) => {
   try {
     if (isGlobalAdmin({ session: session2 })) {
       return true;
+    } else if (!session2.data.company) {
+      return accountancyFilter({ session: session2, accountancyCheckType });
     } else {
       return { company: { id: { equals: session2.data.company.id } } };
     }
   } catch (error) {
     console.log("companyFilter error:", error);
-    return accountancyFilter({ session: session2 });
+    return accountancyFilter({ session: session2, accountancyCheckType });
   }
 };
-var accountancyFilter = ({ session: session2 }) => {
-  console.log("accountancyFilter session:", session2.data);
+var companyCompanyFilter = ({ session: session2 }) => {
+  console.log(session2.data);
+  try {
+    if (isGlobalAdmin({ session: session2 })) {
+      return true;
+    } else if (!session2.data.company) {
+      return accountancyFilter({ session: session2, accountancyCheckType: "onAccountancy" });
+    } else {
+      return {
+        OR: [{ users: { some: { id: { equals: session2.data.id } } } }, { owner: { id: { equals: session2.data.id } } }]
+      };
+    }
+  } catch (error) {
+    console.log("companyCompanyFilter error:", error);
+    return accountancyFilter({ session: session2, accountancyCheckType: "onAccountancy" });
+  }
+};
+var accountancyFilter = ({
+  session: session2,
+  accountancyCheckType
+}) => {
   try {
     if (isGlobalAdmin({ session: session2 })) {
       return true;
     } else {
-      return {
-        OR: [
-          { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } },
-          { company: { accountancy: { id: { equals: session2.data.accoutnancy?.id ?? "a" } } } }
-        ]
-      };
+      if (accountancyCheckType === "onAccountancy") {
+        return {
+          accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } }
+        };
+      } else if (accountancyCheckType === "onAccountancyAndCompany") {
+        return {
+          OR: [
+            { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } },
+            { company: { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } } }
+          ]
+        };
+      } else {
+        return {
+          company: { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } }
+        };
+      }
     }
   } catch (error) {
     console.log("accountancyFilter error:", error);
@@ -272,7 +306,7 @@ var lists = {
             }
           }
         } catch (error) {
-          console.error("Pin check error:", error);
+          console.error("Pin set error:", error);
         }
       }
     },
@@ -295,7 +329,7 @@ var lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
@@ -384,6 +418,9 @@ var lists = {
   }),
   Company: (0, import_core.list)({
     access: {
+      filter: {
+        query: ({ session: session2 }) => companyCompanyFilter({ session: session2 })
+      },
       operation: {
         create: isAdminAccountantManager,
         query: isWorker,
@@ -448,7 +485,7 @@ var lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
@@ -806,7 +843,7 @@ var lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
@@ -1007,7 +1044,7 @@ var lists = {
   Establishment: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
@@ -1078,7 +1115,7 @@ var lists = {
   File: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
@@ -1120,7 +1157,7 @@ var lists = {
   Material: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
@@ -1377,7 +1414,7 @@ var lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
@@ -1705,7 +1742,7 @@ var lists = {
   Supplier: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
+        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
         update: companyFilter,
         delete: companyFilter
       },
