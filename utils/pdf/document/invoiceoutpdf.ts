@@ -2,6 +2,8 @@ import { formatCurrency } from "../../formatters/formatcurrency";
 import { dateFormatBe } from "../../formatters/dateformatters";
 import { addDaysToDate } from "../../addtodate";
 import { Buffer } from "buffer";
+import { pdfHead } from "../common/pdfhead";
+import { PageSize } from "../common/positioning";
 
 export async function generateInvoiceOut({
   document,
@@ -20,20 +22,21 @@ export async function generateInvoiceOut({
   return new Promise(async (resolve, reject) => {
     const pageLeft = 20;
     const pageTop = 40;
+    const pageSize: PageSize = "A4";
     try {
       const PDFDocument: PDFKit.PDFDocument = require("pdfkit");
-      const doc = new PDFDocument({ size: "A4", margin: 20 });
+      const doc = new PDFDocument({ size: pageSize, margin: 20 });
       const buffers: Uint8Array[] = [];
 
       doc.on("data", buffers.push.bind(buffers));
 
-      if (logoBuffer) {
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      } else {
-        const response = await fetch(establishment.logo.url);
-        logoBuffer = await Buffer.from(await response.arrayBuffer());
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      }
+      pdfHead({
+        doc,
+        invoiceDoc,
+        logoBuffer,
+        pageLeft,
+        pageTop,
+      });
 
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
