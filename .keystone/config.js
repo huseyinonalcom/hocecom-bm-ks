@@ -37,6 +37,53 @@ module.exports = __toCommonJS(keystone_exports);
 // utils/bulkdocumentsenderstart.ts
 var import_worker_threads = require("worker_threads");
 var import_path = __toESM(require("path"));
+async function fetchCompany(companyID, context) {
+  let company;
+  await context.sudo().query.Company.findOne({
+    query: "id name accountantEmail logo { url } emailHost emailPort emailUser emailPassword",
+    where: { id: companyID }
+  }).then((res) => {
+    company = res;
+  });
+  return company;
+}
+async function fetchDocuments(companyID, docTypes, month, year, context) {
+  const fetchedDocuments = await context.sudo().query.Document.findMany({
+    orderBy: [{ date: "asc" }],
+    query: "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name amount totalWithTaxAfterReduction tax }",
+    where: {
+      company: {
+        id: {
+          equals: companyID
+        }
+      },
+      isDeleted: {
+        equals: false
+      },
+      type: {
+        in: docTypes
+      },
+      date: {
+        gte: new Date(year, month - 1, 1),
+        lte: new Date(year, month, 1)
+      }
+    }
+  });
+  return Array.from(fetchedDocuments);
+}
+async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context }) {
+  const documents = await fetchDocuments(companyID, docTypes, month, year, context);
+  if (documents.length === 0) {
+    console.log("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
+    return;
+  }
+  const company = await fetchCompany(companyID, context);
+  const workerData = { documents, company };
+  new import_worker_threads.Worker(import_path.default.resolve("./utils/bulkdocumentsenderworker.ts"), {
+    execArgv: ["-r", "ts-node/register"],
+    workerData
+  });
+}
 var bulkSendDocuments = async ({ docTypes, context }) => {
   try {
     let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
@@ -48,11 +95,1213 @@ var bulkSendDocuments = async ({ docTypes, context }) => {
     });
     let dateToSend = /* @__PURE__ */ new Date();
     dateToSend.setDate(-1);
-    console.log("month to send: ", dateToSend.getMonth(), " year to send:", dateToSend.getFullYear());
     for (let company of companiesWithMonthlyReportsActive) {
+      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() + 1, year: dateToSend.getFullYear() });
     }
   } catch (error) {
     console.error("Error occurred while starting bulkdocumentsender with params: ", docTypes, "error: ", error);
+  }
+};
+
+// utils/eutaxes.ts
+var eutaxes = [
+  {
+    code: "AT",
+    country: "Oostenrijk",
+    standard: 20,
+    low: 13,
+    low2: 10,
+    low3: null
+  },
+  {
+    code: "BE",
+    country: "Belgi\xEB",
+    standard: 21,
+    low: 12,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "BG",
+    country: "Bulgarije",
+    standard: 20,
+    low: 9,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "CY",
+    country: "Cyprus",
+    standard: 19,
+    low: 9,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "CZ",
+    country: "Tsjechi\xEB",
+    standard: 21,
+    low: 15,
+    low2: 12,
+    low3: null
+  },
+  {
+    code: "DE",
+    country: "Duitsland",
+    standard: 19,
+    low: 7,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "DK",
+    country: "Denemarken",
+    standard: 25,
+    low: 0,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "EE",
+    country: "Estland",
+    standard: 22,
+    low: 9,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "EL",
+    country: "Griekenland",
+    standard: 24,
+    low: 13,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "ES",
+    country: "Spanje",
+    standard: 21,
+    low: 10,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "FI",
+    country: "Finland",
+    standard: 24,
+    low: 14,
+    low2: 10,
+    low3: null
+  },
+  {
+    code: "FR",
+    country: "Frankrijk",
+    standard: 20,
+    low: 10,
+    low2: 5.5,
+    low3: 2.1
+  },
+  {
+    code: "HR",
+    country: "Kroati\xEB",
+    standard: 25,
+    low: 13,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "HU",
+    country: "Hongarije",
+    standard: 27,
+    low: 18,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "IE",
+    country: "Ierland",
+    standard: 23,
+    low: 13.5,
+    low2: 9,
+    low3: null
+  },
+  {
+    code: "IT",
+    country: "Itali\xEB",
+    standard: 22,
+    low: 10,
+    low2: 5,
+    low3: 4
+  },
+  {
+    code: "LT",
+    country: "Litouwen",
+    standard: 21,
+    low: 9,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "LU",
+    country: "Luxemburg",
+    standard: 17,
+    low: 14,
+    low2: 8,
+    low3: 3
+  },
+  {
+    code: "LV",
+    country: "Letland",
+    standard: 21,
+    low: 12,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "MT",
+    country: "Malta",
+    standard: 18,
+    low: 12,
+    low2: 7,
+    low3: 5
+  },
+  {
+    code: "NL",
+    country: "Nederland",
+    standard: 21,
+    low: 9,
+    low2: null,
+    low3: null
+  },
+  {
+    code: "PL",
+    country: "Polen",
+    standard: 23,
+    low: 8,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "PT",
+    country: "Portugal",
+    standard: 23,
+    low: 13,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "RO",
+    country: "Roemeni\xEB",
+    standard: 19,
+    low: 9,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "SE",
+    country: "Zweden",
+    standard: 25,
+    low: 12,
+    low2: 6,
+    low3: null
+  },
+  {
+    code: "SI",
+    country: "Sloveni\xEB",
+    standard: 22,
+    low: 9.5,
+    low2: 5,
+    low3: null
+  },
+  {
+    code: "SK",
+    country: "Slowakije",
+    standard: 20,
+    low: 10,
+    low2: null,
+    low3: null
+  }
+];
+
+// utils/random.ts
+function generateRandomString(length) {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+// utils/sendmail.ts
+var sendMail = async ({
+  recipient,
+  bcc,
+  company,
+  establishment,
+  subject,
+  html,
+  attachments
+}) => {
+  try {
+    const nodemailer = require("nodemailer");
+    let transporter = nodemailer.createTransport({
+      host: company.emailHost,
+      port: company.emailPort,
+      secure: false,
+      auth: {
+        user: company.emailUser,
+        pass: company.emailPassword
+      }
+    });
+    let mailOptionsClient = {
+      from: `"${company.emailUser}" <${company.emailUser}>`,
+      to: recipient,
+      bcc,
+      attachments,
+      subject,
+      html: templatedMail({
+        content: html,
+        img64: establishment.logo.url
+      })
+    };
+    transporter.sendMail(mailOptionsClient, (error) => {
+      if (error) {
+        console.log("mail error", error);
+        return true;
+      } else {
+        console.log("mail sent");
+        return false;
+      }
+    });
+  } catch (e) {
+    console.log("mail error", e);
+    return false;
+  }
+};
+function templatedMail({ content, img64 }) {
+  return mailPart1({ img64 }) + content + mailPart2;
+}
+var mailPart1 = ({ img64 }) => {
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <!-- Compiled with Bootstrap Email version: 1.5.1 -->
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+      body,
+      table,
+      td {
+        font-family: Helvetica, Arial, sans-serif !important;
+      }
+      .ExternalClass {
+        width: 100%;
+      }
+      .ExternalClass,
+      .ExternalClass p,
+      .ExternalClass span,
+      .ExternalClass font,
+      .ExternalClass td,
+      .ExternalClass div {
+        line-height: 150%;
+      }
+      a {
+        text-decoration: none;
+      }
+      * {
+        color: inherit;
+      }
+      a[x-apple-data-detectors],
+      u + #body a,
+      #MessageViewBody a {
+        color: inherit;
+        text-decoration: none;
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+      }
+      table:not([class^="s-"]) {
+        font-family: Helvetica, Arial, sans-serif;
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+        border-spacing: 0px;
+        border-collapse: collapse;
+      }
+      table:not([class^="s-"]) td {
+        border-spacing: 0px;
+        border-collapse: collapse;
+      }
+      @media screen and (max-width: 600px) {
+        .w-full,
+        .w-full > tbody > tr > td {
+          width: 100% !important;
+        }
+        .w-8,
+        .w-8 > tbody > tr > td {
+          width: 32px !important;
+        }
+        .h-16,
+        .h-16 > tbody > tr > td {
+          height: 64px !important;
+        }
+        .p-lg-10:not(table),
+        .p-lg-10:not(.btn) > tbody > tr > td,
+        .p-lg-10.btn td a {
+          padding: 0 !important;
+        }
+        .pr-4:not(table),
+        .pr-4:not(.btn) > tbody > tr > td,
+        .pr-4.btn td a,
+        .px-4:not(table),
+        .px-4:not(.btn) > tbody > tr > td,
+        .px-4.btn td a {
+          padding-right: 16px !important;
+        }
+        .pl-4:not(table),
+        .pl-4:not(.btn) > tbody > tr > td,
+        .pl-4.btn td a,
+        .px-4:not(table),
+        .px-4:not(.btn) > tbody > tr > td,
+        .px-4.btn td a {
+          padding-left: 16px !important;
+        }
+        .pb-6:not(table),
+        .pb-6:not(.btn) > tbody > tr > td,
+        .pb-6.btn td a,
+        .py-6:not(table),
+        .py-6:not(.btn) > tbody > tr > td,
+        .py-6.btn td a {
+          padding-bottom: 24px !important;
+        }
+        .pt-8:not(table),
+        .pt-8:not(.btn) > tbody > tr > td,
+        .pt-8.btn td a,
+        .py-8:not(table),
+        .py-8:not(.btn) > tbody > tr > td,
+        .py-8.btn td a {
+          padding-top: 32px !important;
+        }
+        .pb-8:not(table),
+        .pb-8:not(.btn) > tbody > tr > td,
+        .pb-8.btn td a,
+        .py-8:not(table),
+        .py-8:not(.btn) > tbody > tr > td,
+        .py-8.btn td a {
+          padding-bottom: 32px !important;
+        }
+        *[class*="s-lg-"] > tbody > tr > td {
+          font-size: 0 !important;
+          line-height: 0 !important;
+          height: 0 !important;
+        }
+        .s-6 > tbody > tr > td {
+          font-size: 24px !important;
+          line-height: 24px !important;
+          height: 24px !important;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-blue-100"
+    style="
+      outline: 0;
+      width: 100%;
+      min-width: 100%;
+      height: 100%;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      font-family: Helvetica, Arial, sans-serif;
+      line-height: 24px;
+      font-weight: normal;
+      font-size: 16px;
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      color: #000000;
+      margin: 0;
+      padding: 0;
+      border-width: 0;
+    "
+    bgcolor="#cfe2ff"
+  >
+    <table
+      class="bg-blue-100 body"
+      valign="top"
+      role="presentation"
+      border="0"
+      cellpadding="0"
+      cellspacing="0"
+      style="
+        outline: 0;
+        width: 100%;
+        min-width: 100%;
+        height: 100%;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        font-family: Helvetica, Arial, sans-serif;
+        line-height: 24px;
+        font-weight: normal;
+        font-size: 16px;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        color: #000000;
+        margin: 0;
+        padding: 0;
+        border-width: 0;
+      "
+      bgcolor="#cfe2ff"
+    >
+      <tbody>
+        <tr>
+          <td valign="top" style="line-height: 24px; font-size: 16px; margin: 0" align="left" bgcolor="#cfe2ff">
+            <table class="container" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%">
+              <tbody>
+                <tr>
+                  <td align="center" style="line-height: 24px; font-size: 16px; margin: 0; padding: 0 16px">
+                    <!--[if (gte mso 9)|(IE)]>
+                                          <table align="center" role="presentation">
+                                            <tbody>
+                                              <tr>
+                                                <td width="600">
+                                        <![endif]-->
+                    <table align="center" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px; margin: 0 auto">
+                      <tbody>
+                        <tr>
+                          <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="ax-center" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
+                                    <img
+                                      class="h-16"
+                                      src="${img64}"
+                                      style="
+                                        height: 64px;
+                                        line-height: 100%;
+                                        outline: none;
+                                        text-decoration: none;
+                                        display: block;
+                                        border-style: none;
+                                        border-width: 0;
+                                      "
+                                      height="64"
+                                    />
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              class="card rounded-3xl px-4 py-8 p-lg-10"
+                              role="presentation"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              style="border-radius: 24px; border-collapse: separate !important; width: 100%; overflow: hidden; border: 1px solid #e2e8f0"
+                              bgcolor="#ffffff"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="line-height: 24px; font-size: 16px; width: 100%; border-radius: 24px; margin: 0; padding: 40px"
+                                    align="left"
+                                    bgcolor="#ffffff"
+                                  >`;
+};
+var mailPart2 = `</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <!--[if (gte mso 9)|(IE)]>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                        <![endif]-->
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
+`;
+
+// utils/utils.ts
+var transformEmail = ({ email, companyId }) => {
+  let parts = email.split("@");
+  let localPart = parts[0].split("+")[0];
+  let domainPart = parts[1];
+  return localPart + "+" + companyId + "@" + domainPart;
+};
+
+// utils/pdf/invoiceoutpdf.ts
+var import_buffer = require("buffer");
+
+// utils/formatters/formatcurrency.ts
+var formatCurrency = (value) => {
+  return new Intl.NumberFormat("nl-BE", {
+    style: "currency",
+    currency: "EUR"
+  }).format(value);
+};
+
+// utils/formatters/dateformatters.ts
+var dateFormatBe = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("fr-FR");
+};
+
+// utils/addtodate.ts
+function addDaysToDate(dateStr, daysToAdd) {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + daysToAdd);
+  return date;
+}
+
+// utils/pdf/invoiceoutpdf.ts
+async function generateInvoiceOut({
+  document,
+  logoBuffer
+}) {
+  const invoiceDoc = document;
+  const establishment = invoiceDoc.establishment;
+  const establishmentAddress = establishment.address;
+  const customer = invoiceDoc.customer;
+  const documentProducts = invoiceDoc.products;
+  const payments = invoiceDoc.payments;
+  return new Promise(async (resolve, reject) => {
+    const pageLeft = 20;
+    const pageTop = 40;
+    try {
+      const PDFDocument = require("pdfkit");
+      const doc = new PDFDocument({ size: "A4", margin: 20 });
+      const buffers = [];
+      doc.on("data", buffers.push.bind(buffers));
+      if (logoBuffer) {
+        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
+      } else {
+        const response = await fetch(establishment.logo.url);
+        logoBuffer = await import_buffer.Buffer.from(await response.arrayBuffer());
+        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
+      }
+      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+      const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
+        if (isHeader) {
+          doc2.lineWidth(25);
+          const bgY = y2 + 5;
+          doc2.lineCap("butt").moveTo(30, bgY).lineTo(550, bgY).stroke("black");
+          doc2.fontSize(10).fillColor("white").text(name, columns[0], y2).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        } else {
+          doc2.fontSize(10).fillColor("black").text(name, columns[0], y2, { width: columns[3] - columns[0] }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7] + 20, y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        }
+      };
+      const generateInvoiceTable = (doc2, documentProducts2, y2) => {
+        let invoiceTableTop = y2;
+        generateTableRow(doc2, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
+        for (let i = 1; i <= documentProducts2.length; i++) {
+          const item = documentProducts2[i - 1];
+          const position = invoiceTableTop + i * 40;
+          generateTableRow(
+            doc2,
+            position,
+            item.name,
+            item.description,
+            formatCurrency(Number(item.price)),
+            item.amount,
+            formatCurrency(Number(item.totalTax)),
+            formatCurrency(Number(item.totalWithTaxAfterReduction))
+          );
+        }
+        return invoiceTableTop + (documentProducts2.length + 1) * 40;
+      };
+      const bankDetails = ({ doc: doc2, x, y: y2, establishment: establishment2 }) => {
+        let strings = [];
+        if (establishment2.bankAccount1) {
+          strings.push(establishment2.bankAccount1);
+        }
+        if (establishment2.bankAccount2 !== null) {
+          strings.push(establishment2.bankAccount2);
+        }
+        if (establishment2.bankAccount3 !== null) {
+          strings.push(establishment2.bankAccount3);
+        }
+        strings.map((string, index) => {
+          doc2.text(string, x, y2 + index * 15);
+        });
+      };
+      const customerDetails = ({ doc: doc2, x, y: y2, invoiceDoc: invoiceDoc2 }) => {
+        let strings = [];
+        const docAddress = invoiceDoc2.delAddress;
+        if (customer.customerCompany) {
+          strings.push(customer.customerCompany);
+        }
+        if (customer.customerTaxNumber) {
+          strings.push(customer.customerTaxNumber);
+        }
+        if (customer.phone) {
+          strings.push(customer.phone);
+        }
+        strings.push(docAddress.street + " " + docAddress.door);
+        if (docAddress.floor) {
+          strings.push("floor: " + docAddress.floor);
+        }
+        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
+        strings.map((string, index) => {
+          doc2.text(string, x, y2 + index * 15);
+        });
+        return y2 + strings.length * 15;
+      };
+      const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
+        doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
+        doc2.fillColor("white").text("Payment History:", x + 10, y2 - 5);
+        doc2.fillColor("black");
+        payments2.forEach((payment, i) => {
+          doc2.text(dateFormatBe(payment.timestamp), x + 10, y2 + 20 * (i + 1));
+          doc2.text(payment.type, x + 85, y2 + 20 * (i + 1));
+          doc2.text(formatCurrency(Number(payment.value)), x + 150, y2 + 20 * (i + 1), {
+            width: 80,
+            align: "right"
+          });
+        });
+      };
+      const taxTable = ({ doc: doc2, x, y: y2, documentProducts: documentProducts2 }) => {
+        let taxRates = [];
+        documentProducts2.forEach((docProd, i) => {
+          if (!taxRates.includes(docProd.tax)) {
+            taxRates.push(docProd.tax);
+          }
+        });
+        taxRates = taxRates.sort((a, b) => a - b);
+        doc2.fontSize(10).text("Total Tax:", x, y2 + 50);
+        doc2.text(formatCurrency(Number(document.totalTax)));
+        taxRates.map((taxRate, index) => {
+          doc2.text("Total Tax " + taxRate + "%:", x, y2 + 50 + (index + 1) * 15).text(
+            formatCurrency(documentProducts2.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)),
+            x + 80,
+            y2 + 50 + (index + 1) * 15
+          );
+        });
+        return y2 + taxRates.length * 15 + 50;
+      };
+      doc.fontSize(20).text("INVOICE", 455, pageTop);
+      doc.fontSize(10).text("Invoice:", 380, 80);
+      doc.text(invoiceDoc.number, 450, 80);
+      doc.text("Date:", 380, 95);
+      doc.text(dateFormatBe(invoiceDoc.date), 450, 95);
+      doc.text("Valid Until:", 380, 110);
+      doc.text(dateFormatBe(addDaysToDate(invoiceDoc.date, 15).toISOString()), 450, 110);
+      doc.text("Delivery Date:", 380, 125);
+      if (invoiceDoc.deliveryDate) {
+        doc.text(dateFormatBe(invoiceDoc.deliveryDate), 450, 125);
+      }
+      let y = 140;
+      doc.text(establishment.name, 50, y);
+      doc.text(establishment.taxID, 50, y + 15);
+      bankDetails({
+        doc,
+        x: 50,
+        y: y + 30,
+        establishment
+      });
+      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
+      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
+      doc.text(establishment.phone, 200, y + 30);
+      doc.text(establishment.phone2, 200, y + 45);
+      doc.text("Order: " + invoiceDoc.references, 380, y);
+      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
+      y = customerDetails({
+        doc,
+        x: 380,
+        y: y + 30,
+        invoiceDoc
+      });
+      y += 60;
+      y = generateInvoiceTable(doc, documentProducts, y);
+      if (y < 500) {
+        y = 500;
+      }
+      taxTable({
+        doc,
+        x: 30,
+        y,
+        documentProducts
+      });
+      paymentsTable({ doc, x: 170, y: y + 30, payments });
+      let totalsX = 410;
+      doc.text("Total Excl. Tax:", totalsX, y + 50);
+      doc.text(formatCurrency(Number(doc.total) - Number(doc.totalTax)));
+      doc.text("Total:", totalsX, y + 65);
+      doc.text(formatCurrency(Number(doc.total)), totalsX + 70, y + 65);
+      doc.text("Already Paid:", totalsX, y + 80);
+      doc.text(formatCurrency(Number(doc.totalPaid)), totalsX + 70, y + 80);
+      doc.text("To Pay:", totalsX, y + 95);
+      doc.text(formatCurrency(Number(doc.totalToPay)), totalsX + 70, y + 95);
+      doc.end();
+      doc.on("end", () => {
+        const pdfData = import_buffer.Buffer.concat(buffers);
+        resolve({
+          filename: `invoice_${document.number}.pdf`,
+          content: pdfData,
+          contentType: "application/pdf"
+        });
+      });
+    } catch (error) {
+      console.error("error on pdf generation (invoice): ", error);
+      reject(`Error generating invoice: ${error}`);
+    }
+  });
+}
+
+// utils/bol-offer-sync.ts
+var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
+var bolApiUrl = "https://api.bol.com/retailer";
+var bolTokens = [];
+function bolHeaders(headersType, clientId) {
+  const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  if (!tokenEntry) {
+    return;
+  }
+  const contentType = headersType === "json" ? "application/vnd.retailer.v10+json" : "application/vnd.retailer.v10+csv";
+  return {
+    "Content-Type": contentType,
+    Accept: contentType,
+    Authorization: `Bearer ${tokenEntry.token}`
+  };
+}
+async function authenticateBolCom(clientId, clientSecret) {
+  const existingTokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  if (existingTokenEntry && /* @__PURE__ */ new Date() < existingTokenEntry.expiration) {
+    return existingTokenEntry.token;
+  }
+  let auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  const authHeader = `Basic ${auth}`;
+  try {
+    const response = await fetch(bolAuthUrl, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      }
+    });
+    if (!response.ok) {
+      console.error("bol auth error:", await response.text());
+      return false;
+    }
+    const data = await response.json();
+    const newToken = {
+      clientId,
+      token: data["access_token"],
+      expiration: new Date((/* @__PURE__ */ new Date()).getTime() + data["expires_in"] * 1e3)
+    };
+    if (existingTokenEntry) {
+      existingTokenEntry.token = newToken.token;
+      existingTokenEntry.expiration = newToken.expiration;
+    } else {
+      bolTokens.push(newToken);
+    }
+    return newToken.token;
+  } catch (error) {
+    console.error("bol token error:", error);
+    return false;
+  }
+}
+var syncBolOrders = async ({ context }) => {
+  const companiesToSync = await findCompaniesToSync({ context });
+  for (let currCompany of companiesToSync) {
+    let orders = await getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret);
+    if (orders && orders.length > 0) {
+      for (let order of orders) {
+        try {
+          const orderExists = await checkIfOrderExists({ orderId: order.orderId, company: currCompany, context });
+          if (!orderExists) {
+            const orderDetails = await getBolComOrder({
+              orderId: order.orderId,
+              bolClientID: currCompany.bolClientID,
+              bolClientSecret: currCompany.bolClientSecret
+            });
+            await saveDocument({ bolDoc: orderDetails, company: currCompany, context });
+            await new Promise((resolve) => setTimeout(resolve, 1e3));
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+  }
+};
+var findCompaniesToSync = async ({ context }) => {
+  return await context.sudo().query.Company.findMany({
+    query: "id bolClientID bolClientSecret emailHost emailPort emailUser emailPassword name owner { id } establishments { id }",
+    where: {
+      isActive: {
+        equals: true
+      },
+      bolClientID: {
+        not: {
+          equals: ""
+        }
+      },
+      bolClientSecret: {
+        not: {
+          equals: ""
+        }
+      }
+    }
+  });
+};
+async function getBolComOrders(bolClientID, bolClientSecret) {
+  await authenticateBolCom(bolClientID, bolClientSecret);
+  let orders = [];
+  const dateString = (date) => date.toISOString().split("T")[0];
+  try {
+    for (let i = 0; i < 3; i++) {
+      const date = /* @__PURE__ */ new Date();
+      date.setDate(date.getDate() - i);
+      const response = await fetch(`${bolApiUrl}/orders?fulfilment-method=ALL&status=ALL&latest-change-date=${dateString(date)}&page=1`, {
+        method: "GET",
+        headers: bolHeaders("json", bolClientID)
+      });
+      if (!response.ok) {
+        console.error(await response.text());
+      } else {
+        const answer = await response.json();
+        if (answer.orders) {
+          orders = orders.concat(answer.orders);
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1e3));
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
+  return sortedOrders;
+}
+async function checkIfOrderExists({ orderId, company, context }) {
+  const existingDoc = await context.sudo().query.Document.findMany({
+    query: "id",
+    where: {
+      company: {
+        id: {
+          equals: company.id
+        }
+      },
+      externalId: {
+        equals: orderId
+      }
+    }
+  });
+  if (existingDoc.length > 0) {
+    return true;
+  }
+  return false;
+}
+async function getBolComOrder({ orderId, bolClientID, bolClientSecret }) {
+  await authenticateBolCom(bolClientID, bolClientSecret);
+  try {
+    const response = await fetch(`${bolApiUrl}/orders/${orderId}`, {
+      method: "GET",
+      headers: bolHeaders("json", bolClientID)
+    });
+    if (!response.ok) {
+      console.error(await response.text());
+      return null;
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+async function findProduct({ ean, company, context }) {
+  let products = await context.sudo().query.Material.findMany({
+    query: "ean id name tax price",
+    where: {
+      ean: {
+        equals: ean
+      },
+      company: {
+        id: {
+          equals: company.id
+        }
+      }
+    }
+  });
+  if (products.length > 0) {
+    return products.at(0);
+  } else {
+    return null;
+  }
+}
+async function createProduct({ productDetails, company, context }) {
+  let product = {
+    ean: productDetails.product.ean,
+    name: productDetails.product.title,
+    tax: "21.0000",
+    price: productDetails.unitPrice.toFixed(4),
+    company: {
+      connect: {
+        id: company.id
+      }
+    }
+  };
+  const newProduct = await context.sudo().query.Material.createOne({
+    data: product,
+    query: "id ean name tax price"
+  });
+  return newProduct;
+}
+var saveDocument = async ({ bolDoc, company, context }) => {
+  let document = {
+    externalId: bolDoc.orderId,
+    date: bolDoc.orderPlacedDateTime,
+    company: {
+      connect: {
+        id: company.id
+      }
+    },
+    origin: "BOL.COM",
+    products: {
+      create: []
+    },
+    creator: {
+      connect: {
+        id: company.owner.id
+      }
+    },
+    establishment: {
+      connect: {
+        id: company.establishments.at(0).id
+      }
+    },
+    payments: {
+      create: [
+        {
+          value: bolDoc.orderItems.reduce((acc, dp) => acc + dp.unitPrice, 0).toFixed(4),
+          type: "online",
+          isVerified: true,
+          timestamp: bolDoc.orderPlacedDateTime,
+          company: {
+            connect: {
+              id: company.id
+            }
+          },
+          creator: {
+            connect: {
+              id: company.owner.id
+            }
+          }
+        }
+      ]
+    },
+    type: "invoice"
+  };
+  try {
+    let customer = await getCustomer({ email: bolDoc.billingDetails.email, company, context });
+    if (!customer) {
+      customer = await createCustomer({ orderDetails: bolDoc, company, context });
+    }
+    document.customer = {
+      connect: {
+        id: customer.id
+      }
+    };
+    let docAddress = customer.customerAddresses.find(
+      (address) => address.street.toLowerCase() == bolDoc.billingDetails.streetName.toLowerCase() && address.door.toLowerCase() == bolDoc.billingDetails.houseNumber.toLowerCase() + (bolDoc.billingDetails.houseNumberExtension ?? "").toLowerCase() && address.zip.toLowerCase() == bolDoc.billingDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.billingDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.billingDetails.countryCode.toLowerCase()
+    );
+    document.docAddress = {
+      connect: {
+        id: docAddress.id
+      }
+    };
+    let delAddress = customer.customerAddresses.find(
+      (address) => address.street.toLowerCase() == bolDoc.shipmentDetails.streetName.toLowerCase() && address.door.toLowerCase().includes(bolDoc.shipmentDetails.houseNumber.toLowerCase()) && address.zip.toLowerCase() == bolDoc.shipmentDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.shipmentDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.shipmentDetails.countryCode.toLowerCase()
+    );
+    document.delAddress = {
+      connect: {
+        id: delAddress.id
+      }
+    };
+    for (let orderProduct of bolDoc.orderItems) {
+      let product = await findProduct({ ean: orderProduct.product.ean, company, context });
+      if (!product) {
+        product = await createProduct({ productDetails: orderProduct, company, context });
+      }
+      document.products.create.push({
+        price: orderProduct.unitPrice.toFixed(4),
+        company: {
+          connect: {
+            id: company.id
+          }
+        },
+        product: {
+          connect: {
+            id: product.id
+          }
+        },
+        amount: orderProduct.quantity.toFixed(4),
+        tax: eutaxes.find((t) => t.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
+        name: product.name
+      });
+    }
+    const postedDocument = await context.sudo().query.Document.createOne({
+      data: document,
+      query: "number date totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city country } docAddress { street door zip city country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city country } logo { url } }"
+    });
+    try {
+      sendMail({
+        establishment: postedDocument.establishment,
+        recipient: "test@huseyinonal.com",
+        subject: `Bestelling ${postedDocument.prefix ?? ""}${postedDocument.number}`,
+        company,
+        attachments: [await generateInvoiceOut({ document: postedDocument })],
+        html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het factuur voor uw recentste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+var getCustomer = async ({ email, company, context }) => {
+  try {
+    const existingCustomer = await context.sudo().query.User.findMany({
+      query: "id email customerAddresses { id street door zip city country } firstName lastName",
+      where: {
+        role: {
+          equals: "customer"
+        },
+        email: {
+          equals: transformEmail({
+            email,
+            companyId: company.id
+          })
+        }
+      }
+    });
+    if (existingCustomer.length > 0) {
+      return existingCustomer.at(0);
+    } else {
+      return null;
+    }
+  } catch (error) {
+    return null;
+  }
+};
+var compareAddresses = ({ docAddress, delAddress }) => {
+  if (docAddress.streetName.toLowerCase() === delAddress.streetName.toLowerCase() && docAddress.houseNumber.toLowerCase() === delAddress.houseNumber.toLowerCase() && docAddress.zipCode.toLowerCase() === delAddress.zipCode.toLowerCase() && docAddress.city.toLowerCase() === delAddress.city.toLowerCase() && docAddress.countryCode.toLowerCase() === delAddress.countryCode.toLowerCase()) {
+    return true;
+  } else {
+    return false;
+  }
+};
+var createCustomer = async ({ orderDetails, company, context }) => {
+  let customer = {
+    email: orderDetails.billingDetails.email,
+    firstName: orderDetails.billingDetails.firstName,
+    lastName: orderDetails.billingDetails.surname,
+    name: orderDetails.billingDetails.firstName + " " + orderDetails.billingDetails.surname,
+    password: generateRandomString(24),
+    role: "customer",
+    company: {
+      connect: {
+        id: company.id
+      }
+    }
+  };
+  let docAddress = orderDetails.billingDetails;
+  let delAddress = orderDetails.shipmentDetails;
+  customer.customerAddresses = {
+    create: [
+      {
+        street: docAddress.streetName,
+        door: docAddress.houseNumber,
+        zip: docAddress.zipCode,
+        city: docAddress.city,
+        country: docAddress.countryCode,
+        company: {
+          connect: {
+            id: company.id
+          }
+        }
+      }
+    ]
+  };
+  if (docAddress.houseNumberExtension) {
+    customer.customerAddresses.create.at(0).door = customer.customerAddresses.create.at(0).door + docAddress.houseNumberExtension;
+  }
+  const areAddressesSame = compareAddresses({ docAddress, delAddress });
+  if (!areAddressesSame) {
+    customer.customerAddresses.create.push({
+      street: delAddress.streetName,
+      door: delAddress.houseNumber,
+      zip: delAddress.zipCode,
+      city: delAddress.city,
+      country: delAddress.countryCode,
+      company: {
+        connect: {
+          id: company.id
+        }
+      }
+    });
+  }
+  try {
+    const newUser = await context.sudo().query.User.createOne({
+      data: customer,
+      query: "id customerAddresses { id street door zip city country } firstName lastName email"
+    });
+    return newUser;
+  } catch (error) {
+    console.error(error);
+    return null;
   }
 };
 
@@ -2190,1210 +3439,6 @@ var lists = {
 
 // keystone.ts
 var import_config2 = require("dotenv/config");
-
-// utils/eutaxes.ts
-var eutaxes = [
-  {
-    code: "AT",
-    country: "Oostenrijk",
-    standard: 20,
-    low: 13,
-    low2: 10,
-    low3: null
-  },
-  {
-    code: "BE",
-    country: "Belgi\xEB",
-    standard: 21,
-    low: 12,
-    low2: 6,
-    low3: null
-  },
-  {
-    code: "BG",
-    country: "Bulgarije",
-    standard: 20,
-    low: 9,
-    low2: null,
-    low3: null
-  },
-  {
-    code: "CY",
-    country: "Cyprus",
-    standard: 19,
-    low: 9,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "CZ",
-    country: "Tsjechi\xEB",
-    standard: 21,
-    low: 15,
-    low2: 12,
-    low3: null
-  },
-  {
-    code: "DE",
-    country: "Duitsland",
-    standard: 19,
-    low: 7,
-    low2: null,
-    low3: null
-  },
-  {
-    code: "DK",
-    country: "Denemarken",
-    standard: 25,
-    low: 0,
-    low2: null,
-    low3: null
-  },
-  {
-    code: "EE",
-    country: "Estland",
-    standard: 22,
-    low: 9,
-    low2: null,
-    low3: null
-  },
-  {
-    code: "EL",
-    country: "Griekenland",
-    standard: 24,
-    low: 13,
-    low2: 6,
-    low3: null
-  },
-  {
-    code: "ES",
-    country: "Spanje",
-    standard: 21,
-    low: 10,
-    low2: null,
-    low3: null
-  },
-  {
-    code: "FI",
-    country: "Finland",
-    standard: 24,
-    low: 14,
-    low2: 10,
-    low3: null
-  },
-  {
-    code: "FR",
-    country: "Frankrijk",
-    standard: 20,
-    low: 10,
-    low2: 5.5,
-    low3: 2.1
-  },
-  {
-    code: "HR",
-    country: "Kroati\xEB",
-    standard: 25,
-    low: 13,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "HU",
-    country: "Hongarije",
-    standard: 27,
-    low: 18,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "IE",
-    country: "Ierland",
-    standard: 23,
-    low: 13.5,
-    low2: 9,
-    low3: null
-  },
-  {
-    code: "IT",
-    country: "Itali\xEB",
-    standard: 22,
-    low: 10,
-    low2: 5,
-    low3: 4
-  },
-  {
-    code: "LT",
-    country: "Litouwen",
-    standard: 21,
-    low: 9,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "LU",
-    country: "Luxemburg",
-    standard: 17,
-    low: 14,
-    low2: 8,
-    low3: 3
-  },
-  {
-    code: "LV",
-    country: "Letland",
-    standard: 21,
-    low: 12,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "MT",
-    country: "Malta",
-    standard: 18,
-    low: 12,
-    low2: 7,
-    low3: 5
-  },
-  {
-    code: "NL",
-    country: "Nederland",
-    standard: 21,
-    low: 9,
-    low2: null,
-    low3: null
-  },
-  {
-    code: "PL",
-    country: "Polen",
-    standard: 23,
-    low: 8,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "PT",
-    country: "Portugal",
-    standard: 23,
-    low: 13,
-    low2: 6,
-    low3: null
-  },
-  {
-    code: "RO",
-    country: "Roemeni\xEB",
-    standard: 19,
-    low: 9,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "SE",
-    country: "Zweden",
-    standard: 25,
-    low: 12,
-    low2: 6,
-    low3: null
-  },
-  {
-    code: "SI",
-    country: "Sloveni\xEB",
-    standard: 22,
-    low: 9.5,
-    low2: 5,
-    low3: null
-  },
-  {
-    code: "SK",
-    country: "Slowakije",
-    standard: 20,
-    low: 10,
-    low2: null,
-    low3: null
-  }
-];
-
-// utils/invoiceoutpdf.ts
-var import_buffer = require("buffer");
-
-// utils/formatters/formatcurrency.ts
-var formatCurrency = (value) => {
-  return new Intl.NumberFormat("nl-BE", {
-    style: "currency",
-    currency: "EUR"
-  }).format(value);
-};
-
-// utils/formatters/dateformatters.ts
-var dateFormatBe = (date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleDateString("fr-FR");
-};
-
-// utils/addtodate.ts
-function addDaysToDate(dateStr, daysToAdd) {
-  const date = new Date(dateStr);
-  date.setDate(date.getDate() + daysToAdd);
-  return date;
-}
-
-// utils/invoiceoutpdf.ts
-async function generateInvoiceOut({
-  document,
-  logoBuffer
-}) {
-  const invoiceDoc = document;
-  const establishment = invoiceDoc.establishment;
-  const establishmentAddress = establishment.address;
-  const customer = invoiceDoc.customer;
-  const documentProducts = invoiceDoc.products;
-  const payments = invoiceDoc.payments;
-  return new Promise(async (resolve, reject) => {
-    const pageLeft = 20;
-    const pageTop = 40;
-    try {
-      const PDFDocument = require("pdfkit");
-      const doc = new PDFDocument({ size: "A4", margin: 20 });
-      const buffers = [];
-      doc.on("data", buffers.push.bind(buffers));
-      if (logoBuffer) {
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      } else {
-        const response = await fetch(establishment.logo.url);
-        logoBuffer = await import_buffer.Buffer.from(await response.arrayBuffer());
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      }
-      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
-      const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
-        if (isHeader) {
-          doc2.lineWidth(25);
-          const bgY = y2 + 5;
-          doc2.lineCap("butt").moveTo(30, bgY).lineTo(550, bgY).stroke("black");
-          doc2.fontSize(10).fillColor("white").text(name, columns[0], y2).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
-        } else {
-          doc2.fontSize(10).fillColor("black").text(name, columns[0], y2, { width: columns[3] - columns[0] }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7] + 20, y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
-        }
-      };
-      const generateInvoiceTable = (doc2, documentProducts2, y2) => {
-        let invoiceTableTop = y2;
-        generateTableRow(doc2, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
-        for (let i = 1; i <= documentProducts2.length; i++) {
-          const item = documentProducts2[i - 1];
-          const position = invoiceTableTop + i * 40;
-          generateTableRow(
-            doc2,
-            position,
-            item.name,
-            item.description,
-            formatCurrency(Number(item.price).toFixed(2)),
-            item.amount,
-            formatCurrency(Number(item.totalTax).toFixed(2)),
-            formatCurrency(Number(item.totalWithTaxAfterReduction).toFixed(2))
-          );
-        }
-        return invoiceTableTop + (documentProducts2.length + 1) * 40;
-      };
-      const bankDetails = ({ doc: doc2, x, y: y2, establishment: establishment2 }) => {
-        let strings = [];
-        if (establishment2.bankAccount1) {
-          strings.push(establishment2.bankAccount1);
-        }
-        if (establishment2.bankAccount2 !== null) {
-          strings.push(establishment2.bankAccount2);
-        }
-        if (establishment2.bankAccount3 !== null) {
-          strings.push(establishment2.bankAccount3);
-        }
-        strings.map((string, index) => {
-          doc2.text(string, x, y2 + index * 15);
-        });
-      };
-      const customerDetails = ({ doc: doc2, x, y: y2, invoiceDoc: invoiceDoc2 }) => {
-        let strings = [];
-        const docAddress = invoiceDoc2.delAddress;
-        if (customer.customerCompany) {
-          strings.push(customer.customerCompany);
-        }
-        if (customer.customerTaxNumber) {
-          strings.push(customer.customerTaxNumber);
-        }
-        if (customer.phone) {
-          strings.push(customer.phone);
-        }
-        strings.push(docAddress.street + " " + docAddress.door);
-        if (docAddress.floor) {
-          strings.push("floor: " + docAddress.floor);
-        }
-        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
-        strings.map((string, index) => {
-          doc2.text(string, x, y2 + index * 15);
-        });
-        return y2 + strings.length * 15;
-      };
-      const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
-        doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
-        doc2.fillColor("white").text("Payment History:", x + 10, y2 - 5);
-        doc2.fillColor("black");
-        payments2.forEach((payment, i) => {
-          doc2.text(dateFormatBe(payment.timestamp), x + 10, y2 + 20 * (i + 1));
-          doc2.text(payment.type, x + 85, y2 + 20 * (i + 1));
-          doc2.text(formatCurrency(Number(payment.value).toFixed(2)), x + 150, y2 + 20 * (i + 1), {
-            width: 80,
-            align: "right"
-          });
-        });
-      };
-      const taxTable = ({ doc: doc2, x, y: y2, documentProducts: documentProducts2 }) => {
-        let taxRates = [];
-        documentProducts2.forEach((docProd, i) => {
-          if (!taxRates.includes(docProd.tax)) {
-            taxRates.push(docProd.tax);
-          }
-        });
-        taxRates = taxRates.sort((a, b) => a - b);
-        doc2.fontSize(10).text("Total Tax:", x, y2 + 50);
-        doc2.text(formatCurrency(documentProducts2.reduce((acc, dp) => acc + Number(dp.totalTax), 0)), x + 80, y2 + 50);
-        taxRates.map((taxRate, index) => {
-          doc2.text("Total Tax " + taxRate + "%:", x, y2 + 50 + (index + 1) * 15).text(
-            formatCurrency(documentProducts2.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)),
-            x + 80,
-            y2 + 50 + (index + 1) * 15
-          );
-        });
-        return y2 + taxRates.length * 15 + 50;
-      };
-      doc.fontSize(20).text("INVOICE", 455, pageTop);
-      doc.fontSize(10).text("Invoice:", 380, 80);
-      doc.text(invoiceDoc.number, 450, 80);
-      doc.text("Date:", 380, 95);
-      doc.text(dateFormatBe(invoiceDoc.date), 450, 95);
-      doc.text("Valid Until:", 380, 110);
-      doc.text(dateFormatBe(addDaysToDate(invoiceDoc.date, 15).toISOString()), 450, 110);
-      doc.text("Delivery Date:", 380, 125);
-      if (invoiceDoc.deliveryDate) {
-        doc.text(dateFormatBe(invoiceDoc.deliveryDate), 450, 125);
-      }
-      let y = 140;
-      doc.text(establishment.name, 50, y);
-      doc.text(establishment.taxID, 50, y + 15);
-      bankDetails({
-        doc,
-        x: 50,
-        y: y + 30,
-        establishment
-      });
-      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
-      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
-      doc.text(establishment.phone, 200, y + 30);
-      doc.text(establishment.phone2, 200, y + 45);
-      doc.text("Order: " + invoiceDoc.references, 380, y);
-      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
-      y = customerDetails({
-        doc,
-        x: 380,
-        y: y + 30,
-        invoiceDoc
-      });
-      y += 60;
-      y = generateInvoiceTable(doc, documentProducts, y);
-      if (y < 500) {
-        y = 500;
-      }
-      taxTable({
-        doc,
-        x: 30,
-        y,
-        documentProducts
-      });
-      paymentsTable({ doc, x: 170, y: y + 30, payments });
-      let totalsX = 410;
-      doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(formatCurrency(doc.total - doc.totalTax));
-      doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(doc.total), totalsX + 70, y + 65);
-      doc.text("Already Paid:", totalsX, y + 80);
-      doc.text(formatCurrency(doc.totalPaid), totalsX + 70, y + 80);
-      doc.text("To Pay:", totalsX, y + 95);
-      doc.text(formatCurrency(doc.totalToPay), totalsX + 70, y + 95);
-      doc.end();
-      doc.on("end", () => {
-        const pdfData = import_buffer.Buffer.concat(buffers);
-        resolve({
-          filename: `invoice_${document.number}.pdf`,
-          content: pdfData,
-          contentType: "application/pdf"
-        });
-      });
-    } catch (error) {
-      console.error("error on pdf generation (invoice): ", error);
-      reject(`Error generating invoice: ${error.message}`);
-    }
-  });
-}
-
-// utils/random.ts
-function generateRandomString(length) {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
-
-// utils/sendmail.ts
-var sendMail = async ({
-  recipient,
-  bcc,
-  company,
-  establishment,
-  subject,
-  html,
-  attachments
-}) => {
-  try {
-    const nodemailer = require("nodemailer");
-    let transporter = nodemailer.createTransport({
-      host: company.emailHost,
-      port: company.emailPort,
-      secure: false,
-      auth: {
-        user: company.emailUser,
-        pass: company.emailPassword
-      }
-    });
-    let mailOptionsClient = {
-      from: `"${company.emailUser}" <${company.emailUser}>`,
-      to: recipient,
-      bcc,
-      attachments,
-      subject,
-      html: templatedMail({
-        content: html,
-        img64: establishment.logo.url
-      })
-    };
-    transporter.sendMail(mailOptionsClient, (error) => {
-      if (error) {
-        console.log("mail error", error);
-        return true;
-      } else {
-        console.log("mail sent");
-        return false;
-      }
-    });
-  } catch (e) {
-    console.log("mail error", e);
-    return false;
-  }
-};
-function templatedMail({ content, img64 }) {
-  return mailPart1({ img64 }) + content + mailPart2;
-}
-var mailPart1 = ({ img64 }) => {
-  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
-  <head>
-    <!-- Compiled with Bootstrap Email version: 1.5.1 -->
-    <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <meta name="x-apple-disable-message-reformatting" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <style type="text/css">
-      body,
-      table,
-      td {
-        font-family: Helvetica, Arial, sans-serif !important;
-      }
-      .ExternalClass {
-        width: 100%;
-      }
-      .ExternalClass,
-      .ExternalClass p,
-      .ExternalClass span,
-      .ExternalClass font,
-      .ExternalClass td,
-      .ExternalClass div {
-        line-height: 150%;
-      }
-      a {
-        text-decoration: none;
-      }
-      * {
-        color: inherit;
-      }
-      a[x-apple-data-detectors],
-      u + #body a,
-      #MessageViewBody a {
-        color: inherit;
-        text-decoration: none;
-        font-size: inherit;
-        font-family: inherit;
-        font-weight: inherit;
-        line-height: inherit;
-      }
-      img {
-        -ms-interpolation-mode: bicubic;
-      }
-      table:not([class^="s-"]) {
-        font-family: Helvetica, Arial, sans-serif;
-        mso-table-lspace: 0pt;
-        mso-table-rspace: 0pt;
-        border-spacing: 0px;
-        border-collapse: collapse;
-      }
-      table:not([class^="s-"]) td {
-        border-spacing: 0px;
-        border-collapse: collapse;
-      }
-      @media screen and (max-width: 600px) {
-        .w-full,
-        .w-full > tbody > tr > td {
-          width: 100% !important;
-        }
-        .w-8,
-        .w-8 > tbody > tr > td {
-          width: 32px !important;
-        }
-        .h-16,
-        .h-16 > tbody > tr > td {
-          height: 64px !important;
-        }
-        .p-lg-10:not(table),
-        .p-lg-10:not(.btn) > tbody > tr > td,
-        .p-lg-10.btn td a {
-          padding: 0 !important;
-        }
-        .pr-4:not(table),
-        .pr-4:not(.btn) > tbody > tr > td,
-        .pr-4.btn td a,
-        .px-4:not(table),
-        .px-4:not(.btn) > tbody > tr > td,
-        .px-4.btn td a {
-          padding-right: 16px !important;
-        }
-        .pl-4:not(table),
-        .pl-4:not(.btn) > tbody > tr > td,
-        .pl-4.btn td a,
-        .px-4:not(table),
-        .px-4:not(.btn) > tbody > tr > td,
-        .px-4.btn td a {
-          padding-left: 16px !important;
-        }
-        .pb-6:not(table),
-        .pb-6:not(.btn) > tbody > tr > td,
-        .pb-6.btn td a,
-        .py-6:not(table),
-        .py-6:not(.btn) > tbody > tr > td,
-        .py-6.btn td a {
-          padding-bottom: 24px !important;
-        }
-        .pt-8:not(table),
-        .pt-8:not(.btn) > tbody > tr > td,
-        .pt-8.btn td a,
-        .py-8:not(table),
-        .py-8:not(.btn) > tbody > tr > td,
-        .py-8.btn td a {
-          padding-top: 32px !important;
-        }
-        .pb-8:not(table),
-        .pb-8:not(.btn) > tbody > tr > td,
-        .pb-8.btn td a,
-        .py-8:not(table),
-        .py-8:not(.btn) > tbody > tr > td,
-        .py-8.btn td a {
-          padding-bottom: 32px !important;
-        }
-        *[class*="s-lg-"] > tbody > tr > td {
-          font-size: 0 !important;
-          line-height: 0 !important;
-          height: 0 !important;
-        }
-        .s-6 > tbody > tr > td {
-          font-size: 24px !important;
-          line-height: 24px !important;
-          height: 24px !important;
-        }
-      }
-    </style>
-  </head>
-  <body
-    class="bg-blue-100"
-    style="
-      outline: 0;
-      width: 100%;
-      min-width: 100%;
-      height: 100%;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-      font-family: Helvetica, Arial, sans-serif;
-      line-height: 24px;
-      font-weight: normal;
-      font-size: 16px;
-      -moz-box-sizing: border-box;
-      -webkit-box-sizing: border-box;
-      box-sizing: border-box;
-      color: #000000;
-      margin: 0;
-      padding: 0;
-      border-width: 0;
-    "
-    bgcolor="#cfe2ff"
-  >
-    <table
-      class="bg-blue-100 body"
-      valign="top"
-      role="presentation"
-      border="0"
-      cellpadding="0"
-      cellspacing="0"
-      style="
-        outline: 0;
-        width: 100%;
-        min-width: 100%;
-        height: 100%;
-        -webkit-text-size-adjust: 100%;
-        -ms-text-size-adjust: 100%;
-        font-family: Helvetica, Arial, sans-serif;
-        line-height: 24px;
-        font-weight: normal;
-        font-size: 16px;
-        -moz-box-sizing: border-box;
-        -webkit-box-sizing: border-box;
-        box-sizing: border-box;
-        color: #000000;
-        margin: 0;
-        padding: 0;
-        border-width: 0;
-      "
-      bgcolor="#cfe2ff"
-    >
-      <tbody>
-        <tr>
-          <td valign="top" style="line-height: 24px; font-size: 16px; margin: 0" align="left" bgcolor="#cfe2ff">
-            <table class="container" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%">
-              <tbody>
-                <tr>
-                  <td align="center" style="line-height: 24px; font-size: 16px; margin: 0; padding: 0 16px">
-                    <!--[if (gte mso 9)|(IE)]>
-                                          <table align="center" role="presentation">
-                                            <tbody>
-                                              <tr>
-                                                <td width="600">
-                                        <![endif]-->
-                    <table align="center" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px; margin: 0 auto">
-                      <tbody>
-                        <tr>
-                          <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
-                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
-                                    &#160;
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table class="ax-center" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
-                                    <img
-                                      class="h-16"
-                                      src="${img64}"
-                                      style="
-                                        height: 64px;
-                                        line-height: 100%;
-                                        outline: none;
-                                        text-decoration: none;
-                                        display: block;
-                                        border-style: none;
-                                        border-width: 0;
-                                      "
-                                      height="64"
-                                    />
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
-                                    &#160;
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table
-                              class="card rounded-3xl px-4 py-8 p-lg-10"
-                              role="presentation"
-                              border="0"
-                              cellpadding="0"
-                              cellspacing="0"
-                              style="border-radius: 24px; border-collapse: separate !important; width: 100%; overflow: hidden; border: 1px solid #e2e8f0"
-                              bgcolor="#ffffff"
-                            >
-                              <tbody>
-                                <tr>
-                                  <td
-                                    style="line-height: 24px; font-size: 16px; width: 100%; border-radius: 24px; margin: 0; padding: 40px"
-                                    align="left"
-                                    bgcolor="#ffffff"
-                                  >`;
-};
-var mailPart2 = `</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
-                                    &#160;
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <!--[if (gte mso 9)|(IE)]>
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                        <![endif]-->
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </body>
-</html>
-`;
-
-// utils/utils.ts
-var transformEmail = ({ email, companyId }) => {
-  let parts = email.split("@");
-  let localPart = parts[0].split("+")[0];
-  let domainPart = parts[1];
-  return localPart + "+" + companyId + "@" + domainPart;
-};
-
-// utils/bol-offer-sync.ts
-var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
-var bolApiUrl = "https://api.bol.com/retailer";
-var bolTokens = [];
-function bolHeaders(headersType, clientId) {
-  const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
-  if (!tokenEntry) {
-    return;
-  }
-  const contentType = headersType === "json" ? "application/vnd.retailer.v10+json" : "application/vnd.retailer.v10+csv";
-  return {
-    "Content-Type": contentType,
-    Accept: contentType,
-    Authorization: `Bearer ${tokenEntry.token}`
-  };
-}
-async function authenticateBolCom(clientId, clientSecret) {
-  const existingTokenEntry = bolTokens.find((t) => t.clientId === clientId);
-  if (existingTokenEntry && /* @__PURE__ */ new Date() < existingTokenEntry.expiration) {
-    return existingTokenEntry.token;
-  }
-  let auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-  const authHeader = `Basic ${auth}`;
-  try {
-    const response = await fetch(bolAuthUrl, {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-        "Content-Type": "application/json",
-        Accept: "application/json"
-      }
-    });
-    if (!response.ok) {
-      console.error("bol auth error:", await response.text());
-      return false;
-    }
-    const data = await response.json();
-    const newToken = {
-      clientId,
-      token: data["access_token"],
-      expiration: new Date((/* @__PURE__ */ new Date()).getTime() + data["expires_in"] * 1e3)
-    };
-    if (existingTokenEntry) {
-      existingTokenEntry.token = newToken.token;
-      existingTokenEntry.expiration = newToken.expiration;
-    } else {
-      bolTokens.push(newToken);
-    }
-    return newToken.token;
-  } catch (error) {
-    console.error("bol token error:", error);
-    return false;
-  }
-}
-var syncBolOrders = async ({ context }) => {
-  const companiesToSync = await findCompaniesToSync({ context });
-  for (let currCompany of companiesToSync) {
-    let orders = await getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret);
-    if (orders && orders.length > 0) {
-      for (let order of orders) {
-        try {
-          const orderExists = await checkIfOrderExists({ orderId: order.orderId, company: currCompany, context });
-          if (!orderExists) {
-            const orderDetails = await getBolComOrder({
-              orderId: order.orderId,
-              bolClientID: currCompany.bolClientID,
-              bolClientSecret: currCompany.bolClientSecret
-            });
-            await saveDocument({ bolDoc: orderDetails, company: currCompany, context });
-            await new Promise((resolve) => setTimeout(resolve, 1e3));
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      }
-    }
-  }
-};
-var findCompaniesToSync = async ({ context }) => {
-  return await context.sudo().query.Company.findMany({
-    query: "id bolClientID bolClientSecret emailHost emailPort emailUser emailPassword name owner { id } establishments { id }",
-    where: {
-      isActive: {
-        equals: true
-      },
-      bolClientID: {
-        not: {
-          equals: ""
-        }
-      },
-      bolClientSecret: {
-        not: {
-          equals: ""
-        }
-      }
-    }
-  });
-};
-async function getBolComOrders(bolClientID, bolClientSecret) {
-  await authenticateBolCom(bolClientID, bolClientSecret);
-  let orders = [];
-  const dateString = (date) => date.toISOString().split("T")[0];
-  try {
-    for (let i = 0; i < 3; i++) {
-      const date = /* @__PURE__ */ new Date();
-      date.setDate(date.getDate() - i);
-      const response = await fetch(`${bolApiUrl}/orders?fulfilment-method=ALL&status=ALL&latest-change-date=${dateString(date)}&page=1`, {
-        method: "GET",
-        headers: bolHeaders("json", bolClientID)
-      });
-      if (!response.ok) {
-        console.error(await response.text());
-      } else {
-        const answer = await response.json();
-        if (answer.orders) {
-          orders = orders.concat(answer.orders);
-        }
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1e3));
-    }
-  } catch (error) {
-    console.error(error);
-  }
-  const sortedOrders = orders.sort((a, b) => new Date(a.orderPlacedDateTime).getTime() - new Date(b.orderPlacedDateTime).getTime());
-  return sortedOrders;
-}
-async function checkIfOrderExists({ orderId, company, context }) {
-  const existingDoc = await context.sudo().query.Document.findMany({
-    query: "id",
-    where: {
-      company: {
-        id: {
-          equals: company.id
-        }
-      },
-      externalId: {
-        equals: orderId
-      }
-    }
-  });
-  if (existingDoc.length > 0) {
-    return true;
-  }
-  return false;
-}
-async function getBolComOrder({ orderId, bolClientID, bolClientSecret }) {
-  await authenticateBolCom(bolClientID, bolClientSecret);
-  try {
-    const response = await fetch(`${bolApiUrl}/orders/${orderId}`, {
-      method: "GET",
-      headers: bolHeaders("json", bolClientID)
-    });
-    if (!response.ok) {
-      console.error(await response.text());
-      return null;
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
-async function findProduct({ ean, company, context }) {
-  let products = await context.sudo().query.Material.findMany({
-    query: "ean id name tax price",
-    where: {
-      ean: {
-        equals: ean
-      },
-      company: {
-        id: {
-          equals: company.id
-        }
-      }
-    }
-  });
-  if (products.length > 0) {
-    return products.at(0);
-  } else {
-    return null;
-  }
-}
-async function createProduct({ productDetails, company, context }) {
-  let product = {
-    ean: productDetails.product.ean,
-    name: productDetails.product.title,
-    tax: "21.0000",
-    price: productDetails.unitPrice.toFixed(4),
-    company: {
-      connect: {
-        id: company.id
-      }
-    }
-  };
-  const newProduct = await context.sudo().query.Material.createOne({
-    data: product,
-    query: "id ean name tax price"
-  });
-  return newProduct;
-}
-var saveDocument = async ({ bolDoc, company, context }) => {
-  let document = {
-    externalId: bolDoc.orderId,
-    date: bolDoc.orderPlacedDateTime,
-    company: {
-      connect: {
-        id: company.id
-      }
-    },
-    origin: "BOL.COM",
-    products: {
-      create: []
-    },
-    creator: {
-      connect: {
-        id: company.owner.id
-      }
-    },
-    establishment: {
-      connect: {
-        id: company.establishments.at(0).id
-      }
-    },
-    payments: {
-      create: [
-        {
-          value: bolDoc.orderItems.reduce((acc, dp) => acc + dp.unitPrice, 0).toFixed(4),
-          type: "online",
-          isVerified: true,
-          timestamp: bolDoc.orderPlacedDateTime,
-          company: {
-            connect: {
-              id: company.id
-            }
-          },
-          creator: {
-            connect: {
-              id: company.owner.id
-            }
-          }
-        }
-      ]
-    },
-    type: "invoice"
-  };
-  try {
-    let customer = await getCustomer({ email: bolDoc.billingDetails.email, company, context });
-    if (!customer) {
-      customer = await createCustomer({ orderDetails: bolDoc, company, context });
-    }
-    document.customer = {
-      connect: {
-        id: customer.id
-      }
-    };
-    let docAddress = customer.customerAddresses.find(
-      (address) => address.street.toLowerCase() == bolDoc.billingDetails.streetName.toLowerCase() && address.door.toLowerCase() == bolDoc.billingDetails.houseNumber.toLowerCase() + (bolDoc.billingDetails.houseNumberExtension ?? "").toLowerCase() && address.zip.toLowerCase() == bolDoc.billingDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.billingDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.billingDetails.countryCode.toLowerCase()
-    );
-    document.docAddress = {
-      connect: {
-        id: docAddress.id
-      }
-    };
-    let delAddress = customer.customerAddresses.find(
-      (address) => address.street.toLowerCase() == bolDoc.shipmentDetails.streetName.toLowerCase() && address.door.toLowerCase().includes(bolDoc.shipmentDetails.houseNumber.toLowerCase()) && address.zip.toLowerCase() == bolDoc.shipmentDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.shipmentDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.shipmentDetails.countryCode.toLowerCase()
-    );
-    document.delAddress = {
-      connect: {
-        id: delAddress.id
-      }
-    };
-    for (let orderProduct of bolDoc.orderItems) {
-      let product = await findProduct({ ean: orderProduct.product.ean, company, context });
-      if (!product) {
-        product = await createProduct({ productDetails: orderProduct, company, context });
-      }
-      document.products.create.push({
-        price: orderProduct.unitPrice.toFixed(4),
-        company: {
-          connect: {
-            id: company.id
-          }
-        },
-        product: {
-          connect: {
-            id: product.id
-          }
-        },
-        amount: orderProduct.quantity.toFixed(4),
-        tax: eutaxes.find((t) => t.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
-        name: product.name
-      });
-    }
-    const postedDocument = await context.sudo().query.Document.createOne({
-      data: document,
-      query: "number date totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city country } docAddress { street door zip city country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city country } logo { url } }"
-    });
-    try {
-      sendMail({
-        establishment: postedDocument.establishment,
-        recipient: "test@huseyinonal.com",
-        subject: `Bestelling ${postedDocument.prefix ?? ""}${postedDocument.number}`,
-        company,
-        attachments: [await generateInvoiceOut({ document: postedDocument })],
-        html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het factuur voor uw recentste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
-var getCustomer = async ({ email, company, context }) => {
-  try {
-    const existingCustomer = await context.sudo().query.User.findMany({
-      query: "id email customerAddresses { id street door zip city country } firstName lastName",
-      where: {
-        role: {
-          equals: "customer"
-        },
-        email: {
-          equals: transformEmail({
-            email,
-            companyId: company.id
-          })
-        }
-      }
-    });
-    if (existingCustomer.length > 0) {
-      return existingCustomer.at(0);
-    } else {
-      return null;
-    }
-  } catch (error) {
-    return null;
-  }
-};
-var compareAddresses = ({ docAddress, delAddress }) => {
-  if (docAddress.streetName.toLowerCase() === delAddress.streetName.toLowerCase() && docAddress.houseNumber.toLowerCase() === delAddress.houseNumber.toLowerCase() && docAddress.zipCode.toLowerCase() === delAddress.zipCode.toLowerCase() && docAddress.city.toLowerCase() === delAddress.city.toLowerCase() && docAddress.countryCode.toLowerCase() === delAddress.countryCode.toLowerCase()) {
-    return true;
-  } else {
-    return false;
-  }
-};
-var createCustomer = async ({ orderDetails, company, context }) => {
-  let customer = {
-    email: orderDetails.billingDetails.email,
-    firstName: orderDetails.billingDetails.firstName,
-    lastName: orderDetails.billingDetails.surname,
-    name: orderDetails.billingDetails.firstName + " " + orderDetails.billingDetails.surname,
-    password: generateRandomString(24),
-    role: "customer",
-    company: {
-      connect: {
-        id: company.id
-      }
-    }
-  };
-  let docAddress = orderDetails.billingDetails;
-  let delAddress = orderDetails.shipmentDetails;
-  customer.customerAddresses = {
-    create: [
-      {
-        street: docAddress.streetName,
-        door: docAddress.houseNumber,
-        zip: docAddress.zipCode,
-        city: docAddress.city,
-        country: docAddress.countryCode,
-        company: {
-          connect: {
-            id: company.id
-          }
-        }
-      }
-    ]
-  };
-  if (docAddress.houseNumberExtension) {
-    customer.customerAddresses.create.at(0).door = customer.customerAddresses.create.at(0).door + docAddress.houseNumberExtension;
-  }
-  const areAddressesSame = compareAddresses({ docAddress, delAddress });
-  if (!areAddressesSame) {
-    customer.customerAddresses.create.push({
-      street: delAddress.streetName,
-      door: delAddress.houseNumber,
-      zip: delAddress.zipCode,
-      city: delAddress.city,
-      country: delAddress.countryCode,
-      company: {
-        connect: {
-          id: company.id
-        }
-      }
-    });
-  }
-  try {
-    const newUser = await context.sudo().query.User.createOne({
-      data: customer,
-      query: "id customerAddresses { id street door zip city country } firstName lastName email"
-    });
-    return newUser;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
@@ -3404,7 +3449,7 @@ var keystone_default = withAuth(
     server: {
       port: 3399,
       cors: {
-        origin: ["https://dfatest.huseyinonal.com", "https://huseyinonal.com", "http://localhost:3399", "http://localhost:3400", "https://acc.digitalforge.be"],
+        origin: ["https://dfatest.huseyinonal.com", "http://localhost:3399", "https://acc.digitalforge.be"],
         credentials: true
       },
       extendExpressApp: (app, context) => {
@@ -3493,7 +3538,6 @@ var keystone_default = withAuth(
             console.error("Error starting bulk document sender", error);
           }
         });
-        bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });
       }
     },
     lists,

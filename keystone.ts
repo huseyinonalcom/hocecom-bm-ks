@@ -1,10 +1,10 @@
 import { bulkSendDocuments } from "./utils/bulkdocumentsenderstart";
+import { syncBolOrders } from "./utils/bol-offer-sync";
 import { fileUpload } from "./utils/fileupload";
 import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
-import { syncBolOrders } from "./utils/bol-offer-sync";
 
 export default withAuth(
   config({
@@ -16,7 +16,7 @@ export default withAuth(
     server: {
       port: 3399,
       cors: {
-        origin: ["https://dfatest.huseyinonal.com", "https://huseyinonal.com", "http://localhost:3399", "http://localhost:3400", "https://acc.digitalforge.be"],
+        origin: ["https://dfatest.huseyinonal.com", "http://localhost:3399", "https://acc.digitalforge.be"],
         credentials: true,
       },
       extendExpressApp: (app, context) => {
@@ -115,8 +115,6 @@ export default withAuth(
             console.error("Error starting bulk document sender", error);
           }
         });
-
-        bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });
       },
     },
     lists,
