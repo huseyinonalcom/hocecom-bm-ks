@@ -28,7 +28,7 @@ export const flexBox = ({
 }): Box => {
   const pageWidth: number = pageSizesDimensions[pageSize].width;
 
-  if (column < 0 || column >= columnCount) {
+  if (column < 1 || column > columnCount) {
     throw new Error("Invalid column index.");
   }
 
@@ -43,7 +43,7 @@ export const flexBox = ({
     throw new Error("Box width exceeds page width.");
   }
 
-  const x: number = column * columnWidth;
+  const x: number = (column - 1) * columnWidth;
   if (x + boxWidth > pageWidth) {
     throw new Error("Box exceeds page boundaries.");
   }
