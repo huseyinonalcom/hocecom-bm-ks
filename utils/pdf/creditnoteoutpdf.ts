@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { dateFormatBe } from "../formatters/dateformatters";
 import { Buffer } from "buffer";
 import { formatCurrency } from "../formatters/formatcurrency";
@@ -35,7 +34,17 @@ export async function generateCreditNoteOut({
       }
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
-      const generateTableRow = (doc, y, name, description, price, amount, tax, subtotal, isHeader = false) => {
+      const generateTableRow = (
+        doc: any,
+        y: number,
+        name: string,
+        description: string,
+        price: string,
+        amount: string,
+        tax: string,
+        subtotal: string,
+        isHeader = false
+      ) => {
         if (isHeader) {
           doc.lineWidth(25);
           const bgY = y + 5;
@@ -62,7 +71,7 @@ export async function generateCreditNoteOut({
         }
       };
 
-      const generateCreditNoteTable = (doc, documentProducts, y) => {
+      const generateCreditNoteTable = (doc: any, documentProducts: any[], y: number) => {
         let creditNoteTableTop = y;
         generateTableRow(doc, creditNoteTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
         for (let i = 1; i <= documentProducts.length; i++) {
@@ -75,14 +84,14 @@ export async function generateCreditNoteOut({
             item.description,
             formatCurrency(item.value.toFixed(2)),
             item.amount,
-            formatCurrency(Number(item.subTotalTax).toFixed(2)),
-            formatCurrency(Number(item.subTotal).toFixed(2))
+            formatCurrency(Number(item.subTotalTax)),
+            formatCurrency(Number(item.subTotal))
           );
         }
         return creditNoteTableTop + (documentProducts.length + 1) * 40;
       };
 
-      const bankDetails = ({ doc, x, y, establishment }) => {
+      const bankDetails = ({ doc, x, y, establishment }: { doc: any; x: number; y: number; establishment: any }) => {
         let strings = [];
         if (establishment.bankAccount1) {
           strings.push(establishment.bankAccount1);
@@ -98,7 +107,7 @@ export async function generateCreditNoteOut({
         });
       };
 
-      const customerDetails = ({ doc, x, y, creditNoteDoc }) => {
+      const customerDetails = ({ doc, x, y, creditNoteDoc }: { doc: any; x: number; y: number; creditNoteDoc: any }) => {
         let strings = [];
         const docAddress = creditNoteDoc.delAddress;
 
@@ -126,8 +135,8 @@ export async function generateCreditNoteOut({
         return y + strings.length * 15;
       };
 
-      const taxTable = ({ doc, x, y, documentProducts }) => {
-        let taxRates = [];
+      const taxTable = ({ doc, x, y, documentProducts }: { doc: any; x: number; y: number; documentProducts: any[] }) => {
+        let taxRates: number[] = [];
 
         documentProducts.forEach((docProd, i) => {
           if (!taxRates.includes(docProd.tax)) {
@@ -204,13 +213,14 @@ export async function generateCreditNoteOut({
       doc.text("Total Excl. Tax:", totalsX, y + 50);
       doc.text(
         formatCurrency(
-          documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0) - documentProducts.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)
+          documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotal), 0) -
+            documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotalTax), 0)
         ),
         totalsX + 70,
         y + 50
       );
       doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(documentProducts.reduce((acc, dp) => acc + Number(dp.subTotal), 0)), totalsX + 70, y + 65);
+      doc.text(formatCurrency(documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotal), 0)), totalsX + 70, y + 65);
 
       doc.end();
       doc.on("end", () => {
@@ -223,7 +233,7 @@ export async function generateCreditNoteOut({
       });
     } catch (error) {
       console.error("error on pdf generation (creditnote): ", error);
-      reject(`Error generating creditnote: ${error.message}`);
+      reject(`Error generating creditnote: ${error}`);
     }
   });
 }

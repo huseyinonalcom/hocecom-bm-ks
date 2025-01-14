@@ -1,9 +1,8 @@
-// @ts-nocheck
 import { dateFormatOnlyDate } from "../formatters/dateformatters";
 import { addDaysToDate } from "../addtodate";
 
 export const invoiceToXml = (
-  document,
+  document: any,
   pdf: {
     filename: string;
     content: Buffer;
@@ -22,7 +21,7 @@ export const invoiceToXml = (
   let taxRates = [];
 
   // First collect unique tax rates
-  documentProducts.forEach((product) => {
+  documentProducts.forEach((product: any) => {
     if (!taxRates.includes(Number(product.tax))) {
       taxRates.push(Number(product.tax));
     }
@@ -255,7 +254,7 @@ export const invoiceToXml = (
 };
 
 export const purchaseToXml = (
-  document,
+  document: any,
   pdf: {
     filename: string;
     content: Buffer;

@@ -1,8 +1,7 @@
-// @ts-nocheck
 import { Buffer } from "buffer";
-import { formatCurrency } from "./formatters/formatcurrency";
-import { dateFormatBe } from "./formatters/dateformatters";
-import { addDaysToDate } from "./addtodate";
+import { formatCurrency } from "../formatters/formatcurrency";
+import { dateFormatBe } from "../formatters/dateformatters";
+import { addDaysToDate } from "../addtodate";
 
 export async function generateInvoiceOut({
   document,
@@ -38,7 +37,17 @@ export async function generateInvoiceOut({
 
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
-      const generateTableRow = (doc, y, name, description, price, amount, tax, subtotal, isHeader = false) => {
+      const generateTableRow = (
+        doc: any,
+        y: number,
+        name: string,
+        description: string,
+        price: string,
+        amount: string,
+        tax: string,
+        subtotal: string,
+        isHeader = false
+      ) => {
         if (isHeader) {
           doc.lineWidth(25);
           const bgY = y + 5;
@@ -65,7 +74,7 @@ export async function generateInvoiceOut({
         }
       };
 
-      const generateInvoiceTable = (doc, documentProducts, y) => {
+      const generateInvoiceTable = (doc: any, documentProducts: any[], y: number) => {
         let invoiceTableTop = y;
         generateTableRow(doc, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
         for (let i = 1; i <= documentProducts.length; i++) {
@@ -85,7 +94,7 @@ export async function generateInvoiceOut({
         return invoiceTableTop + (documentProducts.length + 1) * 40;
       };
 
-      const bankDetails = ({ doc, x, y, establishment }) => {
+      const bankDetails = ({ doc, x, y, establishment }: { doc: any; x: number; y: number; establishment: any }) => {
         let strings = [];
         if (establishment.bankAccount1) {
           strings.push(establishment.bankAccount1);
@@ -101,7 +110,7 @@ export async function generateInvoiceOut({
         });
       };
 
-      const customerDetails = ({ doc, x, y, invoiceDoc }) => {
+      const customerDetails = ({ doc, x, y, invoiceDoc }: { doc: any; x: number; y: number; invoiceDoc: any }) => {
         let strings = [];
         const docAddress = invoiceDoc.delAddress;
 
@@ -129,7 +138,7 @@ export async function generateInvoiceOut({
         return y + strings.length * 15;
       };
 
-      const paymentsTable = ({ doc, x, y, payments }) => {
+      const paymentsTable = ({ doc, x, y, payments }: { doc: any; x: number; y: number; payments: any[] }) => {
         doc
           .lineCap("butt")
           .moveTo(x, y)
@@ -150,8 +159,8 @@ export async function generateInvoiceOut({
         });
       };
 
-      const taxTable = ({ doc, x, y, documentProducts }) => {
-        let taxRates = [];
+      const taxTable = ({ doc, x, y, documentProducts }: { doc: any; x: number; y: number; documentProducts: any[] }) => {
+        let taxRates: number[] = [];
 
         documentProducts.forEach((docProd, i) => {
           if (!taxRates.includes(docProd.tax)) {
@@ -253,7 +262,7 @@ export async function generateInvoiceOut({
       });
     } catch (error) {
       console.error("error on pdf generation (invoice): ", error);
-      reject(`Error generating invoice: ${error.message}`);
+      reject(`Error generating invoice: ${error}`);
     }
   });
 }
