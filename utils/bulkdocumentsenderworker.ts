@@ -137,7 +137,7 @@ async function createZip(tempDir: string, zipPath: string): Promise<void> {
 
 async function sendEmailWithAttachment(zipPath: string): Promise<void> {
   await sendMail({
-    recipient: company.accountantEmail,
+    recipient: "test@huseyinonal.com",
     subject: `Documenten ${company.name} ${dateFormatBe(documents.at(0).date)} - ${dateFormatBe(documents.at(-1).date)}`,
     company: company,
     establishment: documents.at(0).establishment,

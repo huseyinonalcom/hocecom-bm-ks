@@ -108,91 +108,15 @@ export default withAuth(
           }
         });
 
-        // const sendDocumentsToAccountant = async () => {
-        //   try {
-        //     let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
-        //       where: {
-        //         monthlyReports: {
-        //           equals: true,
-        //         },
-        //       },
-        //     });
+        cron.schedule("0 0 2 * *", async () => {
+          try {
+            bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });
+          } catch (error) {
+            console.error("Error starting bulk document sender", error);
+          }
+        });
 
-        //     let currentYear = new Date().getFullYear();
-        //     for (let company of companiesWithMonthlyReportsActive) {
-        //       bulkSendDocuments({
-        //         companyID: company.id,
-        //         docTypes: ["purchase"],
-        //         month: new Date().getMonth() - 5, // last month
-        //         year: currentYear, // Current year
-        //         context,
-        //       });
-        //       bulkSendDocuments({
-        //         companyID: company.id,
-        //         docTypes: ["purchase"],
-        //         month: new Date().getMonth() - 4, // last month
-        //         year: currentYear, // Current year
-        //         context,
-        //       });
-        //       bulkSendDocuments({
-        //         companyID: company.id,
-        //         docTypes: ["purchase"],
-        //         month: new Date().getMonth() - 3, // last month
-        //         year: currentYear, // Current year
-        //         context,
-        //       });
-        //       bulkSendDocuments({
-        //         companyID: company.id,
-        //         docTypes: ["purchase"],
-        //         month: new Date().getMonth() - 2, // last month
-        //         year: currentYear, // Current year
-        //         context,
-        //       });
-        //       bulkSendDocuments({
-        //         companyID: company.id,
-        //         docTypes: ["purchase"],
-        //         month: new Date().getMonth() - 1, // last month
-        //         year: currentYear, // Current year
-        //         context,
-        //       });
-        //       bulkSendDocuments({
-        //         companyID: company.id,
-        //         docTypes: ["purchase"],
-        //         month: new Date().getMonth(), // last month
-        //         year: currentYear, // Current year
-        //         context,
-        //       });
-        //     }
-        //   } catch (error) {
-        //     console.error("Error starting bulk document sender", error);
-        //   }
-        // };
-
-        //  createDocumentsFromBolOrders(context);
-        //  sendDocumentsToAccountant();
-
-        // cron.schedule("0 0 2 * *", async () => {
-        //   try {
-        //     let companiesWithMonthlyReportsActive = await context.sudo().query.companies.findMany({
-        //       where: {
-        //         monthlyReports: {
-        //           equals: true,
-        //         },
-        //       },
-        //     });
-        //     let currentYear = new Date().getFullYear();
-        //     for (let company of companiesWithMonthlyReportsActive) {
-        //       bulkSendDocuments({
-        //         companyID: (company as unknown as Company).id,
-        //         docTypes: ["invoice", "credit_note", "purchase"],
-        //         month: new Date().getMonth(), // last month
-        //         year: currentYear, // Current year
-        //       });
-        //     }
-        //   } catch (error) {
-        //     console.error("Error starting bulk document sender", error);
-        //   }
-        // });
+        bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });
       },
     },
     lists,

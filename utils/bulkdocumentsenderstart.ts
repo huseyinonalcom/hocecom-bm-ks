@@ -27,7 +27,7 @@ async function fetchCompany(companyID: number, context: KeystoneContext) {
 
 async function fetchDocuments(companyID: number, docTypes: string[], month: number, year: number, context: KeystoneContext): Promise<any[]> {
   const fetchedDocuments = await context.sudo().query.Document.findMany({
-    orderBy: [{ date: "desc" }],
+    orderBy: [{ date: "asc" }],
     query:
       "id number establishment { taxID logo { url } } supplier { name address { street door zip city country } taxId } date files { url name } type products { name amount totalWithTaxAfterReduction tax }",
     where: {
@@ -35,6 +35,9 @@ async function fetchDocuments(companyID: number, docTypes: string[], month: numb
         id: {
           equals: companyID,
         },
+      },
+      isDeleted: {
+        equals: false,
       },
       type: {
         in: docTypes,
@@ -63,10 +66,21 @@ async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year,
   });
 }
 
-export const bulkSendDocuments = ({ companyID, docTypes, month, year, context }: BulkDocumentSenderParameters) => {
+export const bulkSendDocuments = async ({ docTypes, context }: { docTypes: string[]; context: KeystoneContext }) => {
   try {
-    startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context });
+    let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
+      where: {
+        monthlyReports: {
+          equals: true,
+        },
+      },
+    });
+    let dateToSend = new Date();
+    dateToSend.setDate(-1);
+    for (let company of companiesWithMonthlyReportsActive) {
+      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() + 1, year: dateToSend.getFullYear() });
+    }
   } catch (error) {
-    console.error("Error occurred while starting bulkdocumentsender with params: ", companyID, docTypes, month, year, "error: ", error);
+    console.error("Error occurred while starting bulkdocumentsender with params: ", docTypes, "error: ", error);
   }
 };
