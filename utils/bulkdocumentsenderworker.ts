@@ -1,7 +1,7 @@
 import { dateFormatBe, dateFormatOnlyDate } from "../utils/formatters/dateformatters";
 import { generateCreditNoteOut } from "../utils/creditnoteoutpdf";
 import { generateInvoiceOut } from "../utils/invoiceoutpdf";
-import { invoiceToXml, purchaseToXml } from "../utils/xml/ayfemaxml";
+import { invoiceToXml, purchaseToXml } from "./peppol/peppolxml";
 import { sendMail } from "../utils/sendmail";
 import { workerData } from "worker_threads";
 import archiver from "archiver";
@@ -140,6 +140,7 @@ async function sendEmailWithAttachment(zipPath: string): Promise<void> {
     recipient: company.accountantEmail,
     subject: `Documenten ${company.name} ${dateFormatBe(documents.at(0).date)} - ${dateFormatBe(documents.at(-1).date)}`,
     company: company,
+    establishment: documents.at(0).establishment,
     attachments: [
       {
         filename: zipPath.split("/").at(-1),
