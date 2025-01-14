@@ -702,6 +702,75 @@ function addDaysToDate(dateStr, daysToAdd) {
 
 // utils/pdf/document/invoiceoutpdf.ts
 var import_buffer = require("buffer");
+
+// utils/pdf/common/positioning.ts
+var pageSizesDimensions = {
+  A4: {
+    width: 595,
+    height: 842
+  }
+};
+var flexBox = ({
+  pageSize,
+  originY,
+  flex,
+  column,
+  columnCount
+}) => {
+  const pageWidth = pageSizesDimensions[pageSize].width;
+  if (column < 1 || column > columnCount) {
+    throw new Error("Invalid column index.");
+  }
+  if (flex <= 0 || columnCount <= 0) {
+    throw new Error("Flex and column count must be positive numbers.");
+  }
+  const columnWidth = pageWidth / columnCount;
+  const boxWidth = columnWidth * flex;
+  if (boxWidth > pageWidth) {
+    throw new Error("Box width exceeds page width.");
+  }
+  const x = (column - 1) * columnWidth;
+  if (x + boxWidth > pageWidth) {
+    throw new Error("Box exceeds page boundaries.");
+  }
+  return {
+    x,
+    y: originY,
+    width: boxWidth
+  };
+};
+
+// utils/pdf/common/pdfhead.ts
+var pdfHead = async ({
+  doc,
+  invoiceDoc,
+  logoBuffer,
+  pageLeft,
+  pageTop
+}) => {
+  const columnCount = 10;
+  const flexBoxHead = ({ flex, column }) => flexBox({ pageSize: "A4", originY: pageTop, flex, column, columnCount });
+  const imageBox = flexBoxHead({ flex: 4, column: 1 });
+  if (logoBuffer) {
+    doc.image(logoBuffer, pageLeft, pageTop, { height: 50, width: imageBox.width });
+  } else {
+    const response = await fetch(invoiceDoc.establishment.logo.url);
+    logoBuffer = await Buffer.from(await response.arrayBuffer());
+    doc.image(logoBuffer, pageLeft, pageTop, { height: 50, width: imageBox.width });
+  }
+  const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 5 });
+  doc.text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
+    width: establishmentDetailsBox.width,
+    align: "left"
+  });
+  const invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
+  doc.text("INVOICE", invoiceDetailsBox.x, invoiceDetailsBox.y, {
+    width: invoiceDetailsBox.width,
+    align: "right"
+  });
+};
+
+// utils/pdf/document/invoiceoutpdf.ts
 async function generateInvoiceOut({
   document,
   logoBuffer
@@ -715,18 +784,19 @@ async function generateInvoiceOut({
   return new Promise(async (resolve, reject) => {
     const pageLeft = 20;
     const pageTop = 40;
+    const pageSize = "A4";
     try {
       const PDFDocument = require("pdfkit");
-      const doc = new PDFDocument({ size: "A4", margin: 20 });
+      const doc = new PDFDocument({ size: pageSize, margin: 20 });
       const buffers = [];
       doc.on("data", buffers.push.bind(buffers));
-      if (logoBuffer) {
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      } else {
-        const response = await fetch(establishment.logo.url);
-        logoBuffer = await import_buffer.Buffer.from(await response.arrayBuffer());
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      }
+      pdfHead({
+        doc,
+        invoiceDoc,
+        logoBuffer,
+        pageLeft,
+        pageTop
+      });
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
       const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
         if (isHeader) {
@@ -872,13 +942,13 @@ async function generateInvoiceOut({
       paymentsTable({ doc, x: 170, y: y + 30, payments });
       let totalsX = 410;
       doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(formatCurrency(Number(doc.total) - Number(doc.totalTax)));
+      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)));
       doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(Number(doc.total)), totalsX + 70, y + 65);
+      doc.text(formatCurrency(Number(invoiceDoc.total)), totalsX + 70, y + 65);
       doc.text("Already Paid:", totalsX, y + 80);
-      doc.text(formatCurrency(Number(doc.totalPaid)), totalsX + 70, y + 80);
+      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalsX + 70, y + 80);
       doc.text("To Pay:", totalsX, y + 95);
-      doc.text(formatCurrency(Number(doc.totalToPay)), totalsX + 70, y + 95);
+      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalsX + 70, y + 95);
       doc.end();
       doc.on("end", () => {
         const pdfData = import_buffer.Buffer.concat(buffers);
