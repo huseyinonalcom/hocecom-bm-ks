@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { dateFormatBe } from "./formatters/dateformatters";
+import { dateFormatBe } from "../formatters/dateformatters";
 import { Buffer } from "buffer";
-import { formatCurrency } from "./formatters/formatcurrency";
+import { formatCurrency } from "../formatters/formatcurrency";
 
 export async function generateCreditNoteOut({
   document,

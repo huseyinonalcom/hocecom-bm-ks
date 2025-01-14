@@ -76,10 +76,10 @@ export async function generateInvoiceOut({
             position,
             item.name,
             item.description,
-            formatCurrency(Number(item.price).toFixed(2)),
+            formatCurrency(Number(item.price)),
             item.amount,
-            formatCurrency(Number(item.totalTax).toFixed(2)),
-            formatCurrency(Number(item.totalWithTaxAfterReduction).toFixed(2))
+            formatCurrency(Number(item.totalTax)),
+            formatCurrency(Number(item.totalWithTaxAfterReduction))
           );
         }
         return invoiceTableTop + (documentProducts.length + 1) * 40;
@@ -143,7 +143,7 @@ export async function generateInvoiceOut({
         payments.forEach((payment, i) => {
           doc.text(dateFormatBe(payment.timestamp), x + 10, y + 20 * (i + 1));
           doc.text(payment.type, x + 85, y + 20 * (i + 1));
-          doc.text(formatCurrency(Number(payment.value).toFixed(2)), x + 150, y + 20 * (i + 1), {
+          doc.text(formatCurrency(Number(payment.value)), x + 150, y + 20 * (i + 1), {
             width: 80,
             align: "right",
           });
@@ -162,7 +162,7 @@ export async function generateInvoiceOut({
         taxRates = taxRates.sort((a, b) => a - b);
 
         doc.fontSize(10).text("Total Tax:", x, y + 50);
-        doc.text(formatCurrency(documentProducts.reduce((acc, dp) => acc + Number(dp.totalTax), 0)), x + 80, y + 50);
+        doc.text(formatCurrency(Number(document.totalTax)));
 
         taxRates.map((taxRate, index) => {
           doc
@@ -234,13 +234,13 @@ export async function generateInvoiceOut({
 
       let totalsX = 410;
       doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(formatCurrency(doc.total - doc.totalTax));
+      doc.text(formatCurrency(Number(doc.total) - Number(doc.totalTax)));
       doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(doc.total), totalsX + 70, y + 65);
+      doc.text(formatCurrency(Number(doc.total)), totalsX + 70, y + 65);
       doc.text("Already Paid:", totalsX, y + 80);
-      doc.text(formatCurrency(doc.totalPaid), totalsX + 70, y + 80);
+      doc.text(formatCurrency(Number(doc.totalPaid)), totalsX + 70, y + 80);
       doc.text("To Pay:", totalsX, y + 95);
-      doc.text(formatCurrency(doc.totalToPay), totalsX + 70, y + 95);
+      doc.text(formatCurrency(Number(doc.totalToPay)), totalsX + 70, y + 95);
 
       doc.end();
       doc.on("end", () => {
