@@ -234,15 +234,13 @@ export async function generateInvoiceOut({
 
       let totalsX = 410;
       doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(formatCurrency(documentProducts.reduce((acc, docProd) => acc + Number(docProd.totalWithoutTaxAfterReduction), 0)), totalsX + 70, y + 50);
+      doc.text(formatCurrency(doc.total - doc.totalTax));
       doc.text("Total:", totalsX, y + 65);
-      let total = documentProducts.reduce((acc, docProd) => acc + Number(docProd.totalWithTaxAfterReduction), 0);
-      doc.text(formatCurrency(total), totalsX + 70, y + 65);
+      doc.text(formatCurrency(doc.total), totalsX + 70, y + 65);
       doc.text("Already Paid:", totalsX, y + 80);
-      let totalPaid = payments.filter((payment) => payment.isVerified && !payment.isDeleted).reduce((acc, payment) => acc + Number(payment.value), 0);
-      doc.text(formatCurrency(totalPaid), totalsX + 70, y + 80);
+      doc.text(formatCurrency(doc.totalPaid), totalsX + 70, y + 80);
       doc.text("To Pay:", totalsX, y + 95);
-      doc.text(formatCurrency(total - totalPaid), totalsX + 70, y + 95);
+      doc.text(formatCurrency(doc.totalToPay), totalsX + 70, y + 95);
 
       doc.end();
       doc.on("end", () => {
