@@ -679,9 +679,6 @@ var transformEmail = ({ email, companyId }) => {
   return localPart + "+" + companyId + "@" + domainPart;
 };
 
-// utils/pdf/invoiceoutpdf.ts
-var import_buffer = require("buffer");
-
 // utils/formatters/formatcurrency.ts
 var formatCurrency = (value) => {
   return new Intl.NumberFormat("nl-BE", {
@@ -703,7 +700,8 @@ function addDaysToDate(dateStr, daysToAdd) {
   return date;
 }
 
-// utils/pdf/invoiceoutpdf.ts
+// utils/pdf/document/invoiceoutpdf.ts
+var import_buffer = require("buffer");
 async function generateInvoiceOut({
   document,
   logoBuffer

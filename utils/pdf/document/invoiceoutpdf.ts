@@ -21,7 +21,7 @@ export async function generateInvoiceOut({
     const pageLeft = 20;
     const pageTop = 40;
     try {
-      const PDFDocument = require("pdfkit");
+      const PDFDocument: PDFKit.PDFDocument = require("pdfkit");
       const doc = new PDFDocument({ size: "A4", margin: 20 });
       const buffers: Uint8Array[] = [];
 
@@ -243,13 +243,13 @@ export async function generateInvoiceOut({
 
       let totalsX = 410;
       doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(formatCurrency(Number(doc.total) - Number(doc.totalTax)));
+      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)));
       doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(Number(doc.total)), totalsX + 70, y + 65);
+      doc.text(formatCurrency(Number(invoiceDoc.total)), totalsX + 70, y + 65);
       doc.text("Already Paid:", totalsX, y + 80);
-      doc.text(formatCurrency(Number(doc.totalPaid)), totalsX + 70, y + 80);
+      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalsX + 70, y + 80);
       doc.text("To Pay:", totalsX, y + 95);
-      doc.text(formatCurrency(Number(doc.totalToPay)), totalsX + 70, y + 95);
+      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalsX + 70, y + 95);
 
       doc.end();
       doc.on("end", () => {
