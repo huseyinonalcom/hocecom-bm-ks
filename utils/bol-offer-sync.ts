@@ -3,7 +3,7 @@ import { eutaxes } from "./eutaxes";
 import { generateRandomString } from "./random";
 import { sendMail } from "./sendmail";
 import { transformEmail } from "./utils";
-import { generateInvoiceOut } from "./pdf/invoiceoutpdf";
+import { generateInvoiceOut } from "./pdf/document/invoiceoutpdf";
 
 const bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 

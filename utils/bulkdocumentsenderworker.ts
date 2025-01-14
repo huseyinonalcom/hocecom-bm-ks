@@ -1,5 +1,5 @@
 import { dateFormatBe, dateFormatOnlyDate } from "../utils/formatters/dateformatters";
-import { generateCreditNoteOut } from "./pdf/creditnoteoutpdf";
+import { generateCreditNoteOut } from "./pdf/document/creditnoteoutpdf";
 import { invoiceToXml, purchaseToXml } from "./peppol/peppolxml";
 import { sendMail } from "../utils/sendmail";
 import { workerData } from "worker_threads";
@@ -7,7 +7,7 @@ import archiver from "archiver";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { generateInvoiceOut } from "./pdf/invoiceoutpdf";
+import { generateInvoiceOut } from "./pdf/document/invoiceoutpdf";
 
 const documents = workerData.documents;
 const company = workerData.company;
