@@ -350,18 +350,44 @@ var dateFormatBe = (date) => {
 };
 
 // utils/pdf/common/paymenthistory.ts
-var paymentsTable = ({ doc, x, y, payments }) => {
-  doc.lineCap("butt").moveTo(x, y).lineTo(x + 230, y).stroke("black");
-  doc.fillColor("white").text("Payment History:", x + 10, y - 5);
-  doc.fillColor("black");
+var paymentsTable = ({ doc, x, yEnd, payments }) => {
+  doc.fontSize(8);
   payments.forEach((payment, i) => {
-    doc.text(dateFormatBe(payment.timestamp), x + 10, y + 20 * (i + 1));
-    doc.text(payment.type, x + 85, y + 20 * (i + 1));
-    doc.text(formatCurrency(Number(payment.value)), x + 150, y + 20 * (i + 1), {
-      width: 80,
+    doc.text(dateFormatBe(payment.timestamp), x, yEnd - 10 * (i + 1));
+    doc.text(payment.type, x + 55, yEnd - 10 * (i + 1));
+    doc.text(formatCurrency(Number(payment.value)), x + 150, yEnd - 10 * (i + 1), {
+      width: 75,
       align: "right"
     });
   });
+  doc.fontSize(10);
+  doc.text("Payment History:", x, yEnd - 10 * payments.length - 15);
+};
+
+// utils/pdf/common/taxtotals.ts
+var taxTable = ({ doc, x, endY, document }) => {
+  let taxRates = [];
+  const documentProducts = document.products;
+  documentProducts.forEach((docProd, i) => {
+    if (!taxRates.includes(docProd.tax)) {
+      taxRates.push(docProd.tax);
+    }
+  });
+  taxRates = taxRates.sort((a, b) => a - b);
+  taxRates.map((taxRate, index) => {
+    doc.text("Total Tax " + Number(taxRate).toFixed(0) + "%:", x, endY - index * 15).text(
+      formatCurrency(
+        documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)
+      ),
+      x + 80,
+      endY - index * 15,
+      {
+        align: "right",
+        width: 60
+      }
+    );
+  });
+  return endY - taxRates.length * 15;
 };
 
 // utils/pdf/document/invoiceoutpdf.ts
@@ -402,42 +428,43 @@ async function generateInvoiceOut({
       if (endOfDeliveryDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfDeliveryDetails;
       }
-      const taxTable = ({ doc: doc2, x, y: y2, documentProducts: documentProducts2 }) => {
-        let taxRates = [];
-        documentProducts2.forEach((docProd, i) => {
-          if (!taxRates.includes(docProd.tax)) {
-            taxRates.push(docProd.tax);
-          }
-        });
-        taxRates = taxRates.sort((a, b) => a - b);
-        doc2.fontSize(10).text("Total Tax:", x, y2 + 50);
-        doc2.text(formatCurrency(Number(document.totalTax)));
-        taxRates.map((taxRate, index) => {
-          doc2.text("Total Tax " + taxRate + "%:", x, y2 + 50 + (index + 1) * 15).text(
-            formatCurrency(documentProducts2.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)),
-            x + 80,
-            y2 + 50 + (index + 1) * 15
-          );
-        });
-        return y2 + taxRates.length * 15 + 50;
-      };
       let y = generateInvoiceTable(doc, documentProducts, endOfDetailsRow);
+      let totalsXNames = 350;
+      let totalXValues = 480;
+      let totalsY = pageSizesDimensions[pageSize].height - 40;
+      doc.fontSize(13);
+      doc.lineWidth(1);
+      doc.lineCap("butt").moveTo(350, totalsY - 85).lineTo(575, totalsY - 85).stroke("black");
+      doc.text("To Pay:", totalsXNames, totalsY);
+      doc.text("Already Paid:", totalsXNames, totalsY - 75);
+      doc.text("Total Excl. Tax:", totalsXNames, totalsY - 60);
+      doc.text("Total Tax:", totalsXNames, totalsY - 45);
+      doc.text("Total:", totalsXNames, totalsY - 30);
+      doc.lineWidth(1);
+      doc.lineCap("butt").moveTo(350, totalsY - 10).lineTo(575, totalsY - 10).stroke("black");
+      doc.text("To Pay:", totalsXNames, totalsY);
+      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalXValues, totalsY - 75, {
+        align: "right"
+      });
+      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)), totalXValues, totalsY - 60, {
+        align: "right"
+      });
+      doc.text(formatCurrency(Number(invoiceDoc.totalTax)), totalXValues, totalsY - 45, {
+        align: "right"
+      });
+      doc.text(formatCurrency(Number(invoiceDoc.total)), totalXValues, totalsY - 30, {
+        align: "right"
+      });
+      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalXValues, totalsY, {
+        align: "right"
+      });
+      paymentsTable({ doc, x: totalsXNames, yEnd: totalsY - 92, payments });
       taxTable({
         doc,
-        x: 30,
-        y,
-        documentProducts
+        x: totalsXNames - 150,
+        endY: pageSizesDimensions[pageSize].height - 40,
+        document
       });
-      paymentsTable({ doc, x: 170, y: y + 30, payments });
-      let totalsX = 410;
-      doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)));
-      doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(Number(invoiceDoc.total)), totalsX + 70, y + 65);
-      doc.text("Already Paid:", totalsX, y + 80);
-      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalsX + 70, y + 80);
-      doc.text("To Pay:", totalsX, y + 95);
-      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalsX + 70, y + 95);
       doc.end();
       doc.on("end", () => {
         const pdfData = import_buffer.Buffer.concat(buffers);

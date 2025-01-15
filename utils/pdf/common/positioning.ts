@@ -6,7 +6,7 @@ export interface Box {
   width: number;
 }
 
-const pageSizesDimensions = {
+export const pageSizesDimensions = {
   A4: {
     width: 595,
     height: 842,
