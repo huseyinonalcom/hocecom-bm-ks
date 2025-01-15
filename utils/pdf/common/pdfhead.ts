@@ -17,6 +17,7 @@ export const pdfHead = async ({
   const flexBoxHead = ({ flex, column }: { flex: number; column: number }) => flexBox({ pageSize: "A4", originY: pageTop, flex, column, columnCount });
 
   const imageBox = flexBoxHead({ flex: 4, column: 1 });
+
   if (logoBuffer) {
     doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
   } else {
@@ -26,6 +27,7 @@ export const pdfHead = async ({
   }
 
   const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+
   doc
     .fontSize(10)
     .text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
@@ -62,10 +64,12 @@ export const pdfHead = async ({
       width: invoiceDetailsBox.width,
       align: "left",
     });
+
   doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
     width: invoiceDetailsBox.width,
     align: "left",
   });
+
   if (invoiceDoc.deliveryDate) {
     doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
       width: invoiceDetailsBox.width,
