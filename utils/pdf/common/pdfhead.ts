@@ -52,40 +52,40 @@ export const pdfHead = async ({
   doc
     .fontSize(20)
     .text("INVOICE", invoiceDetailsBox.x + 35, invoiceDetailsBox.y, {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 35,
       align: "right",
     })
     .fontSize(10)
     .text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x + 45, invoiceDetailsBox.y + 20, {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 45,
       align: "left",
     })
     .text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 45,
       align: "left",
     });
 
   doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width,
+    width: invoiceDetailsBox.width - 45,
     align: "left",
   });
 
   if (invoiceDoc.deliveryDate) {
     doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 45,
       align: "left",
     });
   }
 
   if (invoiceDoc.origin) {
     doc.text("External Service: " + invoiceDoc.origin, {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 45,
       align: "left",
     });
   }
   if (invoiceDoc.externalId) {
     doc.text("External ID: " + invoiceDoc.externalId, {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 45,
       align: "left",
     });
   }

@@ -4,6 +4,7 @@ import { flexBox, PageSize } from "../common/positioning";
 import { addDaysToDate } from "../../addtodate";
 import { pdfHead } from "../common/pdfhead";
 import { Buffer } from "buffer";
+import { pdfPaymentDetails } from "../common/paymentdetails";
 
 export async function generateInvoiceOut({
   document,
@@ -20,7 +21,7 @@ export async function generateInvoiceOut({
   const payments = invoiceDoc.payments;
 
   return new Promise(async (resolve, reject) => {
-    const pageLeft = 0;
+    const pageLeft = 20;
     const pageTop = 40;
     const pageSize: PageSize = "A4";
     try {
@@ -37,6 +38,8 @@ export async function generateInvoiceOut({
         pageLeft,
         pageTop,
       });
+
+      pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft, y: doc.y, width: 150 });
 
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
@@ -55,7 +58,7 @@ export async function generateInvoiceOut({
         if (isHeader) {
           doc.lineWidth(15);
           const bgY = y + 5;
-          doc.lineCap("butt").moveTo(20, bgY).lineTo(575, bgY).stroke("black");
+          doc.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
           doc
             .fontSize(10)
             .fillColor("white")

@@ -118,34 +118,34 @@ var pdfHead = async ({
   const validDate = new Date(invoiceDoc.date);
   validDate.setDate(validDate.getDate() + 15);
   doc.fontSize(20).text("INVOICE", invoiceDetailsBox.x + 35, invoiceDetailsBox.y, {
-    width: invoiceDetailsBox.width,
+    width: invoiceDetailsBox.width - 35,
     align: "right"
   }).fontSize(10).text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x + 45, invoiceDetailsBox.y + 20, {
-    width: invoiceDetailsBox.width,
+    width: invoiceDetailsBox.width - 45,
     align: "left"
   }).text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width,
+    width: invoiceDetailsBox.width - 45,
+    align: "left"
+  });
+  doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
+    width: invoiceDetailsBox.width - 45,
     align: "left"
   });
   if (invoiceDoc.deliveryDate) {
-    doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
-      width: invoiceDetailsBox.width,
+    doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
+      width: invoiceDetailsBox.width - 45,
       align: "left"
     });
   }
-  doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width,
-    align: "left"
-  });
   if (invoiceDoc.origin) {
     doc.text("External Service: " + invoiceDoc.origin, {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 45,
       align: "left"
     });
   }
   if (invoiceDoc.externalId) {
     doc.text("External ID: " + invoiceDoc.externalId, {
-      width: invoiceDetailsBox.width,
+      width: invoiceDetailsBox.width - 45,
       align: "left"
     });
   }
@@ -153,6 +153,23 @@ var pdfHead = async ({
 
 // utils/pdf/document/invoiceoutpdf.ts
 var import_buffer = require("buffer");
+
+// utils/pdf/common/paymentdetails.ts
+var pdfPaymentDetails = ({ doc, invoiceDoc, x, y, width }) => {
+  const address = invoiceDoc.establishment.address;
+  doc.fontSize(10).text(address.street + " " + address.door, x, y, {
+    width,
+    align: "left"
+  });
+  if (address.zip || address.city) {
+    doc.text(address.zip + " " + address.city, {
+      width,
+      align: "left"
+    });
+  }
+};
+
+// utils/pdf/document/invoiceoutpdf.ts
 async function generateInvoiceOut({
   document,
   logoBuffer
@@ -164,7 +181,7 @@ async function generateInvoiceOut({
   const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
   return new Promise(async (resolve, reject) => {
-    const pageLeft = 0;
+    const pageLeft = 20;
     const pageTop = 40;
     const pageSize = "A4";
     try {
@@ -179,13 +196,14 @@ async function generateInvoiceOut({
         pageLeft,
         pageTop
       });
+      pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft, y: doc.y, width: 150 });
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
       const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
         const nameBox = flexBox({ pageSize: "A4", originY: y2, flex: 3, column: 1, columnCount: 10 });
         if (isHeader) {
           doc2.lineWidth(15);
           const bgY = y2 + 5;
-          doc2.lineCap("butt").moveTo(20, bgY).lineTo(575, bgY).stroke("black");
+          doc2.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
           doc2.fontSize(10).fillColor("white").text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
         } else {
           doc2.fontSize(9).fillColor("black").text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7] + 20, y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
