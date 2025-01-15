@@ -364,7 +364,22 @@ async function generateInvoiceOut({
       };
       const generateInvoiceTable = (doc2, documentProducts2, y2) => {
         let invoiceTableTop = y2 + 5;
-        let position = generateTableRow(doc2, invoiceTableTop, "Name", "Description", "Price", "Amount", "Reduction", "Tax", "Subtotal", true);
+        let showReduction = false;
+        if (documentProducts2.find((dp) => dp.reduction && dp.reduction > 0)) {
+          showReduction = true;
+        }
+        let position = generateTableRow(
+          doc2,
+          invoiceTableTop,
+          "Name",
+          "Description",
+          "Price",
+          "Amount",
+          showReduction ? "Reduction" : "",
+          "Tax",
+          "Subtotal",
+          true
+        );
         for (let i = 0; i < documentProducts2.length; i++) {
           const item = documentProducts2[i];
           position = generateTableRow(
@@ -374,7 +389,7 @@ async function generateInvoiceOut({
             item.description,
             formatCurrency(Number(item.price)),
             Number(item.amount).toFixed(2),
-            Number(item.reduction).toFixed(2) + "%",
+            showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
             formatCurrency(Number(item.totalTax)),
             formatCurrency(Number(item.totalWithTaxAfterReduction))
           );
