@@ -6,6 +6,8 @@ import { Buffer } from "buffer";
 import { pdfPaymentDetails } from "../common/paymentdetails";
 import { pdfInvoicingDetails } from "../common/invoicingdetails";
 import { pdfDeliveryDetails } from "../common/deliverydetails";
+import { generateInvoiceTable } from "../common/productstable";
+import { paymentsTable } from "../common/paymenthistory";
 
 export async function generateInvoiceOut({
   document,
@@ -53,124 +55,6 @@ export async function generateInvoiceOut({
         endOfDetailsRow = endOfDeliveryDetails;
       }
 
-      const generateTableRow = (
-        doc: any,
-        y: number,
-        name: string,
-        description: string,
-        price: string,
-        amount: string,
-        reduction: string,
-        tax: string,
-        subtotal: string,
-        isHeader = false
-      ) => {
-        const pageSize = "A4";
-        const columnCount = 18;
-        const flexBoxTableRow = ({ flex, column }: { flex: number; column: number }) => flexBox({ pageSize, originY: y, flex, column, columnCount });
-        const nameBox = flexBoxTableRow({ flex: 4, column: 1 });
-        if (isHeader) {
-          doc.lineWidth(17);
-          const bgY = y + 4;
-          doc.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
-        }
-        let newY = nameBox.y;
-        doc
-          .fontSize(9)
-          .fillColor(isHeader ? "white" : "black")
-          .text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 35, align: "left" });
-        if (doc.y > newY) {
-          newY = doc.y;
-        }
-        doc.text(description, 125, nameBox.y, { width: 90, align: "left" });
-        if (doc.y > newY) {
-          newY = doc.y;
-        }
-        doc.text(price, 225, nameBox.y, { width: 70, align: "left" });
-        if (doc.y > newY) {
-          newY = doc.y;
-        }
-        doc.text(amount, 300, nameBox.y, { width: 50, align: "left" });
-        if (doc.y > newY) {
-          newY = doc.y;
-        }
-        doc.text(reduction, 365, nameBox.y, { width: 50, align: "left" });
-        if (doc.y > newY) {
-          newY = doc.y;
-        }
-        doc.text(tax, 425, nameBox.y, { width: 70, align: "left" });
-        if (doc.y > newY) {
-          newY = doc.y;
-        }
-        doc.text(subtotal, 500, nameBox.y, { width: 65, align: "left" });
-        if (doc.y > newY) {
-          newY = doc.y;
-        }
-
-        if (!isHeader) {
-          doc.lineWidth(1);
-          doc.lineCap("butt").moveTo(pageLeft, newY).lineTo(575, newY).stroke("black");
-        }
-
-        return newY + 5;
-      };
-
-      const generateInvoiceTable = (doc: any, documentProducts: any[], y: number) => {
-        let invoiceTableTop = y + 5;
-        let showReduction = false;
-        if (documentProducts.find((dp) => dp.reduction && dp.reduction > 0)) {
-          showReduction = true;
-        }
-        let position = generateTableRow(
-          doc,
-          invoiceTableTop,
-          "Name",
-          "Description",
-          "Price",
-          "Amount",
-          showReduction ? "Reduction" : "",
-          "Tax",
-          "Subtotal",
-          true
-        );
-        for (let i = 0; i < documentProducts.length; i++) {
-          const item = documentProducts[i];
-          position = generateTableRow(
-            doc,
-            position,
-            item.name,
-            item.description,
-            formatCurrency(Number(item.price)),
-            Number(item.amount).toFixed(2),
-            showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
-            formatCurrency(Number(item.totalTax)),
-            formatCurrency(Number(item.totalWithTaxAfterReduction))
-          );
-        }
-        return doc.y;
-      };
-
-      const paymentsTable = ({ doc, x, y, payments }: { doc: any; x: number; y: number; payments: any[] }) => {
-        doc
-          .lineCap("butt")
-          .moveTo(x, y)
-          .lineTo(x + 230, y)
-          .stroke("black");
-
-        doc.fillColor("white").text("Payment History:", x + 10, y - 5);
-
-        doc.fillColor("black");
-
-        payments.forEach((payment, i) => {
-          doc.text(dateFormatBe(payment.timestamp), x + 10, y + 20 * (i + 1));
-          doc.text(payment.type, x + 85, y + 20 * (i + 1));
-          doc.text(formatCurrency(Number(payment.value)), x + 150, y + 20 * (i + 1), {
-            width: 80,
-            align: "right",
-          });
-        });
-      };
-
       const taxTable = ({ doc, x, y, documentProducts }: { doc: any; x: number; y: number; documentProducts: any[] }) => {
         let taxRates: number[] = [];
 
@@ -199,10 +83,6 @@ export async function generateInvoiceOut({
       };
 
       let y = generateInvoiceTable(doc, documentProducts, endOfDetailsRow);
-
-      if (y < 500) {
-        y = 500;
-      }
 
       taxTable({
         doc: doc,

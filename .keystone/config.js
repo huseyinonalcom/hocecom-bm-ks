@@ -42,12 +42,6 @@ var formatCurrency = (value) => {
   }).format(value);
 };
 
-// utils/formatters/dateformatters.ts
-var dateFormatBe = (date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleDateString("fr-FR");
-};
-
 // utils/pdf/common/positioning.ts
 var pageSizesDimensions = {
   A4: {
@@ -279,6 +273,97 @@ var pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }) => {
   return doc.y;
 };
 
+// utils/pdf/common/productstable.ts
+var generateTableRow = (doc, y, name, description, price, amount, reduction, tax, subtotal, isHeader = false) => {
+  const pageSize = "A4";
+  const columnCount = 18;
+  const flexBoxTableRow = ({ flex, column }) => flexBox({ pageSize, originY: y, flex, column, columnCount });
+  const nameBox = flexBoxTableRow({ flex: 4, column: 1 });
+  if (isHeader) {
+    doc.lineWidth(17);
+    const bgY = y + 4;
+    doc.lineCap("butt").moveTo(20, bgY).lineTo(575, bgY).stroke("black");
+  }
+  let newY = nameBox.y;
+  doc.fontSize(9).fillColor(isHeader ? "white" : "black").text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 35, align: "left" });
+  if (doc.y > newY) {
+    newY = doc.y;
+  }
+  doc.text(description, 125, nameBox.y, { width: 90, align: "left" });
+  if (doc.y > newY) {
+    newY = doc.y;
+  }
+  doc.text(price, 225, nameBox.y, { width: 70, align: "left" });
+  if (doc.y > newY) {
+    newY = doc.y;
+  }
+  doc.text(amount, 300, nameBox.y, { width: 50, align: "left" });
+  if (doc.y > newY) {
+    newY = doc.y;
+  }
+  doc.text(reduction, 365, nameBox.y, { width: 50, align: "left" });
+  if (doc.y > newY) {
+    newY = doc.y;
+  }
+  doc.text(tax, 425, nameBox.y, { width: 70, align: "left" });
+  if (doc.y > newY) {
+    newY = doc.y;
+  }
+  doc.text(subtotal, 500, nameBox.y, { width: 65, align: "left" });
+  if (doc.y > newY) {
+    newY = doc.y;
+  }
+  if (!isHeader) {
+    doc.lineWidth(1);
+    doc.lineCap("butt").moveTo(20, newY).lineTo(575, newY).stroke("black");
+  }
+  return newY + 5;
+};
+var generateInvoiceTable = (doc, documentProducts, y) => {
+  let invoiceTableTop = y + 5;
+  let showReduction = false;
+  if (documentProducts.find((dp) => dp.reduction && Number(dp.reduction) > 0)) {
+    showReduction = true;
+  }
+  let position = generateTableRow(doc, invoiceTableTop, "Name", "Description", "Price", "Amount", showReduction ? "Reduction" : "", "Tax", "Subtotal", true);
+  for (let i = 0; i < documentProducts.length; i++) {
+    const item = documentProducts[i];
+    position = generateTableRow(
+      doc,
+      position,
+      item.name,
+      item.description,
+      formatCurrency(Number(item.price)),
+      Number(item.amount).toFixed(2),
+      showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
+      formatCurrency(Number(item.totalTax)),
+      formatCurrency(Number(item.totalWithTaxAfterReduction))
+    );
+  }
+  return doc.y;
+};
+
+// utils/formatters/dateformatters.ts
+var dateFormatBe = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("fr-FR");
+};
+
+// utils/pdf/common/paymenthistory.ts
+var paymentsTable = ({ doc, x, y, payments }) => {
+  doc.lineCap("butt").moveTo(x, y).lineTo(x + 230, y).stroke("black");
+  doc.fillColor("white").text("Payment History:", x + 10, y - 5);
+  doc.fillColor("black");
+  payments.forEach((payment, i) => {
+    doc.text(dateFormatBe(payment.timestamp), x + 10, y + 20 * (i + 1));
+    doc.text(payment.type, x + 85, y + 20 * (i + 1));
+    doc.text(formatCurrency(Number(payment.value)), x + 150, y + 20 * (i + 1), {
+      width: 80,
+      align: "right"
+    });
+  });
+};
+
 // utils/pdf/document/invoiceoutpdf.ts
 async function generateInvoiceOut({
   document,
@@ -317,98 +402,6 @@ async function generateInvoiceOut({
       if (endOfDeliveryDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfDeliveryDetails;
       }
-      const generateTableRow = (doc2, y2, name, description, price, amount, reduction, tax, subtotal, isHeader = false) => {
-        const pageSize2 = "A4";
-        const columnCount = 18;
-        const flexBoxTableRow = ({ flex, column }) => flexBox({ pageSize: pageSize2, originY: y2, flex, column, columnCount });
-        const nameBox = flexBoxTableRow({ flex: 4, column: 1 });
-        if (isHeader) {
-          doc2.lineWidth(17);
-          const bgY = y2 + 4;
-          doc2.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
-        }
-        let newY = nameBox.y;
-        doc2.fontSize(9).fillColor(isHeader ? "white" : "black").text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 35, align: "left" });
-        if (doc2.y > newY) {
-          newY = doc2.y;
-        }
-        doc2.text(description, 125, nameBox.y, { width: 90, align: "left" });
-        if (doc2.y > newY) {
-          newY = doc2.y;
-        }
-        doc2.text(price, 225, nameBox.y, { width: 70, align: "left" });
-        if (doc2.y > newY) {
-          newY = doc2.y;
-        }
-        doc2.text(amount, 300, nameBox.y, { width: 50, align: "left" });
-        if (doc2.y > newY) {
-          newY = doc2.y;
-        }
-        doc2.text(reduction, 365, nameBox.y, { width: 50, align: "left" });
-        if (doc2.y > newY) {
-          newY = doc2.y;
-        }
-        doc2.text(tax, 425, nameBox.y, { width: 70, align: "left" });
-        if (doc2.y > newY) {
-          newY = doc2.y;
-        }
-        doc2.text(subtotal, 500, nameBox.y, { width: 65, align: "left" });
-        if (doc2.y > newY) {
-          newY = doc2.y;
-        }
-        if (!isHeader) {
-          doc2.lineWidth(1);
-          doc2.lineCap("butt").moveTo(pageLeft, newY).lineTo(575, newY).stroke("black");
-        }
-        return newY + 5;
-      };
-      const generateInvoiceTable = (doc2, documentProducts2, y2) => {
-        let invoiceTableTop = y2 + 5;
-        let showReduction = false;
-        if (documentProducts2.find((dp) => dp.reduction && dp.reduction > 0)) {
-          showReduction = true;
-        }
-        let position = generateTableRow(
-          doc2,
-          invoiceTableTop,
-          "Name",
-          "Description",
-          "Price",
-          "Amount",
-          showReduction ? "Reduction" : "",
-          "Tax",
-          "Subtotal",
-          true
-        );
-        for (let i = 0; i < documentProducts2.length; i++) {
-          const item = documentProducts2[i];
-          position = generateTableRow(
-            doc2,
-            position,
-            item.name,
-            item.description,
-            formatCurrency(Number(item.price)),
-            Number(item.amount).toFixed(2),
-            showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
-            formatCurrency(Number(item.totalTax)),
-            formatCurrency(Number(item.totalWithTaxAfterReduction))
-          );
-        }
-        return doc2.y;
-      };
-      const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
-        doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
-        doc2.fillColor("white").text("Payment History:", x + 10, y2 - 5);
-        doc2.fillColor("black");
-        payments2.forEach((payment, i) => {
-          doc2.text(dateFormatBe(payment.timestamp), x + 10, y2 + 20 * (i + 1));
-          doc2.text(payment.type, x + 85, y2 + 20 * (i + 1));
-          doc2.text(formatCurrency(Number(payment.value)), x + 150, y2 + 20 * (i + 1), {
-            width: 80,
-            align: "right"
-          });
-        });
-      };
       const taxTable = ({ doc: doc2, x, y: y2, documentProducts: documentProducts2 }) => {
         let taxRates = [];
         documentProducts2.forEach((docProd, i) => {
@@ -429,9 +422,6 @@ async function generateInvoiceOut({
         return y2 + taxRates.length * 15 + 50;
       };
       let y = generateInvoiceTable(doc, documentProducts, endOfDetailsRow);
-      if (y < 500) {
-        y = 500;
-      }
       taxTable({
         doc,
         x: 30,
