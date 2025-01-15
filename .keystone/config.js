@@ -285,9 +285,6 @@ async function generateInvoiceOut({
   logoBuffer
 }) {
   const invoiceDoc = document;
-  const establishment = invoiceDoc.establishment;
-  const establishmentAddress = establishment.address;
-  const customer = invoiceDoc.customer;
   const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
   return new Promise(async (resolve, reject) => {
@@ -320,38 +317,69 @@ async function generateInvoiceOut({
       if (endOfDeliveryDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfDeliveryDetails;
       }
-      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
-      const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
-        const nameBox = flexBox({ pageSize: "A4", originY: y2, flex: 3, column: 1, columnCount: 10 });
+      const generateTableRow = (doc2, y2, name, description, price, amount, reduction, tax, subtotal, isHeader = false) => {
+        const pageSize2 = "A4";
+        const columnCount = 18;
+        const flexBoxTableRow = ({ flex, column }) => flexBox({ pageSize: pageSize2, originY: y2, flex, column, columnCount });
+        const nameBox = flexBoxTableRow({ flex: 4, column: 1 });
         if (isHeader) {
-          doc2.lineWidth(15);
-          const bgY = y2 + 5;
+          doc2.lineWidth(17);
+          const bgY = y2 + 4;
           doc2.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
         }
-        doc2.fontSize(9).fillColor(isHeader ? "white" : "black").text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 25, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        let newY = nameBox.y;
+        doc2.fontSize(9).fillColor(isHeader ? "white" : "black").text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 35, align: "left" });
+        if (doc2.y > newY) {
+          newY = doc2.y;
+        }
+        doc2.text(description, 125, nameBox.y, { width: 90, align: "left" });
+        if (doc2.y > newY) {
+          newY = doc2.y;
+        }
+        doc2.text(price, 225, nameBox.y, { width: 70, align: "left" });
+        if (doc2.y > newY) {
+          newY = doc2.y;
+        }
+        doc2.text(amount, 300, nameBox.y, { width: 50, align: "left" });
+        if (doc2.y > newY) {
+          newY = doc2.y;
+        }
+        doc2.text(reduction, 365, nameBox.y, { width: 50, align: "left" });
+        if (doc2.y > newY) {
+          newY = doc2.y;
+        }
+        doc2.text(tax, 425, nameBox.y, { width: 70, align: "left" });
+        if (doc2.y > newY) {
+          newY = doc2.y;
+        }
+        doc2.text(subtotal, 500, nameBox.y, { width: 65, align: "left" });
+        if (doc2.y > newY) {
+          newY = doc2.y;
+        }
         if (!isHeader) {
           doc2.lineWidth(1);
-          doc2.lineCap("butt").moveTo(pageLeft, doc2.y).lineTo(575, doc2.y).stroke("black");
+          doc2.lineCap("butt").moveTo(pageLeft, newY).lineTo(575, newY).stroke("black");
         }
+        return newY + 5;
       };
       const generateInvoiceTable = (doc2, documentProducts2, y2) => {
         let invoiceTableTop = y2 + 5;
-        generateTableRow(doc2, invoiceTableTop, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
-        for (let i = 1; i <= documentProducts2.length; i++) {
-          const item = documentProducts2[i - 1];
-          const position = invoiceTableTop + i * 40;
-          generateTableRow(
+        let position = generateTableRow(doc2, invoiceTableTop, "Name", "Description", "Price", "Amount", "Reduction", "Tax", "Subtotal", true);
+        for (let i = 0; i < documentProducts2.length; i++) {
+          const item = documentProducts2[i];
+          position = generateTableRow(
             doc2,
             position,
             item.name,
             item.description,
             formatCurrency(Number(item.price)),
             Number(item.amount).toFixed(2),
+            Number(item.reduction).toFixed(2) + "%",
             formatCurrency(Number(item.totalTax)),
             formatCurrency(Number(item.totalWithTaxAfterReduction))
           );
         }
-        return invoiceTableTop + (documentProducts2.length + 1) * 40;
+        return doc2.y;
       };
       const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
         doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
@@ -3713,7 +3741,7 @@ var keystone_default = withAuth(
         const generateTestPDF = async () => {
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
-              query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city floor province country } logo { url } }",
+              query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city floor province country } logo { url } }",
               where: {
                 id: "cm5glkpe00039gx56xni3eab3"
               }

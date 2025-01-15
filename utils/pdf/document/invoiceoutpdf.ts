@@ -1,7 +1,6 @@
 import { formatCurrency } from "../../formatters/formatcurrency";
 import { dateFormatBe } from "../../formatters/dateformatters";
 import { flexBox, PageSize } from "../common/positioning";
-import { addDaysToDate } from "../../addtodate";
 import { pdfHead } from "../common/pdfhead";
 import { Buffer } from "buffer";
 import { pdfPaymentDetails } from "../common/paymentdetails";
@@ -16,9 +15,6 @@ export async function generateInvoiceOut({
   logoBuffer?: Buffer;
 }): Promise<{ filename: string; content: Buffer; contentType: string }> {
   const invoiceDoc = document;
-  const establishment = invoiceDoc.establishment;
-  const establishmentAddress = establishment.address;
-  const customer = invoiceDoc.customer;
   const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
 
@@ -56,7 +52,6 @@ export async function generateInvoiceOut({
       if (endOfDeliveryDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfDeliveryDetails;
       }
-      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
       const generateTableRow = (
         doc: any,
@@ -65,52 +60,79 @@ export async function generateInvoiceOut({
         description: string,
         price: string,
         amount: string,
+        reduction: string,
         tax: string,
         subtotal: string,
         isHeader = false
       ) => {
-        const nameBox = flexBox({ pageSize: "A4", originY: y, flex: 3, column: 1, columnCount: 10 });
-
+        const pageSize = "A4";
+        const columnCount = 18;
+        const flexBoxTableRow = ({ flex, column }: { flex: number; column: number }) => flexBox({ pageSize, originY: y, flex, column, columnCount });
+        const nameBox = flexBoxTableRow({ flex: 4, column: 1 });
         if (isHeader) {
-          doc.lineWidth(15);
-          const bgY = y + 5;
+          doc.lineWidth(17);
+          const bgY = y + 4;
           doc.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
         }
-
+        let newY = nameBox.y;
         doc
           .fontSize(9)
           .fillColor(isHeader ? "white" : "black")
-          .text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 25, align: "left" })
-          .text(description, columns[4], y)
-          .text(price, columns[6], y)
-          .text(amount, columns[7], y)
-          .text(tax, columns[8], y)
-          .text(subtotal, columns[9], y);
+          .text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 35, align: "left" });
+        if (doc.y > newY) {
+          newY = doc.y;
+        }
+        doc.text(description, 125, nameBox.y, { width: 90, align: "left" });
+        if (doc.y > newY) {
+          newY = doc.y;
+        }
+        doc.text(price, 225, nameBox.y, { width: 70, align: "left" });
+        if (doc.y > newY) {
+          newY = doc.y;
+        }
+        doc.text(amount, 300, nameBox.y, { width: 50, align: "left" });
+        if (doc.y > newY) {
+          newY = doc.y;
+        }
+        doc.text(reduction, 365, nameBox.y, { width: 50, align: "left" });
+        if (doc.y > newY) {
+          newY = doc.y;
+        }
+        doc.text(tax, 425, nameBox.y, { width: 70, align: "left" });
+        if (doc.y > newY) {
+          newY = doc.y;
+        }
+        doc.text(subtotal, 500, nameBox.y, { width: 65, align: "left" });
+        if (doc.y > newY) {
+          newY = doc.y;
+        }
 
         if (!isHeader) {
           doc.lineWidth(1);
-          doc.lineCap("butt").moveTo(pageLeft, doc.y).lineTo(575, doc.y).stroke("black");
+          doc.lineCap("butt").moveTo(pageLeft, newY).lineTo(575, newY).stroke("black");
         }
+
+        return newY + 5;
       };
 
       const generateInvoiceTable = (doc: any, documentProducts: any[], y: number) => {
         let invoiceTableTop = y + 5;
-        generateTableRow(doc, invoiceTableTop, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
-        for (let i = 1; i <= documentProducts.length; i++) {
-          const item = documentProducts[i - 1];
-          const position = invoiceTableTop + i * 40;
-          generateTableRow(
+        let position = generateTableRow(doc, invoiceTableTop, "Name", "Description", "Price", "Amount", "Reduction", "Tax", "Subtotal", true);
+        for (let i = 0; i < documentProducts.length; i++) {
+          const item = documentProducts[i];
+          position = generateTableRow(
             doc,
             position,
             item.name,
             item.description,
             formatCurrency(Number(item.price)),
             Number(item.amount).toFixed(2),
+            Number(item.reduction).toFixed(2) + "%",
             formatCurrency(Number(item.totalTax)),
             formatCurrency(Number(item.totalWithTaxAfterReduction))
           );
         }
-        return invoiceTableTop + (documentProducts.length + 1) * 40;
+        return doc.y;
       };
 
       const paymentsTable = ({ doc, x, y, payments }: { doc: any; x: number; y: number; payments: any[] }) => {
