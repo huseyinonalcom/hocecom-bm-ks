@@ -94,7 +94,7 @@ var pdfHead = async ({
   pageTop
 }) => {
   const columnCount = 11;
-  const flexBoxHead = ({ flex, column }) => flexBox({ pageSize: "A4", originY: pageTop, flex, column, columnCount });
+  const flexBoxHead = ({ flex, column }) => flexBox({ pageSize: "A4", originY: pageTop + 5, flex, column, columnCount });
   const imageBox = flexBoxHead({ flex: 4, column: 1 });
   if (logoBuffer) {
     doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
@@ -103,49 +103,62 @@ var pdfHead = async ({
     logoBuffer = Buffer.from(await response.arrayBuffer());
     doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
   }
-  const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+  let establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+  establishmentDetailsBox.x += 20;
+  establishmentDetailsBox.width -= 20;
   doc.fontSize(10).text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
     width: establishmentDetailsBox.width,
     align: "left"
-  }).text(invoiceDoc.establishment.phone, {
-    width: establishmentDetailsBox.width
-  }).text(invoiceDoc.establishment.phone2, {
-    width: establishmentDetailsBox.width
-  }).text(invoiceDoc.establishment.taxID, {
-    width: establishmentDetailsBox.width
   });
-  const invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
+  if (invoiceDoc.establishment.phone) {
+    doc.text(invoiceDoc.establishment.phone, {
+      width: establishmentDetailsBox.width
+    });
+  }
+  if (invoiceDoc.establishment.phone2) {
+    doc.text(invoiceDoc.establishment.phone2, {
+      width: establishmentDetailsBox.width
+    });
+  }
+  if (invoiceDoc.establishment.taxID) {
+    doc.text(invoiceDoc.establishment.taxID, {
+      width: establishmentDetailsBox.width
+    });
+  }
+  let invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
   const validDate = new Date(invoiceDoc.date);
   validDate.setDate(validDate.getDate() + 15);
-  doc.fontSize(20).text("INVOICE", invoiceDetailsBox.x + 35, invoiceDetailsBox.y, {
-    width: invoiceDetailsBox.width - 35,
+  invoiceDetailsBox.x += 50;
+  invoiceDetailsBox.width -= 20;
+  doc.fontSize(20).text("INVOICE", invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
+    width: invoiceDetailsBox.width - 5,
     align: "right"
-  }).fontSize(10).text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x + 45, invoiceDetailsBox.y + 20, {
-    width: invoiceDetailsBox.width - 45,
+  }).fontSize(10).text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
+    width: invoiceDetailsBox.width,
     align: "left"
   }).text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width - 45,
+    width: invoiceDetailsBox.width,
     align: "left"
   });
   doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width - 45,
+    width: invoiceDetailsBox.width,
     align: "left"
   });
   if (invoiceDoc.deliveryDate) {
     doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
-      width: invoiceDetailsBox.width - 45,
+      width: invoiceDetailsBox.width,
       align: "left"
     });
   }
   if (invoiceDoc.origin) {
     doc.text("External Service: " + invoiceDoc.origin, {
-      width: invoiceDetailsBox.width - 45,
+      width: invoiceDetailsBox.width,
       align: "left"
     });
   }
   if (invoiceDoc.externalId) {
     doc.text("External ID: " + invoiceDoc.externalId, {
-      width: invoiceDetailsBox.width - 45,
+      width: invoiceDetailsBox.width,
       align: "left"
     });
   }
@@ -156,17 +169,114 @@ var import_buffer = require("buffer");
 
 // utils/pdf/common/paymentdetails.ts
 var pdfPaymentDetails = ({ doc, invoiceDoc, x, y, width }) => {
-  const address = invoiceDoc.establishment.address;
+  const establishment = invoiceDoc.establishment;
+  const address = establishment.address;
   doc.fontSize(10).text(address.street + " " + address.door, x, y, {
     width,
     align: "left"
   });
+  if (address.floor) {
+    doc.text("Floor: " + address.floor, {
+      width,
+      align: "left"
+    });
+  }
   if (address.zip || address.city) {
     doc.text(address.zip + " " + address.city, {
       width,
       align: "left"
     });
   }
+  if (address.province || address.country) {
+    doc.text(address.province + " " + address.country, {
+      width,
+      align: "left"
+    });
+  }
+  if (establishment.bankAccount1) {
+    doc.text(establishment.bankAccount1, {
+      width,
+      align: "left"
+    });
+  }
+  if (establishment.bankAccount2) {
+    doc.text(establishment.bankAccount2, {
+      width,
+      align: "left"
+    });
+  }
+  if (establishment.bankAccount3) {
+    doc.text(establishment.bankAccount3, {
+      width,
+      align: "left"
+    });
+  }
+  return doc.y;
+};
+
+// utils/pdf/common/invoicingdetails.ts
+var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
+  const customer = invoiceDoc.customer;
+  const address = invoiceDoc.docAddress;
+  doc.fontSize(10).text("Invoicing: " + customer.firstName + " " + customer.lastName, x, y, {
+    width,
+    align: "left"
+  });
+  doc.text(address.street + " " + address.door, {
+    width,
+    align: "left"
+  });
+  if (address.floor) {
+    doc.text("floor: " + address.floor, {
+      width,
+      align: "left"
+    });
+  }
+  if (address.zip || address.city) {
+    doc.text(address.zip + " " + address.city, {
+      width,
+      align: "left"
+    });
+  }
+  if (address.province || address.country) {
+    doc.text(address.province + " " + address.country, {
+      width,
+      align: "left"
+    });
+  }
+  return doc.y;
+};
+
+// utils/pdf/common/deliverydetails.ts
+var pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }) => {
+  const address = invoiceDoc.delAddress;
+  doc.fontSize(10).text("Delivery:", x, y, {
+    width,
+    align: "left"
+  });
+  doc.text(address.street + " " + address.door, {
+    width,
+    align: "left"
+  });
+  if (address.floor) {
+    doc.text("floor: " + address.floor, {
+      width,
+      align: "left"
+    });
+  }
+  if (address.zip || address.city) {
+    doc.text(address.zip + " " + address.city, {
+      width,
+      align: "left"
+    });
+  }
+  if (address.province || address.country) {
+    doc.text(address.province + " " + address.country, {
+      width,
+      align: "left"
+    });
+  }
+  return doc.y;
 };
 
 // utils/pdf/document/invoiceoutpdf.ts
@@ -196,7 +306,20 @@ async function generateInvoiceOut({
         pageLeft,
         pageTop
       });
-      pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft, y: doc.y, width: 150 });
+      const detailsRowY = doc.y;
+      let endOfDetailsRow = doc.y;
+      const endOfPaymentDetails = pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
+      if (endOfPaymentDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfPaymentDetails;
+      }
+      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, invoiceDoc, x: 200, y: detailsRowY, width: 165 });
+      if (endOfInvoicingDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfInvoicingDetails;
+      }
+      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, invoiceDoc, x: 380, y: detailsRowY, width: 165 });
+      if (endOfDeliveryDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfDeliveryDetails;
+      }
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
       const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
         const nameBox = flexBox({ pageSize: "A4", originY: y2, flex: 3, column: 1, columnCount: 10 });
@@ -204,14 +327,16 @@ async function generateInvoiceOut({
           doc2.lineWidth(15);
           const bgY = y2 + 5;
           doc2.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
-          doc2.fontSize(10).fillColor("white").text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
-        } else {
-          doc2.fontSize(9).fillColor("black").text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7] + 20, y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        }
+        doc2.fontSize(9).fillColor(isHeader ? "white" : "black").text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 25, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        if (!isHeader) {
+          doc2.lineWidth(1);
+          doc2.lineCap("butt").moveTo(pageLeft, doc2.y).lineTo(575, doc2.y).stroke("black");
         }
       };
       const generateInvoiceTable = (doc2, documentProducts2, y2) => {
-        let invoiceTableTop = y2;
-        generateTableRow(doc2, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
+        let invoiceTableTop = y2 + 5;
+        generateTableRow(doc2, invoiceTableTop, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
         for (let i = 1; i <= documentProducts2.length; i++) {
           const item = documentProducts2[i - 1];
           const position = invoiceTableTop + i * 40;
@@ -221,49 +346,12 @@ async function generateInvoiceOut({
             item.name,
             item.description,
             formatCurrency(Number(item.price)),
-            item.amount,
+            Number(item.amount).toFixed(2),
             formatCurrency(Number(item.totalTax)),
             formatCurrency(Number(item.totalWithTaxAfterReduction))
           );
         }
         return invoiceTableTop + (documentProducts2.length + 1) * 40;
-      };
-      const bankDetails = ({ doc: doc2, x, y: y2, establishment: establishment2 }) => {
-        let strings = [];
-        if (establishment2.bankAccount1) {
-          strings.push(establishment2.bankAccount1);
-        }
-        if (establishment2.bankAccount2 !== null) {
-          strings.push(establishment2.bankAccount2);
-        }
-        if (establishment2.bankAccount3 !== null) {
-          strings.push(establishment2.bankAccount3);
-        }
-        strings.map((string, index) => {
-          doc2.text(string, x, y2 + index * 15);
-        });
-      };
-      const customerDetails = ({ doc: doc2, x, y: y2, invoiceDoc: invoiceDoc2 }) => {
-        let strings = [];
-        const docAddress = invoiceDoc2.delAddress;
-        if (customer.customerCompany) {
-          strings.push(customer.customerCompany);
-        }
-        if (customer.customerTaxNumber) {
-          strings.push(customer.customerTaxNumber);
-        }
-        if (customer.phone) {
-          strings.push(customer.phone);
-        }
-        strings.push(docAddress.street + " " + docAddress.door);
-        if (docAddress.floor) {
-          strings.push("floor: " + docAddress.floor);
-        }
-        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
-        strings.map((string, index) => {
-          doc2.text(string, x, y2 + index * 15);
-        });
-        return y2 + strings.length * 15;
       };
       const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
         doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
@@ -297,29 +385,7 @@ async function generateInvoiceOut({
         });
         return y2 + taxRates.length * 15 + 50;
       };
-      let y = 140;
-      doc.text(establishment.name, 50, y);
-      doc.text(establishment.taxID, 50, y + 15);
-      bankDetails({
-        doc,
-        x: 50,
-        y: y + 30,
-        establishment
-      });
-      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
-      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
-      doc.text(establishment.phone, 200, y + 30);
-      doc.text(establishment.phone2, 200, y + 45);
-      doc.text("Order: " + invoiceDoc.references, 380, y);
-      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
-      y = customerDetails({
-        doc,
-        x: 380,
-        y: y + 30,
-        invoiceDoc
-      });
-      y += 60;
-      y = generateInvoiceTable(doc, documentProducts, y);
+      let y = generateInvoiceTable(doc, documentProducts, endOfDetailsRow);
       if (y < 500) {
         y = 500;
       }
@@ -3647,7 +3713,7 @@ var keystone_default = withAuth(
         const generateTestPDF = async () => {
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
-              query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city country } docAddress { street door zip city country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city country } logo { url } }",
+              query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city floor province country } logo { url } }",
               where: {
                 id: "cm5glkpe00039gx56xni3eab3"
               }

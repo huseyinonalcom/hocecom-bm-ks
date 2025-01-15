@@ -5,6 +5,8 @@ import { addDaysToDate } from "../../addtodate";
 import { pdfHead } from "../common/pdfhead";
 import { Buffer } from "buffer";
 import { pdfPaymentDetails } from "../common/paymentdetails";
+import { pdfInvoicingDetails } from "../common/invoicingdetails";
+import { pdfDeliveryDetails } from "../common/deliverydetails";
 
 export async function generateInvoiceOut({
   document,
@@ -39,8 +41,21 @@ export async function generateInvoiceOut({
         pageTop,
       });
 
-      pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft, y: doc.y, width: 150 });
+      const detailsRowY = doc.y;
 
+      let endOfDetailsRow = doc.y;
+      const endOfPaymentDetails = pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
+      if (endOfPaymentDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfPaymentDetails;
+      }
+      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, invoiceDoc, x: 200, y: detailsRowY, width: 165 });
+      if (endOfInvoicingDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfInvoicingDetails;
+      }
+      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, invoiceDoc, x: 380, y: detailsRowY, width: 165 });
+      if (endOfDeliveryDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfDeliveryDetails;
+      }
       const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
       const generateTableRow = (
@@ -55,35 +70,32 @@ export async function generateInvoiceOut({
         isHeader = false
       ) => {
         const nameBox = flexBox({ pageSize: "A4", originY: y, flex: 3, column: 1, columnCount: 10 });
+
         if (isHeader) {
           doc.lineWidth(15);
           const bgY = y + 5;
           doc.lineCap("butt").moveTo(pageLeft, bgY).lineTo(575, bgY).stroke("black");
-          doc
-            .fontSize(10)
-            .fillColor("white")
-            .text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" })
-            .text(description, columns[4], y)
-            .text(price, columns[6], y)
-            .text(amount, columns[7], y)
-            .text(tax, columns[8], y)
-            .text(subtotal, columns[9], y);
-        } else {
-          doc
-            .fontSize(9)
-            .fillColor("black")
-            .text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" })
-            .text(description, columns[4], y)
-            .text(price, columns[6], y)
-            .text(amount, columns[7] + 20, y)
-            .text(tax, columns[8], y)
-            .text(subtotal, columns[9], y);
+        }
+
+        doc
+          .fontSize(9)
+          .fillColor(isHeader ? "white" : "black")
+          .text(name, nameBox.x + 25, nameBox.y, { width: nameBox.width - 25, align: "left" })
+          .text(description, columns[4], y)
+          .text(price, columns[6], y)
+          .text(amount, columns[7], y)
+          .text(tax, columns[8], y)
+          .text(subtotal, columns[9], y);
+
+        if (!isHeader) {
+          doc.lineWidth(1);
+          doc.lineCap("butt").moveTo(pageLeft, doc.y).lineTo(575, doc.y).stroke("black");
         }
       };
 
       const generateInvoiceTable = (doc: any, documentProducts: any[], y: number) => {
-        let invoiceTableTop = y;
-        generateTableRow(doc, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
+        let invoiceTableTop = y + 5;
+        generateTableRow(doc, invoiceTableTop, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
         for (let i = 1; i <= documentProducts.length; i++) {
           const item = documentProducts[i - 1];
           const position = invoiceTableTop + i * 40;
@@ -93,56 +105,12 @@ export async function generateInvoiceOut({
             item.name,
             item.description,
             formatCurrency(Number(item.price)),
-            item.amount,
+            Number(item.amount).toFixed(2),
             formatCurrency(Number(item.totalTax)),
             formatCurrency(Number(item.totalWithTaxAfterReduction))
           );
         }
         return invoiceTableTop + (documentProducts.length + 1) * 40;
-      };
-
-      const bankDetails = ({ doc, x, y, establishment }: { doc: any; x: number; y: number; establishment: any }) => {
-        let strings = [];
-        if (establishment.bankAccount1) {
-          strings.push(establishment.bankAccount1);
-        }
-        if (establishment.bankAccount2 !== null) {
-          strings.push(establishment.bankAccount2);
-        }
-        if (establishment.bankAccount3 !== null) {
-          strings.push(establishment.bankAccount3);
-        }
-        strings.map((string, index) => {
-          doc.text(string, x, y + index * 15);
-        });
-      };
-
-      const customerDetails = ({ doc, x, y, invoiceDoc }: { doc: any; x: number; y: number; invoiceDoc: any }) => {
-        let strings = [];
-        const docAddress = invoiceDoc.delAddress;
-
-        if (customer.customerCompany) {
-          strings.push(customer.customerCompany);
-        }
-
-        if (customer.customerTaxNumber) {
-          strings.push(customer.customerTaxNumber);
-        }
-
-        if (customer.phone) {
-          strings.push(customer.phone);
-        }
-
-        strings.push(docAddress.street + " " + docAddress.door);
-        if (docAddress.floor) {
-          strings.push("floor: " + docAddress.floor);
-        }
-        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
-
-        strings.map((string, index) => {
-          doc.text(string, x, y + index * 15);
-        });
-        return y + strings.length * 15;
       };
 
       const paymentsTable = ({ doc, x, y, payments }: { doc: any; x: number; y: number; payments: any[] }) => {
@@ -193,34 +161,7 @@ export async function generateInvoiceOut({
         return y + taxRates.length * 15 + 50;
       };
 
-      let y = 140;
-
-      doc.text(establishment.name, 50, y);
-      doc.text(establishment.taxID, 50, y + 15);
-      bankDetails({
-        doc: doc,
-        x: 50,
-        y: y + 30,
-        establishment: establishment,
-      });
-
-      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
-      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
-      doc.text(establishment.phone, 200, y + 30);
-      doc.text(establishment.phone2, 200, y + 45);
-
-      doc.text("Order: " + invoiceDoc.references, 380, y);
-      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
-      y = customerDetails({
-        doc: doc,
-        x: 380,
-        y: y + 30,
-        invoiceDoc: invoiceDoc,
-      });
-
-      y += 60;
-
-      y = generateInvoiceTable(doc, documentProducts, y);
+      let y = generateInvoiceTable(doc, documentProducts, endOfDetailsRow);
 
       if (y < 500) {
         y = 500;

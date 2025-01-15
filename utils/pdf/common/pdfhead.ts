@@ -14,7 +14,7 @@ export const pdfHead = async ({
   pageTop: number;
 }) => {
   const columnCount = 11;
-  const flexBoxHead = ({ flex, column }: { flex: number; column: number }) => flexBox({ pageSize: "A4", originY: pageTop, flex, column, columnCount });
+  const flexBoxHead = ({ flex, column }: { flex: number; column: number }) => flexBox({ pageSize: "A4", originY: pageTop + 5, flex, column, columnCount });
 
   const imageBox = flexBoxHead({ flex: 4, column: 1 });
 
@@ -26,66 +26,75 @@ export const pdfHead = async ({
     doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
   }
 
-  const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+  let establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+  establishmentDetailsBox.x += 20;
+  establishmentDetailsBox.width -= 20;
+  doc.fontSize(10).text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
+    width: establishmentDetailsBox.width,
+    align: "left",
+  });
 
-  doc
-    .fontSize(10)
-    .text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
-      width: establishmentDetailsBox.width,
-      align: "left",
-    })
-    .text(invoiceDoc.establishment.phone, {
-      width: establishmentDetailsBox.width,
-    })
-    .text(invoiceDoc.establishment.phone2, {
-      width: establishmentDetailsBox.width,
-    })
-    .text(invoiceDoc.establishment.taxID, {
+  if (invoiceDoc.establishment.phone) {
+    doc.text(invoiceDoc.establishment.phone, {
       width: establishmentDetailsBox.width,
     });
+  }
 
-  const invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
+  if (invoiceDoc.establishment.phone2) {
+    doc.text(invoiceDoc.establishment.phone2, {
+      width: establishmentDetailsBox.width,
+    });
+  }
+
+  if (invoiceDoc.establishment.taxID) {
+    doc.text(invoiceDoc.establishment.taxID, {
+      width: establishmentDetailsBox.width,
+    });
+  }
+
+  let invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
 
   const validDate = new Date(invoiceDoc.date);
   validDate.setDate(validDate.getDate() + 15);
-
+  invoiceDetailsBox.x += 50;
+  invoiceDetailsBox.width -= 20;
   doc
     .fontSize(20)
-    .text("INVOICE", invoiceDetailsBox.x + 35, invoiceDetailsBox.y, {
-      width: invoiceDetailsBox.width - 35,
+    .text("INVOICE", invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
+      width: invoiceDetailsBox.width - 5,
       align: "right",
     })
     .fontSize(10)
-    .text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x + 45, invoiceDetailsBox.y + 20, {
-      width: invoiceDetailsBox.width - 45,
+    .text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
+      width: invoiceDetailsBox.width,
       align: "left",
     })
     .text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
-      width: invoiceDetailsBox.width - 45,
+      width: invoiceDetailsBox.width,
       align: "left",
     });
 
   doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width - 45,
+    width: invoiceDetailsBox.width,
     align: "left",
   });
 
   if (invoiceDoc.deliveryDate) {
     doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
-      width: invoiceDetailsBox.width - 45,
+      width: invoiceDetailsBox.width,
       align: "left",
     });
   }
 
   if (invoiceDoc.origin) {
     doc.text("External Service: " + invoiceDoc.origin, {
-      width: invoiceDetailsBox.width - 45,
+      width: invoiceDetailsBox.width,
       align: "left",
     });
   }
   if (invoiceDoc.externalId) {
     doc.text("External ID: " + invoiceDoc.externalId, {
-      width: invoiceDetailsBox.width - 45,
+      width: invoiceDetailsBox.width,
       align: "left",
     });
   }
