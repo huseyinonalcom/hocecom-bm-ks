@@ -1,6 +1,8 @@
+import { generateInvoiceOut } from "./utils/pdf/document/invoiceoutpdf";
 import { bulkSendDocuments } from "./utils/bulkdocumentsenderstart";
 import { syncBolOrders } from "./utils/bol-offer-sync";
 import { fileUpload } from "./utils/fileupload";
+import { mkdirSync, writeFileSync } from "fs";
 import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
@@ -115,6 +117,26 @@ export default withAuth(
             console.error("Error starting bulk document sender", error);
           }
         });
+
+        const generateTestPDF = async () => {
+          try {
+            const postedDocument = await context.sudo().query.Document.findOne({
+              query:
+                "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city country } docAddress { street door zip city country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city country } logo { url } }",
+              where: {
+                id: "cm5glkpe00039gx56xni3eab3",
+              },
+            });
+
+            const pdf = await generateInvoiceOut({ document: postedDocument });
+            mkdirSync("./test", { recursive: true });
+            writeFileSync(`./test/${pdf.filename}`, new Uint8Array(pdf.content));
+            console.info("Test invoice PDF generated");
+          } catch (error) {
+            console.error("Error generating test pdf", error);
+          }
+        };
+        generateTestPDF();
       },
     },
     lists,

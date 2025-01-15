@@ -34,6 +34,309 @@ __export(keystone_exports, {
 });
 module.exports = __toCommonJS(keystone_exports);
 
+// utils/formatters/formatcurrency.ts
+var formatCurrency = (value) => {
+  return new Intl.NumberFormat("nl-BE", {
+    style: "currency",
+    currency: "EUR"
+  }).format(value);
+};
+
+// utils/formatters/dateformatters.ts
+var dateFormatBe = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("fr-FR");
+};
+
+// utils/pdf/common/positioning.ts
+var pageSizesDimensions = {
+  A4: {
+    width: 595,
+    height: 842
+  }
+};
+var flexBox = ({
+  pageSize,
+  originY,
+  flex,
+  column,
+  columnCount
+}) => {
+  const pageWidth = pageSizesDimensions[pageSize].width;
+  if (column < 1 || column > columnCount) {
+    throw new Error("Invalid column index.");
+  }
+  if (flex <= 0 || columnCount <= 0) {
+    throw new Error("Flex and column count must be positive numbers.");
+  }
+  const columnWidth = pageWidth / columnCount;
+  const boxWidth = columnWidth * flex;
+  if (boxWidth > pageWidth) {
+    throw new Error("Box width exceeds page width.");
+  }
+  const x = (column - 1) * columnWidth;
+  if (x + boxWidth > pageWidth) {
+    throw new Error("Box exceeds page boundaries.");
+  }
+  return {
+    x,
+    y: originY,
+    width: boxWidth
+  };
+};
+
+// utils/pdf/common/pdfhead.ts
+var pdfHead = async ({
+  doc,
+  invoiceDoc,
+  logoBuffer,
+  pageLeft,
+  pageTop
+}) => {
+  const columnCount = 11;
+  const flexBoxHead = ({ flex, column }) => flexBox({ pageSize: "A4", originY: pageTop, flex, column, columnCount });
+  const imageBox = flexBoxHead({ flex: 4, column: 1 });
+  if (logoBuffer) {
+    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
+  } else {
+    const response = await fetch(invoiceDoc.establishment.logo.url);
+    logoBuffer = Buffer.from(await response.arrayBuffer());
+    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
+  }
+  const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+  doc.fontSize(10).text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
+    width: establishmentDetailsBox.width,
+    align: "left"
+  }).text(invoiceDoc.establishment.phone, {
+    width: establishmentDetailsBox.width
+  }).text(invoiceDoc.establishment.phone2, {
+    width: establishmentDetailsBox.width
+  }).text(invoiceDoc.establishment.taxID, {
+    width: establishmentDetailsBox.width
+  });
+  const invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
+  const validDate = new Date(invoiceDoc.date);
+  validDate.setDate(validDate.getDate() + 15);
+  doc.fontSize(20).text("INVOICE", invoiceDetailsBox.x + 35, invoiceDetailsBox.y, {
+    width: invoiceDetailsBox.width,
+    align: "right"
+  }).fontSize(10).text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x + 45, invoiceDetailsBox.y + 20, {
+    width: invoiceDetailsBox.width,
+    align: "left"
+  }).text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
+    width: invoiceDetailsBox.width,
+    align: "left"
+  });
+  if (invoiceDoc.deliveryDate) {
+    doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
+      width: invoiceDetailsBox.width,
+      align: "left"
+    });
+  }
+  doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
+    width: invoiceDetailsBox.width,
+    align: "left"
+  });
+  if (invoiceDoc.origin) {
+    doc.text("External Service: " + invoiceDoc.origin, {
+      width: invoiceDetailsBox.width,
+      align: "left"
+    });
+  }
+  if (invoiceDoc.externalId) {
+    doc.text("External ID: " + invoiceDoc.externalId, {
+      width: invoiceDetailsBox.width,
+      align: "left"
+    });
+  }
+};
+
+// utils/pdf/document/invoiceoutpdf.ts
+var import_buffer = require("buffer");
+async function generateInvoiceOut({
+  document,
+  logoBuffer
+}) {
+  const invoiceDoc = document;
+  const establishment = invoiceDoc.establishment;
+  const establishmentAddress = establishment.address;
+  const customer = invoiceDoc.customer;
+  const documentProducts = invoiceDoc.products;
+  const payments = invoiceDoc.payments;
+  return new Promise(async (resolve, reject) => {
+    const pageLeft = 0;
+    const pageTop = 40;
+    const pageSize = "A4";
+    try {
+      const PDFDocument = require("pdfkit");
+      const doc = new PDFDocument({ size: pageSize, margin: 20 });
+      const buffers = [];
+      doc.on("data", buffers.push.bind(buffers));
+      await pdfHead({
+        doc,
+        invoiceDoc,
+        logoBuffer,
+        pageLeft,
+        pageTop
+      });
+      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+      const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
+        const nameBox = flexBox({ pageSize: "A4", originY: y2, flex: 3, column: 1, columnCount: 10 });
+        if (isHeader) {
+          doc2.lineWidth(15);
+          const bgY = y2 + 5;
+          doc2.lineCap("butt").moveTo(20, bgY).lineTo(575, bgY).stroke("black");
+          doc2.fontSize(10).fillColor("white").text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        } else {
+          doc2.fontSize(9).fillColor("black").text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7] + 20, y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
+        }
+      };
+      const generateInvoiceTable = (doc2, documentProducts2, y2) => {
+        let invoiceTableTop = y2;
+        generateTableRow(doc2, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
+        for (let i = 1; i <= documentProducts2.length; i++) {
+          const item = documentProducts2[i - 1];
+          const position = invoiceTableTop + i * 40;
+          generateTableRow(
+            doc2,
+            position,
+            item.name,
+            item.description,
+            formatCurrency(Number(item.price)),
+            item.amount,
+            formatCurrency(Number(item.totalTax)),
+            formatCurrency(Number(item.totalWithTaxAfterReduction))
+          );
+        }
+        return invoiceTableTop + (documentProducts2.length + 1) * 40;
+      };
+      const bankDetails = ({ doc: doc2, x, y: y2, establishment: establishment2 }) => {
+        let strings = [];
+        if (establishment2.bankAccount1) {
+          strings.push(establishment2.bankAccount1);
+        }
+        if (establishment2.bankAccount2 !== null) {
+          strings.push(establishment2.bankAccount2);
+        }
+        if (establishment2.bankAccount3 !== null) {
+          strings.push(establishment2.bankAccount3);
+        }
+        strings.map((string, index) => {
+          doc2.text(string, x, y2 + index * 15);
+        });
+      };
+      const customerDetails = ({ doc: doc2, x, y: y2, invoiceDoc: invoiceDoc2 }) => {
+        let strings = [];
+        const docAddress = invoiceDoc2.delAddress;
+        if (customer.customerCompany) {
+          strings.push(customer.customerCompany);
+        }
+        if (customer.customerTaxNumber) {
+          strings.push(customer.customerTaxNumber);
+        }
+        if (customer.phone) {
+          strings.push(customer.phone);
+        }
+        strings.push(docAddress.street + " " + docAddress.door);
+        if (docAddress.floor) {
+          strings.push("floor: " + docAddress.floor);
+        }
+        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
+        strings.map((string, index) => {
+          doc2.text(string, x, y2 + index * 15);
+        });
+        return y2 + strings.length * 15;
+      };
+      const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
+        doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
+        doc2.fillColor("white").text("Payment History:", x + 10, y2 - 5);
+        doc2.fillColor("black");
+        payments2.forEach((payment, i) => {
+          doc2.text(dateFormatBe(payment.timestamp), x + 10, y2 + 20 * (i + 1));
+          doc2.text(payment.type, x + 85, y2 + 20 * (i + 1));
+          doc2.text(formatCurrency(Number(payment.value)), x + 150, y2 + 20 * (i + 1), {
+            width: 80,
+            align: "right"
+          });
+        });
+      };
+      const taxTable = ({ doc: doc2, x, y: y2, documentProducts: documentProducts2 }) => {
+        let taxRates = [];
+        documentProducts2.forEach((docProd, i) => {
+          if (!taxRates.includes(docProd.tax)) {
+            taxRates.push(docProd.tax);
+          }
+        });
+        taxRates = taxRates.sort((a, b) => a - b);
+        doc2.fontSize(10).text("Total Tax:", x, y2 + 50);
+        doc2.text(formatCurrency(Number(document.totalTax)));
+        taxRates.map((taxRate, index) => {
+          doc2.text("Total Tax " + taxRate + "%:", x, y2 + 50 + (index + 1) * 15).text(
+            formatCurrency(documentProducts2.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)),
+            x + 80,
+            y2 + 50 + (index + 1) * 15
+          );
+        });
+        return y2 + taxRates.length * 15 + 50;
+      };
+      let y = 140;
+      doc.text(establishment.name, 50, y);
+      doc.text(establishment.taxID, 50, y + 15);
+      bankDetails({
+        doc,
+        x: 50,
+        y: y + 30,
+        establishment
+      });
+      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
+      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
+      doc.text(establishment.phone, 200, y + 30);
+      doc.text(establishment.phone2, 200, y + 45);
+      doc.text("Order: " + invoiceDoc.references, 380, y);
+      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
+      y = customerDetails({
+        doc,
+        x: 380,
+        y: y + 30,
+        invoiceDoc
+      });
+      y += 60;
+      y = generateInvoiceTable(doc, documentProducts, y);
+      if (y < 500) {
+        y = 500;
+      }
+      taxTable({
+        doc,
+        x: 30,
+        y,
+        documentProducts
+      });
+      paymentsTable({ doc, x: 170, y: y + 30, payments });
+      let totalsX = 410;
+      doc.text("Total Excl. Tax:", totalsX, y + 50);
+      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)));
+      doc.text("Total:", totalsX, y + 65);
+      doc.text(formatCurrency(Number(invoiceDoc.total)), totalsX + 70, y + 65);
+      doc.text("Already Paid:", totalsX, y + 80);
+      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalsX + 70, y + 80);
+      doc.text("To Pay:", totalsX, y + 95);
+      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalsX + 70, y + 95);
+      doc.end();
+      doc.on("end", () => {
+        const pdfData = import_buffer.Buffer.concat(buffers);
+        resolve({
+          filename: `invoice_${document.number}.pdf`,
+          content: pdfData,
+          contentType: "application/pdf"
+        });
+      });
+    } catch (error) {
+      console.error("error on pdf generation (invoice): ", error);
+      reject(`Error generating invoice: ${error}`);
+    }
+  });
+}
+
 // utils/bulkdocumentsenderstart.ts
 var import_worker_threads = require("worker_threads");
 var import_path = __toESM(require("path"));
@@ -679,292 +982,6 @@ var transformEmail = ({ email, companyId }) => {
   return localPart + "+" + companyId + "@" + domainPart;
 };
 
-// utils/formatters/formatcurrency.ts
-var formatCurrency = (value) => {
-  return new Intl.NumberFormat("nl-BE", {
-    style: "currency",
-    currency: "EUR"
-  }).format(value);
-};
-
-// utils/formatters/dateformatters.ts
-var dateFormatBe = (date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleDateString("fr-FR");
-};
-
-// utils/addtodate.ts
-function addDaysToDate(dateStr, daysToAdd) {
-  const date = new Date(dateStr);
-  date.setDate(date.getDate() + daysToAdd);
-  return date;
-}
-
-// utils/pdf/document/invoiceoutpdf.ts
-var import_buffer = require("buffer");
-
-// utils/pdf/common/positioning.ts
-var pageSizesDimensions = {
-  A4: {
-    width: 595,
-    height: 842
-  }
-};
-var flexBox = ({
-  pageSize,
-  originY,
-  flex,
-  column,
-  columnCount
-}) => {
-  const pageWidth = pageSizesDimensions[pageSize].width;
-  if (column < 1 || column > columnCount) {
-    throw new Error("Invalid column index.");
-  }
-  if (flex <= 0 || columnCount <= 0) {
-    throw new Error("Flex and column count must be positive numbers.");
-  }
-  const columnWidth = pageWidth / columnCount;
-  const boxWidth = columnWidth * flex;
-  if (boxWidth > pageWidth) {
-    throw new Error("Box width exceeds page width.");
-  }
-  const x = (column - 1) * columnWidth;
-  if (x + boxWidth > pageWidth) {
-    throw new Error("Box exceeds page boundaries.");
-  }
-  return {
-    x,
-    y: originY,
-    width: boxWidth
-  };
-};
-
-// utils/pdf/common/pdfhead.ts
-var pdfHead = async ({
-  doc,
-  invoiceDoc,
-  logoBuffer,
-  pageLeft,
-  pageTop
-}) => {
-  const columnCount = 10;
-  const flexBoxHead = ({ flex, column }) => flexBox({ pageSize: "A4", originY: pageTop, flex, column, columnCount });
-  const imageBox = flexBoxHead({ flex: 4, column: 1 });
-  if (logoBuffer) {
-    doc.image(logoBuffer, pageLeft, pageTop, { height: 50, width: imageBox.width });
-  } else {
-    const response = await fetch(invoiceDoc.establishment.logo.url);
-    logoBuffer = await Buffer.from(await response.arrayBuffer());
-    doc.image(logoBuffer, pageLeft, pageTop, { height: 50, width: imageBox.width });
-  }
-  const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 5 });
-  doc.text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
-    width: establishmentDetailsBox.width,
-    align: "left"
-  });
-  const invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
-  doc.text("INVOICE", invoiceDetailsBox.x, invoiceDetailsBox.y, {
-    width: invoiceDetailsBox.width,
-    align: "right"
-  });
-};
-
-// utils/pdf/document/invoiceoutpdf.ts
-async function generateInvoiceOut({
-  document,
-  logoBuffer
-}) {
-  const invoiceDoc = document;
-  const establishment = invoiceDoc.establishment;
-  const establishmentAddress = establishment.address;
-  const customer = invoiceDoc.customer;
-  const documentProducts = invoiceDoc.products;
-  const payments = invoiceDoc.payments;
-  return new Promise(async (resolve, reject) => {
-    const pageLeft = 20;
-    const pageTop = 40;
-    const pageSize = "A4";
-    try {
-      const PDFDocument = require("pdfkit");
-      const doc = new PDFDocument({ size: pageSize, margin: 20 });
-      const buffers = [];
-      doc.on("data", buffers.push.bind(buffers));
-      pdfHead({
-        doc,
-        invoiceDoc,
-        logoBuffer,
-        pageLeft,
-        pageTop
-      });
-      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
-      const generateTableRow = (doc2, y2, name, description, price, amount, tax, subtotal, isHeader = false) => {
-        if (isHeader) {
-          doc2.lineWidth(25);
-          const bgY = y2 + 5;
-          doc2.lineCap("butt").moveTo(30, bgY).lineTo(550, bgY).stroke("black");
-          doc2.fontSize(10).fillColor("white").text(name, columns[0], y2).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7], y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
-        } else {
-          doc2.fontSize(10).fillColor("black").text(name, columns[0], y2, { width: columns[3] - columns[0] }).text(description, columns[4], y2).text(price, columns[6], y2).text(amount, columns[7] + 20, y2).text(tax, columns[8], y2).text(subtotal, columns[9], y2);
-        }
-      };
-      const generateInvoiceTable = (doc2, documentProducts2, y2) => {
-        let invoiceTableTop = y2;
-        generateTableRow(doc2, invoiceTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
-        for (let i = 1; i <= documentProducts2.length; i++) {
-          const item = documentProducts2[i - 1];
-          const position = invoiceTableTop + i * 40;
-          generateTableRow(
-            doc2,
-            position,
-            item.name,
-            item.description,
-            formatCurrency(Number(item.price)),
-            item.amount,
-            formatCurrency(Number(item.totalTax)),
-            formatCurrency(Number(item.totalWithTaxAfterReduction))
-          );
-        }
-        return invoiceTableTop + (documentProducts2.length + 1) * 40;
-      };
-      const bankDetails = ({ doc: doc2, x, y: y2, establishment: establishment2 }) => {
-        let strings = [];
-        if (establishment2.bankAccount1) {
-          strings.push(establishment2.bankAccount1);
-        }
-        if (establishment2.bankAccount2 !== null) {
-          strings.push(establishment2.bankAccount2);
-        }
-        if (establishment2.bankAccount3 !== null) {
-          strings.push(establishment2.bankAccount3);
-        }
-        strings.map((string, index) => {
-          doc2.text(string, x, y2 + index * 15);
-        });
-      };
-      const customerDetails = ({ doc: doc2, x, y: y2, invoiceDoc: invoiceDoc2 }) => {
-        let strings = [];
-        const docAddress = invoiceDoc2.delAddress;
-        if (customer.customerCompany) {
-          strings.push(customer.customerCompany);
-        }
-        if (customer.customerTaxNumber) {
-          strings.push(customer.customerTaxNumber);
-        }
-        if (customer.phone) {
-          strings.push(customer.phone);
-        }
-        strings.push(docAddress.street + " " + docAddress.door);
-        if (docAddress.floor) {
-          strings.push("floor: " + docAddress.floor);
-        }
-        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
-        strings.map((string, index) => {
-          doc2.text(string, x, y2 + index * 15);
-        });
-        return y2 + strings.length * 15;
-      };
-      const paymentsTable = ({ doc: doc2, x, y: y2, payments: payments2 }) => {
-        doc2.lineCap("butt").moveTo(x, y2).lineTo(x + 230, y2).stroke("black");
-        doc2.fillColor("white").text("Payment History:", x + 10, y2 - 5);
-        doc2.fillColor("black");
-        payments2.forEach((payment, i) => {
-          doc2.text(dateFormatBe(payment.timestamp), x + 10, y2 + 20 * (i + 1));
-          doc2.text(payment.type, x + 85, y2 + 20 * (i + 1));
-          doc2.text(formatCurrency(Number(payment.value)), x + 150, y2 + 20 * (i + 1), {
-            width: 80,
-            align: "right"
-          });
-        });
-      };
-      const taxTable = ({ doc: doc2, x, y: y2, documentProducts: documentProducts2 }) => {
-        let taxRates = [];
-        documentProducts2.forEach((docProd, i) => {
-          if (!taxRates.includes(docProd.tax)) {
-            taxRates.push(docProd.tax);
-          }
-        });
-        taxRates = taxRates.sort((a, b) => a - b);
-        doc2.fontSize(10).text("Total Tax:", x, y2 + 50);
-        doc2.text(formatCurrency(Number(document.totalTax)));
-        taxRates.map((taxRate, index) => {
-          doc2.text("Total Tax " + taxRate + "%:", x, y2 + 50 + (index + 1) * 15).text(
-            formatCurrency(documentProducts2.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)),
-            x + 80,
-            y2 + 50 + (index + 1) * 15
-          );
-        });
-        return y2 + taxRates.length * 15 + 50;
-      };
-      doc.fontSize(20).text("INVOICE", 455, pageTop);
-      doc.fontSize(10).text("Invoice:", 380, 80);
-      doc.text(invoiceDoc.number, 450, 80);
-      doc.text("Date:", 380, 95);
-      doc.text(dateFormatBe(invoiceDoc.date), 450, 95);
-      doc.text("Valid Until:", 380, 110);
-      doc.text(dateFormatBe(addDaysToDate(invoiceDoc.date, 15).toISOString()), 450, 110);
-      doc.text("Delivery Date:", 380, 125);
-      if (invoiceDoc.deliveryDate) {
-        doc.text(dateFormatBe(invoiceDoc.deliveryDate), 450, 125);
-      }
-      let y = 140;
-      doc.text(establishment.name, 50, y);
-      doc.text(establishment.taxID, 50, y + 15);
-      bankDetails({
-        doc,
-        x: 50,
-        y: y + 30,
-        establishment
-      });
-      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
-      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
-      doc.text(establishment.phone, 200, y + 30);
-      doc.text(establishment.phone2, 200, y + 45);
-      doc.text("Order: " + invoiceDoc.references, 380, y);
-      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
-      y = customerDetails({
-        doc,
-        x: 380,
-        y: y + 30,
-        invoiceDoc
-      });
-      y += 60;
-      y = generateInvoiceTable(doc, documentProducts, y);
-      if (y < 500) {
-        y = 500;
-      }
-      taxTable({
-        doc,
-        x: 30,
-        y,
-        documentProducts
-      });
-      paymentsTable({ doc, x: 170, y: y + 30, payments });
-      let totalsX = 410;
-      doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)));
-      doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(Number(invoiceDoc.total)), totalsX + 70, y + 65);
-      doc.text("Already Paid:", totalsX, y + 80);
-      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalsX + 70, y + 80);
-      doc.text("To Pay:", totalsX, y + 95);
-      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalsX + 70, y + 95);
-      doc.end();
-      doc.on("end", () => {
-        const pdfData = import_buffer.Buffer.concat(buffers);
-        resolve({
-          filename: `invoice_${document.number}.pdf`,
-          content: pdfData,
-          contentType: "application/pdf"
-        });
-      });
-    } catch (error) {
-      console.error("error on pdf generation (invoice): ", error);
-      reject(`Error generating invoice: ${error}`);
-    }
-  });
-}
-
 // utils/bol-offer-sync.ts
 var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 var bolApiUrl = "https://api.bol.com/retailer";
@@ -1407,6 +1424,9 @@ var fileUpload = async (file) => {
     throw new Error("Failed to upload file");
   }
 };
+
+// keystone.ts
+var import_fs = require("fs");
 
 // auth.ts
 var import_crypto = require("crypto");
@@ -3606,6 +3626,23 @@ var keystone_default = withAuth(
             console.error("Error starting bulk document sender", error);
           }
         });
+        const generateTestPDF = async () => {
+          try {
+            const postedDocument = await context.sudo().query.Document.findOne({
+              query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city country } docAddress { street door zip city country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city country } logo { url } }",
+              where: {
+                id: "cm5glkpe00039gx56xni3eab3"
+              }
+            });
+            const pdf = await generateInvoiceOut({ document: postedDocument });
+            (0, import_fs.mkdirSync)("./test", { recursive: true });
+            (0, import_fs.writeFileSync)(`./test/${pdf.filename}`, new Uint8Array(pdf.content));
+            console.info("Test invoice PDF generated");
+          } catch (error) {
+            console.error("Error generating test pdf", error);
+          }
+        };
+        generateTestPDF();
       }
     },
     lists,

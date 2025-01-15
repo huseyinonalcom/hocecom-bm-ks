@@ -1,6 +1,6 @@
 import { formatCurrency } from "../../formatters/formatcurrency";
 import { dateFormatBe } from "../../formatters/dateformatters";
-import { PageSize } from "../common/positioning";
+import { flexBox, PageSize } from "../common/positioning";
 import { addDaysToDate } from "../../addtodate";
 import { pdfHead } from "../common/pdfhead";
 import { Buffer } from "buffer";
@@ -20,7 +20,7 @@ export async function generateInvoiceOut({
   const payments = invoiceDoc.payments;
 
   return new Promise(async (resolve, reject) => {
-    const pageLeft = 20;
+    const pageLeft = 0;
     const pageTop = 40;
     const pageSize: PageSize = "A4";
     try {
@@ -30,7 +30,7 @@ export async function generateInvoiceOut({
 
       doc.on("data", buffers.push.bind(buffers));
 
-      pdfHead({
+      await pdfHead({
         doc,
         invoiceDoc,
         logoBuffer,
@@ -51,14 +51,15 @@ export async function generateInvoiceOut({
         subtotal: string,
         isHeader = false
       ) => {
+        const nameBox = flexBox({ pageSize: "A4", originY: y, flex: 3, column: 1, columnCount: 10 });
         if (isHeader) {
-          doc.lineWidth(25);
+          doc.lineWidth(15);
           const bgY = y + 5;
-          doc.lineCap("butt").moveTo(30, bgY).lineTo(550, bgY).stroke("black");
+          doc.lineCap("butt").moveTo(20, bgY).lineTo(575, bgY).stroke("black");
           doc
             .fontSize(10)
             .fillColor("white")
-            .text(name, columns[0], y)
+            .text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" })
             .text(description, columns[4], y)
             .text(price, columns[6], y)
             .text(amount, columns[7], y)
@@ -66,9 +67,9 @@ export async function generateInvoiceOut({
             .text(subtotal, columns[9], y);
         } else {
           doc
-            .fontSize(10)
+            .fontSize(9)
             .fillColor("black")
-            .text(name, columns[0], y, { width: columns[3] - columns[0] })
+            .text(name, nameBox.x + 30, nameBox.y, { width: nameBox.width - 30, align: "left" })
             .text(description, columns[4], y)
             .text(price, columns[6], y)
             .text(amount, columns[7] + 20, y)
@@ -188,19 +189,6 @@ export async function generateInvoiceOut({
 
         return y + taxRates.length * 15 + 50;
       };
-
-      doc.fontSize(20).text("INVOICE", 455, pageTop);
-
-      doc.fontSize(10).text("Invoice:", 380, 80);
-      doc.text(invoiceDoc.number, 450, 80);
-      doc.text("Date:", 380, 95);
-      doc.text(dateFormatBe(invoiceDoc.date), 450, 95);
-      doc.text("Valid Until:", 380, 110);
-      doc.text(dateFormatBe(addDaysToDate(invoiceDoc.date, 15).toISOString()), 450, 110);
-      doc.text("Delivery Date:", 380, 125);
-      if (invoiceDoc.deliveryDate) {
-        doc.text(dateFormatBe(invoiceDoc.deliveryDate), 450, 125);
-      }
 
       let y = 140;
 

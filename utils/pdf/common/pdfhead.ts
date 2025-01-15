@@ -13,27 +13,76 @@ export const pdfHead = async ({
   pageLeft: number;
   pageTop: number;
 }) => {
-  const columnCount = 10;
+  const columnCount = 11;
   const flexBoxHead = ({ flex, column }: { flex: number; column: number }) => flexBox({ pageSize: "A4", originY: pageTop, flex, column, columnCount });
 
   const imageBox = flexBoxHead({ flex: 4, column: 1 });
   if (logoBuffer) {
-    doc.image(logoBuffer, pageLeft, pageTop, { height: 50, width: imageBox.width });
+    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
   } else {
     const response = await fetch(invoiceDoc.establishment.logo.url);
-    logoBuffer = await Buffer.from(await response.arrayBuffer());
-    doc.image(logoBuffer, pageLeft, pageTop, { height: 50, width: imageBox.width });
+    logoBuffer = Buffer.from(await response.arrayBuffer());
+    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
   }
 
-  const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 5 });
-  doc.text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
-    width: establishmentDetailsBox.width,
-    align: "left",
-  });
+  const establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+  doc
+    .fontSize(10)
+    .text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
+      width: establishmentDetailsBox.width,
+      align: "left",
+    })
+    .text(invoiceDoc.establishment.phone, {
+      width: establishmentDetailsBox.width,
+    })
+    .text(invoiceDoc.establishment.phone2, {
+      width: establishmentDetailsBox.width,
+    })
+    .text(invoiceDoc.establishment.taxID, {
+      width: establishmentDetailsBox.width,
+    });
 
   const invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
-  doc.text("INVOICE", invoiceDetailsBox.x, invoiceDetailsBox.y, {
+
+  const validDate = new Date(invoiceDoc.date);
+  validDate.setDate(validDate.getDate() + 15);
+
+  doc
+    .fontSize(20)
+    .text("INVOICE", invoiceDetailsBox.x + 35, invoiceDetailsBox.y, {
+      width: invoiceDetailsBox.width,
+      align: "right",
+    })
+    .fontSize(10)
+    .text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x + 45, invoiceDetailsBox.y + 20, {
+      width: invoiceDetailsBox.width,
+      align: "left",
+    })
+    .text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
+      width: invoiceDetailsBox.width,
+      align: "left",
+    });
+  doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
     width: invoiceDetailsBox.width,
-    align: "right",
+    align: "left",
   });
+  if (invoiceDoc.deliveryDate) {
+    doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
+      width: invoiceDetailsBox.width,
+      align: "left",
+    });
+  }
+
+  if (invoiceDoc.origin) {
+    doc.text("External Service: " + invoiceDoc.origin, {
+      width: invoiceDetailsBox.width,
+      align: "left",
+    });
+  }
+  if (invoiceDoc.externalId) {
+    doc.text("External ID: " + invoiceDoc.externalId, {
+      width: invoiceDetailsBox.width,
+      align: "left",
+    });
+  }
 };

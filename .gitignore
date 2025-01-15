@@ -7,3 +7,4 @@ data.db
 .keystone/config.js.map
 /.keystone/uploads
 /.keystone/backup
+/test
