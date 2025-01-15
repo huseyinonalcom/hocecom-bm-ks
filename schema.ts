@@ -20,14 +20,19 @@ import {
   isSuperAdmin,
   isAdminAccountantIntern,
   isIntern,
+  Session,
 } from "./functions";
+
+const filterOnId = ({ session }: { session: Session }) => {};
+const filterOnCompany = ({ session }: { session: Session }) => {};
+const filterOnAccountancy = ({}: { session: Session }) => {};
 
 const companyFilter = ({
   session,
   accountancyCheckType,
 }: {
-  session?: any;
-  accountancyCheckType?: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
+  session: Session;
+  accountancyCheckType: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
 }) => {
   try {
     if (isGlobalAdmin({ session })) {
@@ -43,7 +48,7 @@ const companyFilter = ({
   }
 };
 
-const companyCompanyFilter = ({ session }: { session?: any }) => {
+const companyCompanyFilter = ({ session }: { session: Session }) => {
   try {
     if (isGlobalAdmin({ session })) {
       return true;
@@ -64,8 +69,8 @@ const accountancyFilter = ({
   session,
   accountancyCheckType,
 }: {
-  session?: any;
-  accountancyCheckType?: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
+  session: Session;
+  accountancyCheckType: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
 }) => {
   try {
     if (isGlobalAdmin({ session })) {
@@ -1071,7 +1076,7 @@ export const lists: Lists = {
       }),
       pricedBy: select({
         type: "string",
-        options: ["amount", "volume", "length", "weight", "area"],
+        options: ["amount", "volume", "length", "weight", "area", "time"],
         defaultValue: "amount",
       }),
       type: select({
@@ -1326,7 +1331,7 @@ export const lists: Lists = {
       reference: text(),
       type: select({
         type: "string",
-        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory"],
+        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory", "cheque", "other"],
         defaultValue: "cash",
         validation: { isRequired: true },
       }),
@@ -1781,7 +1786,7 @@ export const lists: Lists = {
   User: list({
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onAccountancyAndCompany" }),
+        query: ({ session, listKey, operation }) => companyFilter({ session, accountancyCheckType: "onAccountancyAndCompany" }),
         update: companyFilter,
         delete: isGlobalAdmin,
       },

@@ -18,12 +18,16 @@ export type Role =
 export type Session = {
   itemId: string;
   data: {
-    isBlocked: boolean;
-    username: string;
-    company?: string;
-    accountancy?: string;
+    id: string;
     role: Role;
     permissions: any;
+    isBlocked: boolean;
+    company?: {
+      id: string;
+    };
+    accountancy?: {
+      id: string;
+    };
   };
 };
 
