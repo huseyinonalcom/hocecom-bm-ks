@@ -23,32 +23,89 @@ import {
   Session,
 } from "./functions";
 
-const filterOnId = ({ session }: { session: Session }) => {};
-const filterOnCompany = ({ session }: { session: Session }) => {};
-const filterOnAccountancy = ({}: { session: Session }) => {};
+const filterOnIdCopmany = ({ session }: { session?: Session }) => {};
+const filterOnCompany = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else {
+      return { company: { id: { equals: session.data.company?.id } } };
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+
+const filterOnIdAccountancy = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else {
+      return { id: { equals: session.data.accountancy?.id } };
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+
+const filterOnIdAccountancyOrCompanyAccountancy = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else if (session.data.company?.accountancy?.id) {
+      return { id: { equals: session.data.company.accountancy.id } };
+    } else {
+      return filterOnIdAccountancy({ session });
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+
+const filterOnAccountancyOrCompany = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else {
+      return { OR: [{ accountancy: { id: { equals: session.data.accountancy?.id } } }, { company: { id: { equals: session.data.company?.id } } }] };
+    }
+  } catch (error) {
+    console.error("companyCompanyFilter error:", error);
+    return false;
+  }
+};
 
 const companyFilter = ({
   session,
   accountancyCheckType,
 }: {
-  session: Session;
-  accountancyCheckType: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
+  session?: Session;
+  accountancyCheckType?: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
 }) => {
+  if (!session) return false;
   try {
     if (isGlobalAdmin({ session })) {
       return true;
     } else if (!session.data.company) {
-      return accountancyFilter({ session, accountancyCheckType });
+      return accountancyFilter({ session, accountancyCheckType: accountancyCheckType ?? "onAccountancy" });
     } else {
       return { company: { id: { equals: session.data.company.id } } };
     }
   } catch (error) {
     console.error("companyFilter error:", error);
-    return accountancyFilter({ session, accountancyCheckType });
+    return accountancyFilter({ session, accountancyCheckType: accountancyCheckType ?? "onAccountancy" });
   }
 };
 
-const companyCompanyFilter = ({ session }: { session: Session }) => {
+const companyCompanyFilter = ({ session }: { session?: Session }) => {
+  if (!session) return false;
   try {
     if (isGlobalAdmin({ session })) {
       return true;
@@ -69,9 +126,10 @@ const accountancyFilter = ({
   session,
   accountancyCheckType,
 }: {
-  session: Session;
+  session?: Session;
   accountancyCheckType: "onCompany" | "onAccountancy" | "onAccountancyAndCompany";
 }) => {
+  if (!session) return false;
   try {
     if (isGlobalAdmin({ session })) {
       return true;
@@ -102,6 +160,11 @@ const accountancyFilter = ({
 export const lists: Lists = {
   Accountancy: list({
     access: {
+      filter: {
+        query: filterOnIdAccountancyOrCompanyAccountancy,
+        update: filterOnIdAccountancy,
+        delete: isSuperAdmin,
+      },
       operation: {
         create: isSuperAdmin,
         query: isAdminAccountantIntern,
@@ -149,8 +212,8 @@ export const lists: Lists = {
     access: {
       filter: {
         query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
+        update: filterOnCompany,
+        delete: filterOnCompany,
       },
       operation: {
         create: isUser,
@@ -193,9 +256,9 @@ export const lists: Lists = {
   AssemblyComponent: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompany,
+        update: filterOnCompany,
+        delete: filterOnCompany,
       },
       operation: {
         create: isManager,
@@ -1283,45 +1346,7 @@ export const lists: Lists = {
         ref: "Document.payments",
         many: true,
       }),
-      out: virtual({
-        field: graphql.field({
-          type: graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findMany({
-                where: {
-                  payments: {
-                    some: {
-                      id: {
-                        equals: item.id,
-                      },
-                    },
-                  },
-                },
-                query: "type",
-              });
-              switch (document[0].type) {
-                case "satış":
-                  return false;
-                case "irsaliye":
-                  return false;
-                case "fatura":
-                  return false;
-                case "borç dekontu":
-                  return false;
-                case "alacak dekontu":
-                  return true;
-                case "satın alma":
-                  return true;
-                default:
-                  return false;
-              }
-            } catch (e) {
-              return false;
-            }
-          },
-        }),
-      }),
+      out: checkbox({ defaultValue: false }),
       isDeleted: checkbox({ defaultValue: false }),
       isVerified: checkbox({ defaultValue: false }),
       creator: relationship({
@@ -1707,6 +1732,7 @@ export const lists: Lists = {
       taxId: text(),
       contactMail: text(),
       orderMail: text(),
+      balance: decimal(),
       phone: text(),
       orderTime: integer(),
       extraFields: json(),
@@ -1902,6 +1928,7 @@ export const lists: Lists = {
         ref: "StockMovement.customer",
         many: true,
       }),
+      customerBalance: decimal(),
       preferredLanguage: text(),
       customerCompany: text(),
       firstName: text(),
@@ -1939,9 +1966,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompany,
+        update: filterOnCompany,
+        delete: filterOnCompany,
       },
       operation: {
         create: isEmployee,
@@ -1974,9 +2001,9 @@ export const lists: Lists = {
   WorkOrderOperation: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompany,
+        update: filterOnCompany,
+        delete: filterOnCompany,
       },
       operation: {
         create: isEmployee,

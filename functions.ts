@@ -24,6 +24,9 @@ export type Session = {
     isBlocked: boolean;
     company?: {
       id: string;
+      accountancy?: {
+        id: string;
+      };
     };
     accountancy?: {
       id: string;
