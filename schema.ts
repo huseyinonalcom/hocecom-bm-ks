@@ -23,7 +23,19 @@ import {
   Session,
 } from "./functions";
 
-const filterOnIdCopmany = ({ session }: { session?: Session }) => {};
+const filterOnIdCopmany = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else {
+      return { id: { equals: session.data.company?.id } };
+    }
+  } catch (error) {
+    console.error("filterOnIdCopmany error:", error);
+    return false;
+  }
+};
 const filterOnCompany = ({ session }: { session?: Session }) => {
   if (!session) return false;
   try {
@@ -33,7 +45,7 @@ const filterOnCompany = ({ session }: { session?: Session }) => {
       return { company: { id: { equals: session.data.company?.id } } };
     }
   } catch (error) {
-    console.error("companyFilter error:", error);
+    console.error("filterOnCompany error:", error);
     return false;
   }
 };
@@ -61,6 +73,24 @@ const filterOnIdAccountancyOrCompanyAccountancy = ({ session }: { session?: Sess
       return { id: { equals: session.data.company.accountancy.id } };
     } else {
       return filterOnIdAccountancy({ session });
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+
+const filterOnIdCompanyOrCompanyAccountancy = ({ session }: { session?: Session }) => {
+  if (!session) return false;
+  try {
+    if (isGlobalAdmin({ session })) {
+      return true;
+    } else if (session.data.company?.id) {
+      return { company: { id: { equals: session.data.company?.id } } };
+    } else if (session.data.company?.accountancy?.id) {
+      return { accountancy: { id: { equals: session.data.company.accountancy.id } } };
+    } else {
+      return false;
     }
   } catch (error) {
     console.error("companyFilter error:", error);
@@ -301,7 +331,7 @@ export const lists: Lists = {
   Company: list({
     access: {
       filter: {
-        query: ({ session }) => companyCompanyFilter({ session }),
+        query: filterOnIdCompanyOrCompanyAccountancy,
       },
       operation: {
         create: isAdminAccountantManager,
