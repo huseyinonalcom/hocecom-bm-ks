@@ -76,21 +76,19 @@ export default withAuth(
             const pinCheck = await context.sudo().query.Company.findOne({
               where: {
                 pincode: String(pin),
-                isActive: true,
               },
               query: "id",
             });
-            if (pinCheck) {
+            if (pinCheck && pinCheck.isActive) {
               res.status(200).json({ id: pinCheck.id });
             } else {
               const pinCheckAccountancy = await context.sudo().query.Accountancy.findOne({
                 where: {
                   pincode: String(pin),
-                  isActive: true,
                 },
                 query: "id",
               });
-              if (pinCheckAccountancy) {
+              if (pinCheckAccountancy && pinCheckAccountancy.isActive) {
                 res.status(200).json({ id: pinCheckAccountancy.id });
               } else {
                 res.status(404).json({ message: "Bad pin" });
