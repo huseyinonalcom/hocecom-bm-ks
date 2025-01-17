@@ -1583,7 +1583,7 @@ if (!sessionSecret && process.env.NODE_ENV !== "production") {
 var { withAuth } = (0, import_auth.createAuth)({
   listKey: "User",
   identityField: "email",
-  sessionData: "id role permissions isBlocked company { id } accountancy { id }",
+  sessionData: "id role permissions isBlocked company { id accountancy { id } } accountancy { id }",
   secretField: "password",
   initFirstItem: {
     fields: ["name", "role", "email", "password"]
@@ -1651,7 +1651,7 @@ var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reducti
   return Number(totalAfterReduction * (1 + tax / 100));
 };
 
-// functions.ts
+// utils/accesscontrol/rbac.ts
 var isSuperAdmin = ({ session: session2 }) => {
   if (!session2) return false;
   if (session2.data.role == "superadmin") return true;
@@ -1682,11 +1682,6 @@ var isCompanyAdmin = ({ session: session2 }) => {
   if (session2.data.role == "company_admin" || isOwner({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
-var isAdminAccountantEmployee = ({ session: session2 }) => {
-  if (!session2) return false;
-  if (session2.data.role == "admin_accountant_employee" || isAdminAccountantManager({ session: session2 })) return !session2.data.isBlocked;
-  return false;
-};
 var isGeneralManager = ({ session: session2 }) => {
   if (!session2) return false;
   if (session2.data.role == "general_manager" || isCompanyAdmin({ session: session2 })) return !session2.data.isBlocked;
@@ -1700,11 +1695,6 @@ var isManager = ({ session: session2 }) => {
 var isAccountant = ({ session: session2 }) => {
   if (!session2) return false;
   if (session2.data.role == "accountant" || isManager({ session: session2 })) return !session2.data.isBlocked;
-  return false;
-};
-var isAdminAccountantIntern = ({ session: session2 }) => {
-  if (!session2) return false;
-  if (session2.data.role == "admin_accountant_intern" || isAdminAccountantEmployee({ session: session2 })) return !session2.data.isBlocked;
   return false;
 };
 var isEmployee = ({ session: session2 }) => {
@@ -1728,93 +1718,126 @@ var isUser = ({ session: session2 }) => {
   return false;
 };
 
-// schema.ts
-var companyFilter = ({
-  session: session2,
-  accountancyCheckType
-}) => {
-  try {
-    if (isGlobalAdmin({ session: session2 })) {
-      return true;
-    } else if (!session2.data.company) {
-      return accountancyFilter({ session: session2, accountancyCheckType });
-    } else {
-      return { company: { id: { equals: session2.data.company.id } } };
-    }
-  } catch (error) {
-    console.error("companyFilter error:", error);
-    return accountancyFilter({ session: session2, accountancyCheckType });
-  }
-};
-var companyCompanyFilter = ({ session: session2 }) => {
-  try {
-    if (isGlobalAdmin({ session: session2 })) {
-      return true;
-    } else if (!session2.data.company) {
-      return accountancyFilter({ session: session2, accountancyCheckType: "onAccountancy" });
-    } else {
-      return {
-        OR: [{ users: { some: { id: { equals: session2.data.id } } } }, { owner: { id: { equals: session2.data.id } } }]
-      };
-    }
-  } catch (error) {
-    console.error("companyCompanyFilter error:", error);
-    return accountancyFilter({ session: session2, accountancyCheckType: "onAccountancy" });
-  }
-};
-var accountancyFilter = ({
-  session: session2,
-  accountancyCheckType
-}) => {
+// utils/accesscontrol/tenantac.ts
+var filterOnCompanyRelation = ({ session: session2 }) => {
+  if (!session2) return false;
   try {
     if (isGlobalAdmin({ session: session2 })) {
       return true;
     } else {
-      if (accountancyCheckType === "onAccountancy") {
-        return {
-          accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } }
-        };
-      } else if (accountancyCheckType === "onAccountancyAndCompany") {
-        return {
-          OR: [
-            { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } },
-            { company: { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } } }
-          ]
-        };
-      } else {
-        return {
-          company: { accountancy: { id: { equals: session2.data.accountancy?.id ?? "a" } } }
-        };
-      }
+      return { company: { id: { equals: session2.data.company?.id } } };
     }
   } catch (error) {
-    console.error("accountancyFilter error:", error);
+    console.error("filterOnCompany error:", error);
     return false;
   }
 };
+var filterOnCompanyRelationOrCompanyAccountancyRelation = ({ session: session2 }) => {
+  if (!session2) return false;
+  try {
+    if (isGlobalAdmin({ session: session2 })) {
+      return true;
+    } else if (session2.data.company?.id) {
+      return { company: { id: { equals: session2.data.company?.id } } };
+    } else if (session2.data.accountancy?.id) {
+      return { company: { accountancy: { id: { equals: session2.data.accountancy.id } } } };
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+var filterOnIdCompanyOrCompanyAccountancyRelation = ({ session: session2 }) => {
+  if (!session2) return false;
+  try {
+    if (isGlobalAdmin({ session: session2 })) {
+      return true;
+    } else if (session2.data.company?.id) {
+      return { id: { equals: session2.data.company.id } };
+    } else if (session2.data.accountancy?.id) {
+      return { accountancy: { id: { equals: session2.data.accountancy.id } } };
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+var filterOnIdAccountancy = ({ session: session2 }) => {
+  if (!session2) return false;
+  try {
+    if (isGlobalAdmin({ session: session2 })) {
+      return true;
+    } else {
+      return { id: { equals: session2.data.accountancy?.id } };
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+var filterOnIdAccountancyOrAccountancyCompanyRelation = ({ session: session2 }) => {
+  if (!session2) return false;
+  try {
+    if (isGlobalAdmin({ session: session2 })) {
+      return true;
+    } else if (session2.data.company?.accountancy?.id) {
+      return { id: { equals: session2.data.company.accountancy.id } };
+    } else if (session2.data.accountancy?.id) {
+      return { id: { equals: session2.data.accountancy.id } };
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error("companyFilter error:", error);
+    return false;
+  }
+};
+
+// schema.ts
 var lists = {
   Accountancy: (0, import_core.list)({
     access: {
+      filter: {
+        query: filterOnIdAccountancyOrAccountancyCompanyRelation,
+        update: filterOnIdAccountancy,
+        delete: isSuperAdmin
+      },
       operation: {
         create: isSuperAdmin,
-        query: isAdminAccountantIntern,
+        query: isAccountant,
         update: isAdminAccountantManager,
         delete: isSuperAdmin
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+      beforeOperation: async ({ operation, context, item, resolvedData }) => {
         try {
           if (operation === "create" || operation === "update") {
             const pin = resolvedData.pincode;
-            const pinCheck = await context.sudo().query.Company.findOne({
+            let pinCheck = await context.sudo().query.Company.findOne({
               where: {
                 pincode: String(pin)
               },
               query: "id"
             });
+            if (!pinCheck) {
+              pinCheck = await context.sudo().query.Accountancy.findOne({
+                where: {
+                  pincode: String(pin)
+                },
+                query: "id"
+              });
+            }
             if (pinCheck) {
-              throw new Error("Pincode already in use");
+              if (operation === "create") {
+                throw new Error("Pincode already in use");
+              } else if (operation === "update" && pinCheck.id !== item.id) {
+                throw new Error("Pincode already in use");
+              }
             }
           }
         } catch (error) {
@@ -1841,9 +1864,9 @@ var lists = {
     },
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        delete: isSuperAdmin
       },
       operation: {
         create: isUser,
@@ -1856,11 +1879,14 @@ var lists = {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
         try {
           if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
+            if (isGlobalAdmin({ session: context.session }) && resolvedData.company) {
+            } else {
+              resolvedData.company = {
+                connect: {
+                  id: context.session.data.company.id
+                }
+              };
+            }
           }
         } catch (error) {
           console.error("Company hook error");
@@ -1886,9 +1912,9 @@ var lists = {
   AssemblyComponent: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isManager,
@@ -1931,11 +1957,13 @@ var lists = {
   Company: (0, import_core.list)({
     access: {
       filter: {
-        query: ({ session: session2 }) => companyCompanyFilter({ session: session2 })
+        query: filterOnIdCompanyOrCompanyAccountancyRelation,
+        update: filterOnIdCompanyOrCompanyAccountancyRelation,
+        delete: import_access.denyAll
       },
       operation: {
         create: isAdminAccountantManager,
-        query: isWorker,
+        query: isUser,
         update: isCompanyAdmin,
         delete: import_access.denyAll
       }
@@ -1945,14 +1973,26 @@ var lists = {
         try {
           if (operation === "create" || operation === "update") {
             const pin = resolvedData.pincode;
-            const pinCheck = await context.sudo().query.Accountancy.findOne({
+            let pinCheck = await context.sudo().query.Company.findOne({
               where: {
                 pincode: String(pin)
               },
               query: "id"
             });
+            if (!pinCheck) {
+              pinCheck = await context.sudo().query.Accountancy.findOne({
+                where: {
+                  pincode: String(pin)
+                },
+                query: "id"
+              });
+            }
             if (pinCheck) {
-              throw new Error("Pincode already in use");
+              if (operation === "create") {
+                throw new Error("Pincode already in use");
+              } else if (operation === "update" && pinCheck.id !== item.id) {
+                throw new Error("Pincode already in use");
+              }
             }
           }
         } catch (error) {
@@ -1997,9 +2037,9 @@ var lists = {
     },
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,
@@ -2321,6 +2361,19 @@ var lists = {
     ui: {
       labelField: "amount"
     },
+    access: {
+      filter: {
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
+      },
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager
+      }
+    },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
@@ -2351,19 +2404,6 @@ var lists = {
         }
       },
       afterOperation: async ({ operation, item, context }) => {
-      }
-    },
-    access: {
-      filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
-      },
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager
       }
     },
     fields: {
@@ -2554,11 +2594,14 @@ var lists = {
     }
   }),
   Establishment: (0, import_core.list)({
+    ui: {
+      labelField: "name"
+    },
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isAdminAccountantManager,
@@ -2627,9 +2670,9 @@ var lists = {
   File: (0, import_core.list)({
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,
@@ -2669,9 +2712,9 @@ var lists = {
   Material: (0, import_core.list)({
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isManager,
@@ -2751,7 +2794,7 @@ var lists = {
       }),
       pricedBy: (0, import_fields.select)({
         type: "string",
-        options: ["amount", "volume", "length", "weight", "area"],
+        options: ["amount", "volume", "length", "weight", "area", "time"],
         defaultValue: "amount"
       }),
       type: (0, import_fields.select)({
@@ -2788,9 +2831,9 @@ var lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,
@@ -2830,9 +2873,9 @@ var lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isGlobalAdmin,
@@ -2871,9 +2914,9 @@ var lists = {
   Operation: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,
@@ -2926,9 +2969,9 @@ var lists = {
     },
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,
@@ -2958,45 +3001,7 @@ var lists = {
         ref: "Document.payments",
         many: true
       }),
-      out: (0, import_fields.virtual)({
-        field: import_core.graphql.field({
-          type: import_core.graphql.Boolean,
-          async resolve(item, args, context) {
-            try {
-              const document = await context.query.Document.findMany({
-                where: {
-                  payments: {
-                    some: {
-                      id: {
-                        equals: item.id
-                      }
-                    }
-                  }
-                },
-                query: "type"
-              });
-              switch (document[0].type) {
-                case "sat\u0131\u015F":
-                  return false;
-                case "irsaliye":
-                  return false;
-                case "fatura":
-                  return false;
-                case "bor\xE7 dekontu":
-                  return false;
-                case "alacak dekontu":
-                  return true;
-                case "sat\u0131n alma":
-                  return true;
-                default:
-                  return false;
-              }
-            } catch (e) {
-              return false;
-            }
-          }
-        })
-      }),
+      out: (0, import_fields.checkbox)({ defaultValue: false }),
       isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
       isVerified: (0, import_fields.checkbox)({ defaultValue: false }),
       creator: (0, import_fields.relationship)({
@@ -3021,9 +3026,9 @@ var lists = {
   Shelf: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isCompanyAdmin,
@@ -3070,9 +3075,9 @@ var lists = {
   ShelfStock: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isWorker,
@@ -3177,9 +3182,9 @@ var lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,
@@ -3254,9 +3259,9 @@ var lists = {
   Supplier: (0, import_core.list)({
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isManager,
@@ -3289,6 +3294,7 @@ var lists = {
       taxId: (0, import_fields.text)(),
       contactMail: (0, import_fields.text)(),
       orderMail: (0, import_fields.text)(),
+      balance: (0, import_fields.decimal)(),
       phone: (0, import_fields.text)(),
       orderTime: (0, import_fields.integer)(),
       extraFields: (0, import_fields.json)()
@@ -3297,9 +3303,9 @@ var lists = {
   Tag: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,
@@ -3368,17 +3374,15 @@ var lists = {
   User: (0, import_core.list)({
     access: {
       filter: {
-        query: ({ session: session2 }) => companyFilter({ session: session2, accountancyCheckType: "onAccountancyAndCompany" }),
-        update: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
         delete: isGlobalAdmin
       },
       operation: {
         query: isUser,
         create: isManager,
         update: isManager,
-        delete: () => {
-          return true;
-        }
+        delete: isGlobalAdmin
       }
     },
     hooks: {
@@ -3483,6 +3487,7 @@ var lists = {
         ref: "StockMovement.customer",
         many: true
       }),
+      customerBalance: (0, import_fields.decimal)(),
       preferredLanguage: (0, import_fields.text)(),
       customerCompany: (0, import_fields.text)(),
       firstName: (0, import_fields.text)(),
@@ -3503,6 +3508,19 @@ var lists = {
     ui: {
       labelField: "number"
     },
+    access: {
+      filter: {
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
+      },
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager
+      }
+    },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
@@ -3516,19 +3534,6 @@ var lists = {
         } catch (error) {
           console.error("Company hook error");
         }
-      }
-    },
-    access: {
-      filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
-      },
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager
       }
     },
     fields: {
@@ -3555,9 +3560,9 @@ var lists = {
   WorkOrderOperation: (0, import_core.list)({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
       },
       operation: {
         create: isEmployee,

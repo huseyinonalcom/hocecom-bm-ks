@@ -20,43 +20,56 @@ import {
   isSuperAdmin,
   isAdminAccountantIntern,
   isIntern,
+  isAccountant,
 } from "./utils/accesscontrol/rbac";
 import {
-  filterOnIdAccountancyOrCompanyAccountancy,
+  filterOnIdAccountancyOrAccountancyCompanyRelation,
+  filterOnCompanyRelation,
+  filterOnIdCompanyOrCompanyAccountancyRelation,
   filterOnIdAccountancy,
-  companyFilter,
-  filterOnCompany,
-  filterOnIdCompanyOrCompanyAccountancy,
+  filterOnCompanyRelationOrCompanyAccountancyRelation,
 } from "./utils/accesscontrol/tenantac";
 
 export const lists: Lists = {
   Accountancy: list({
     access: {
       filter: {
-        query: filterOnIdAccountancyOrCompanyAccountancy,
+        query: filterOnIdAccountancyOrAccountancyCompanyRelation,
         update: filterOnIdAccountancy,
         delete: isSuperAdmin,
       },
       operation: {
         create: isSuperAdmin,
-        query: isAdminAccountantIntern,
+        query: isAccountant,
         update: isAdminAccountantManager,
         delete: isSuperAdmin,
       },
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+      beforeOperation: async ({ operation, context, item, resolvedData }) => {
         try {
           if (operation === "create" || operation === "update") {
             const pin = resolvedData.pincode;
-            const pinCheck = await context.sudo().query.Company.findOne({
+            let pinCheck = await context.sudo().query.Company.findOne({
               where: {
                 pincode: String(pin),
               },
               query: "id",
             });
+            if (!pinCheck) {
+              pinCheck = await context.sudo().query.Accountancy.findOne({
+                where: {
+                  pincode: String(pin),
+                },
+                query: "id",
+              });
+            }
             if (pinCheck) {
-              throw new Error("Pincode already in use");
+              if (operation === "create") {
+                throw new Error("Pincode already in use");
+              } else if (operation === "update" && pinCheck.id !== item.id) {
+                throw new Error("Pincode already in use");
+              }
             }
           }
         } catch (error) {
@@ -83,9 +96,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: filterOnCompany,
-        delete: filterOnCompany,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        delete: isSuperAdmin,
       },
       operation: {
         create: isUser,
@@ -98,11 +111,14 @@ export const lists: Lists = {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
         try {
           if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id,
-              },
-            };
+            if (isGlobalAdmin({ session: context.session }) && resolvedData.company) {
+            } else {
+              resolvedData.company = {
+                connect: {
+                  id: context.session.data.company.id,
+                },
+              };
+            }
           }
         } catch (error) {
           console.error("Company hook error");
@@ -128,9 +144,9 @@ export const lists: Lists = {
   AssemblyComponent: list({
     access: {
       filter: {
-        query: filterOnCompany,
-        update: filterOnCompany,
-        delete: filterOnCompany,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isManager,
@@ -173,11 +189,13 @@ export const lists: Lists = {
   Company: list({
     access: {
       filter: {
-        query: filterOnIdCompanyOrCompanyAccountancy,
+        query: filterOnIdCompanyOrCompanyAccountancyRelation,
+        update: filterOnIdCompanyOrCompanyAccountancyRelation,
+        delete: denyAll,
       },
       operation: {
         create: isAdminAccountantManager,
-        query: isWorker,
+        query: isUser,
         update: isCompanyAdmin,
         delete: denyAll,
       },
@@ -187,14 +205,26 @@ export const lists: Lists = {
         try {
           if (operation === "create" || operation === "update") {
             const pin = resolvedData.pincode;
-            const pinCheck = await context.sudo().query.Accountancy.findOne({
+            let pinCheck = await context.sudo().query.Company.findOne({
               where: {
                 pincode: String(pin),
               },
               query: "id",
             });
+            if (!pinCheck) {
+              pinCheck = await context.sudo().query.Accountancy.findOne({
+                where: {
+                  pincode: String(pin),
+                },
+                query: "id",
+              });
+            }
             if (pinCheck) {
-              throw new Error("Pincode already in use");
+              if (operation === "create") {
+                throw new Error("Pincode already in use");
+              } else if (operation === "update" && pinCheck.id !== item.id) {
+                throw new Error("Pincode already in use");
+              }
             }
           }
         } catch (error) {
@@ -239,9 +269,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,
@@ -564,6 +594,19 @@ export const lists: Lists = {
     ui: {
       labelField: "amount",
     },
+    access: {
+      filter: {
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
+      },
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager,
+      },
+    },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
@@ -609,19 +652,6 @@ export const lists: Lists = {
         //     },
         //   });
         // }
-      },
-    },
-    access: {
-      filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
-      },
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager,
       },
     },
     fields: {
@@ -814,11 +844,14 @@ export const lists: Lists = {
     },
   }),
   Establishment: list({
+    ui: {
+      labelField: "name",
+    },
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isAdminAccountantManager,
@@ -887,9 +920,9 @@ export const lists: Lists = {
   File: list({
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,
@@ -929,9 +962,9 @@ export const lists: Lists = {
   Material: list({
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isManager,
@@ -1048,9 +1081,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,
@@ -1090,9 +1123,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isGlobalAdmin,
@@ -1131,9 +1164,9 @@ export const lists: Lists = {
   Operation: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,
@@ -1186,9 +1219,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,
@@ -1243,9 +1276,9 @@ export const lists: Lists = {
   Shelf: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isCompanyAdmin,
@@ -1292,9 +1325,9 @@ export const lists: Lists = {
   ShelfStock: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isWorker,
@@ -1401,9 +1434,9 @@ export const lists: Lists = {
     },
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,
@@ -1569,9 +1602,9 @@ export const lists: Lists = {
   Supplier: list({
     access: {
       filter: {
-        query: ({ session }) => companyFilter({ session, accountancyCheckType: "onCompany" }),
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isManager,
@@ -1613,9 +1646,9 @@ export const lists: Lists = {
   Tag: list({
     access: {
       filter: {
-        query: companyFilter,
-        update: companyFilter,
-        delete: companyFilter,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,
@@ -1684,17 +1717,15 @@ export const lists: Lists = {
   User: list({
     access: {
       filter: {
-        query: ({ session, listKey, operation }) => companyFilter({ session, accountancyCheckType: "onAccountancyAndCompany" }),
-        update: companyFilter,
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
         delete: isGlobalAdmin,
       },
       operation: {
         query: isUser,
         create: isManager,
         update: isManager,
-        delete: () => {
-          return true;
-        },
+        delete: isGlobalAdmin,
       },
     },
     hooks: {
@@ -1821,6 +1852,19 @@ export const lists: Lists = {
     ui: {
       labelField: "number",
     },
+    access: {
+      filter: {
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
+      },
+      operation: {
+        create: isEmployee,
+        query: isEmployee,
+        update: isEmployee,
+        delete: isManager,
+      },
+    },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
         try {
@@ -1834,19 +1878,6 @@ export const lists: Lists = {
         } catch (error) {
           console.error("Company hook error");
         }
-      },
-    },
-    access: {
-      filter: {
-        query: filterOnCompany,
-        update: filterOnCompany,
-        delete: filterOnCompany,
-      },
-      operation: {
-        create: isEmployee,
-        query: isEmployee,
-        update: isEmployee,
-        delete: isManager,
       },
     },
     fields: {
@@ -1873,9 +1904,9 @@ export const lists: Lists = {
   WorkOrderOperation: list({
     access: {
       filter: {
-        query: filterOnCompany,
-        update: filterOnCompany,
-        delete: filterOnCompany,
+        query: filterOnCompanyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
       },
       operation: {
         create: isEmployee,

@@ -327,6 +327,7 @@ model Payment {
   id          String     @id @default(cuid())
   value       Decimal    @postgresql.Decimal(18, 4)
   document    Document[] @relation("Document_payments")
+  out         Boolean    @default(false)
   isDeleted   Boolean    @default(false)
   isVerified  Boolean    @default(false)
   creator     User?      @relation("Payment_creator", fields: [creatorId], references: [id])
@@ -428,6 +429,7 @@ model Supplier {
   taxId       String     @default("")
   contactMail String     @default("")
   orderMail   String     @default("")
+  balance     Decimal?   @postgresql.Decimal(18, 4)
   phone       String     @default("")
   orderTime   Int?
   extraFields Json?
@@ -474,6 +476,7 @@ model User {
   documents         Document[]      @relation("Document_creator")
   customerDocuments Document[]      @relation("Document_customer")
   customerMovements StockMovement[] @relation("StockMovement_customer")
+  customerBalance   Decimal?        @postgresql.Decimal(18, 4)
   preferredLanguage String          @default("")
   customerCompany   String          @default("")
   firstName         String          @default("")

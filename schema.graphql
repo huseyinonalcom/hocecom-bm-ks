@@ -1660,6 +1660,7 @@ input PaymentWhereInput {
   id: IDFilter
   value: DecimalFilter
   document: DocumentManyRelationFilter
+  out: BooleanFilter
   isDeleted: BooleanFilter
   isVerified: BooleanFilter
   creator: UserWhereInput
@@ -1672,6 +1673,7 @@ input PaymentWhereInput {
 input PaymentOrderByInput {
   id: OrderDirection
   value: OrderDirection
+  out: OrderDirection
   isDeleted: OrderDirection
   isVerified: OrderDirection
   reference: OrderDirection
@@ -1682,6 +1684,7 @@ input PaymentOrderByInput {
 input PaymentUpdateInput {
   value: Decimal
   document: DocumentRelateToManyForUpdateInput
+  out: Boolean
   isDeleted: Boolean
   isVerified: Boolean
   creator: UserRelateToOneForUpdateInput
@@ -1700,6 +1703,7 @@ input PaymentUpdateArgs {
 input PaymentCreateInput {
   value: Decimal
   document: DocumentRelateToManyForCreateInput
+  out: Boolean
   isDeleted: Boolean
   isVerified: Boolean
   creator: UserRelateToOneForCreateInput
@@ -2046,6 +2050,7 @@ type Supplier {
   taxId: String
   contactMail: String
   orderMail: String
+  balance: Decimal
   phone: String
   orderTime: Int
   extraFields: JSON
@@ -2068,6 +2073,7 @@ input SupplierWhereInput {
   taxId: StringFilter
   contactMail: StringFilter
   orderMail: StringFilter
+  balance: DecimalNullableFilter
   phone: StringFilter
   orderTime: IntNullableFilter
 }
@@ -2084,6 +2090,7 @@ input SupplierOrderByInput {
   taxId: OrderDirection
   contactMail: OrderDirection
   orderMail: OrderDirection
+  balance: OrderDirection
   phone: OrderDirection
   orderTime: OrderDirection
 }
@@ -2097,6 +2104,7 @@ input SupplierUpdateInput {
   taxId: String
   contactMail: String
   orderMail: String
+  balance: Decimal
   phone: String
   orderTime: Int
   extraFields: JSON
@@ -2123,6 +2131,7 @@ input SupplierCreateInput {
   taxId: String
   contactMail: String
   orderMail: String
+  balance: Decimal
   phone: String
   orderTime: Int
   extraFields: JSON
@@ -2241,6 +2250,7 @@ type User {
   customerDocumentsCount(where: DocumentWhereInput! = {}): Int
   customerMovements(where: StockMovementWhereInput! = {}, orderBy: [StockMovementOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: StockMovementWhereUniqueInput): [StockMovement!]
   customerMovementsCount(where: StockMovementWhereInput! = {}): Int
+  customerBalance: Decimal
   preferredLanguage: String
   customerCompany: String
   firstName: String
@@ -2291,6 +2301,7 @@ input UserWhereInput {
   documents: DocumentManyRelationFilter
   customerDocuments: DocumentManyRelationFilter
   customerMovements: StockMovementManyRelationFilter
+  customerBalance: DecimalNullableFilter
   preferredLanguage: StringFilter
   customerCompany: StringFilter
   firstName: StringFilter
@@ -2327,6 +2338,7 @@ input UserOrderByInput {
   phone: OrderDirection
   role: OrderDirection
   ssid: OrderDirection
+  customerBalance: OrderDirection
   preferredLanguage: OrderDirection
   customerCompany: OrderDirection
   firstName: OrderDirection
@@ -2350,6 +2362,7 @@ input UserUpdateInput {
   documents: DocumentRelateToManyForUpdateInput
   customerDocuments: DocumentRelateToManyForUpdateInput
   customerMovements: StockMovementRelateToManyForUpdateInput
+  customerBalance: Decimal
   preferredLanguage: String
   customerCompany: String
   firstName: String
@@ -2400,6 +2413,7 @@ input UserCreateInput {
   documents: DocumentRelateToManyForCreateInput
   customerDocuments: DocumentRelateToManyForCreateInput
   customerMovements: StockMovementRelateToManyForCreateInput
+  customerBalance: Decimal
   preferredLanguage: String
   customerCompany: String
   firstName: String
