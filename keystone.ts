@@ -76,6 +76,7 @@ export default withAuth(
             const pinCheck = await context.sudo().query.Company.findOne({
               where: {
                 pincode: String(pin),
+                isActive: true,
               },
               query: "id",
             });
@@ -85,6 +86,7 @@ export default withAuth(
               const pinCheckAccountancy = await context.sudo().query.Accountancy.findOne({
                 where: {
                   pincode: String(pin),
+                  isActive: true,
                 },
                 query: "id",
               });
