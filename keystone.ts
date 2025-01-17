@@ -79,6 +79,7 @@ export default withAuth(
               },
               query: "id isActive",
             });
+            console.log(pinCheck);
             if (pinCheck && pinCheck.isActive) {
               res.status(200).json({ id: pinCheck.id });
             } else {
@@ -88,6 +89,7 @@ export default withAuth(
                 },
                 query: "id isActive",
               });
+              console.log(pinCheckAccountancy);
               if (pinCheckAccountancy && pinCheckAccountancy.isActive) {
                 res.status(200).json({ id: pinCheckAccountancy.id });
               } else {
