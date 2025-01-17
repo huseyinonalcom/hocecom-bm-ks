@@ -77,7 +77,7 @@ export default withAuth(
               where: {
                 pincode: String(pin),
               },
-              query: "id",
+              query: "id isActive",
             });
             if (pinCheck && pinCheck.isActive) {
               res.status(200).json({ id: pinCheck.id });
@@ -86,7 +86,7 @@ export default withAuth(
                 where: {
                   pincode: String(pin),
                 },
-                query: "id",
+                query: "id isActive",
               });
               if (pinCheckAccountancy && pinCheckAccountancy.isActive) {
                 res.status(200).json({ id: pinCheckAccountancy.id });
