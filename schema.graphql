@@ -1645,6 +1645,10 @@ type Payment {
   reference: String
   type: String
   timestamp: DateTime
+  notes(where: NoteWhereInput! = {}, orderBy: [NoteOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NoteWhereUniqueInput): [Note!]
+  notesCount(where: NoteWhereInput! = {}): Int
+  customer: User
+  supplier: Supplier
   company: Company
   extraFields: JSON
 }
@@ -1667,7 +1671,16 @@ input PaymentWhereInput {
   reference: StringFilter
   type: StringFilter
   timestamp: DateTimeNullableFilter
+  notes: NoteManyRelationFilter
+  customer: UserWhereInput
+  supplier: SupplierWhereInput
   company: CompanyWhereInput
+}
+
+input NoteManyRelationFilter {
+  every: NoteWhereInput
+  some: NoteWhereInput
+  none: NoteWhereInput
 }
 
 input PaymentOrderByInput {
@@ -1691,8 +1704,18 @@ input PaymentUpdateInput {
   reference: String
   type: String
   timestamp: DateTime
+  notes: NoteRelateToManyForUpdateInput
+  customer: UserRelateToOneForUpdateInput
+  supplier: SupplierRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
+}
+
+input NoteRelateToManyForUpdateInput {
+  disconnect: [NoteWhereUniqueInput!]
+  set: [NoteWhereUniqueInput!]
+  create: [NoteCreateInput!]
+  connect: [NoteWhereUniqueInput!]
 }
 
 input PaymentUpdateArgs {
@@ -1710,8 +1733,16 @@ input PaymentCreateInput {
   reference: String
   type: String
   timestamp: DateTime
+  notes: NoteRelateToManyForCreateInput
+  customer: UserRelateToOneForCreateInput
+  supplier: SupplierRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
+}
+
+input NoteRelateToManyForCreateInput {
+  create: [NoteCreateInput!]
+  connect: [NoteWhereUniqueInput!]
 }
 
 type Shelf {
@@ -2049,6 +2080,8 @@ type Supplier {
   address: Address
   taxId: String
   contactMail: String
+  payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
+  paymentsCount(where: PaymentWhereInput! = {}): Int
   orderMail: String
   balance: Decimal
   phone: String
@@ -2072,6 +2105,7 @@ input SupplierWhereInput {
   address: AddressWhereInput
   taxId: StringFilter
   contactMail: StringFilter
+  payments: PaymentManyRelationFilter
   orderMail: StringFilter
   balance: DecimalNullableFilter
   phone: StringFilter
@@ -2103,6 +2137,7 @@ input SupplierUpdateInput {
   address: AddressRelateToOneForUpdateInput
   taxId: String
   contactMail: String
+  payments: PaymentRelateToManyForUpdateInput
   orderMail: String
   balance: Decimal
   phone: String
@@ -2130,6 +2165,7 @@ input SupplierCreateInput {
   address: AddressRelateToOneForCreateInput
   taxId: String
   contactMail: String
+  payments: PaymentRelateToManyForCreateInput
   orderMail: String
   balance: Decimal
   phone: String
@@ -2233,6 +2269,8 @@ type User {
   id: ID!
   name: String
   email: String
+  customerPayments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
+  customerPaymentsCount(where: PaymentWhereInput! = {}): Int
   email2: String
   isBlocked: Boolean
   phone: String
@@ -2291,6 +2329,7 @@ input UserWhereInput {
   id: IDFilter
   name: StringFilter
   email: StringFilter
+  customerPayments: PaymentManyRelationFilter
   email2: StringFilter
   isBlocked: BooleanFilter
   phone: StringFilter
@@ -2315,12 +2354,6 @@ input UserWhereInput {
   accountancy: AccountancyWhereInput
   ownedCompany: CompanyWhereInput
   company: CompanyWhereInput
-}
-
-input NoteManyRelationFilter {
-  every: NoteWhereInput
-  some: NoteWhereInput
-  none: NoteWhereInput
 }
 
 input AddressManyRelationFilter {
@@ -2350,6 +2383,7 @@ input UserOrderByInput {
 input UserUpdateInput {
   name: String
   email: String
+  customerPayments: PaymentRelateToManyForUpdateInput
   email2: String
   isBlocked: Boolean
   phone: String
@@ -2379,13 +2413,6 @@ input UserUpdateInput {
   extraFields: JSON
 }
 
-input NoteRelateToManyForUpdateInput {
-  disconnect: [NoteWhereUniqueInput!]
-  set: [NoteWhereUniqueInput!]
-  create: [NoteCreateInput!]
-  connect: [NoteWhereUniqueInput!]
-}
-
 input AddressRelateToManyForUpdateInput {
   disconnect: [AddressWhereUniqueInput!]
   set: [AddressWhereUniqueInput!]
@@ -2401,6 +2428,7 @@ input UserUpdateArgs {
 input UserCreateInput {
   name: String
   email: String
+  customerPayments: PaymentRelateToManyForCreateInput
   email2: String
   isBlocked: Boolean
   phone: String
@@ -2428,11 +2456,6 @@ input UserCreateInput {
   ownedCompany: CompanyRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
-}
-
-input NoteRelateToManyForCreateInput {
-  create: [NoteCreateInput!]
-  connect: [NoteWhereUniqueInput!]
 }
 
 input AddressRelateToManyForCreateInput {

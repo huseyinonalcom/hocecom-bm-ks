@@ -276,13 +276,14 @@ model Material {
 }
 
 model Note {
-  id          String   @id @default(cuid())
-  note        String   @default("")
-  creator     User?    @relation("Note_creator", fields: [creatorId], references: [id])
-  creatorId   String?  @map("creator")
-  company     Company? @relation("Note_company", fields: [companyId], references: [id])
-  companyId   String?  @map("company")
-  extraFields Json?
+  id                 String    @id @default(cuid())
+  note               String    @default("")
+  creator            User?     @relation("Note_creator", fields: [creatorId], references: [id])
+  creatorId          String?   @map("creator")
+  company            Company?  @relation("Note_company", fields: [companyId], references: [id])
+  companyId          String?   @map("company")
+  extraFields        Json?
+  from_Payment_notes Payment[] @relation("Payment_notes")
 
   @@index([creatorId])
   @@index([companyId])
@@ -335,11 +336,18 @@ model Payment {
   reference   String     @default("")
   type        String     @default("cash")
   timestamp   DateTime?  @default(now())
+  notes       Note[]     @relation("Payment_notes")
+  customer    User?      @relation("Payment_customer", fields: [customerId], references: [id])
+  customerId  String?    @map("customer")
+  supplier    Supplier?  @relation("Payment_supplier", fields: [supplierId], references: [id])
+  supplierId  String?    @map("supplier")
   company     Company?   @relation("Payment_company", fields: [companyId], references: [id])
   companyId   String?    @map("company")
   extraFields Json?
 
   @@index([creatorId])
+  @@index([customerId])
+  @@index([supplierId])
   @@index([companyId])
 }
 
@@ -428,6 +436,7 @@ model Supplier {
   addressId   String?    @map("address")
   taxId       String     @default("")
   contactMail String     @default("")
+  payments    Payment[]  @relation("Payment_supplier")
   orderMail   String     @default("")
   balance     Decimal?   @postgresql.Decimal(18, 4)
   phone       String     @default("")
@@ -464,6 +473,7 @@ model User {
   id                String          @id @default(cuid())
   name              String          @default("")
   email             String          @unique @default("")
+  customerPayments  Payment[]       @relation("Payment_customer")
   email2            String          @default("")
   isBlocked         Boolean         @default(false)
   phone             String          @default("")

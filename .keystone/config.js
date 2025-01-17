@@ -3019,6 +3019,9 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
+      notes: (0, import_fields.relationship)({ ref: "Note", many: true }),
+      customer: (0, import_fields.relationship)({ ref: "User.customerPayments", many: false }),
+      supplier: (0, import_fields.relationship)({ ref: "Supplier.payments", many: false }),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       extraFields: (0, import_fields.json)()
     }
@@ -3293,6 +3296,7 @@ var lists = {
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
       taxId: (0, import_fields.text)(),
       contactMail: (0, import_fields.text)(),
+      payments: (0, import_fields.relationship)({ ref: "Payment.supplier", many: true }),
       orderMail: (0, import_fields.text)(),
       balance: (0, import_fields.decimal)(),
       phone: (0, import_fields.text)(),
@@ -3431,6 +3435,7 @@ var lists = {
         isIndexed: "unique",
         validation: { isRequired: true }
       }),
+      customerPayments: (0, import_fields.relationship)({ ref: "Payment.customer", many: true }),
       email2: (0, import_fields.text)(),
       isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
       phone: (0, import_fields.text)(),
