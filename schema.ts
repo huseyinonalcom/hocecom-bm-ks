@@ -18,7 +18,6 @@ import {
   isManager,
   isUser,
   isSuperAdmin,
-  isAdminAccountantIntern,
   isIntern,
   isAccountant,
 } from "./utils/accesscontrol/rbac";
@@ -591,9 +590,6 @@ export const lists: Lists = {
     },
   }),
   DocumentProduct: list({
-    ui: {
-      labelField: "amount",
-    },
     access: {
       filter: {
         query: filterOnCompanyRelationOrCompanyAccountancyRelation,
@@ -844,9 +840,6 @@ export const lists: Lists = {
     },
   }),
   Establishment: list({
-    ui: {
-      labelField: "name",
-    },
     access: {
       filter: {
         query: filterOnCompanyRelationOrCompanyAccountancyRelation,
