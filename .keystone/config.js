@@ -2358,9 +2358,6 @@ var lists = {
     }
   }),
   DocumentProduct: (0, import_core.list)({
-    ui: {
-      labelField: "amount"
-    },
     access: {
       filter: {
         query: filterOnCompanyRelationOrCompanyAccountancyRelation,
@@ -2594,9 +2591,6 @@ var lists = {
     }
   }),
   Establishment: (0, import_core.list)({
-    ui: {
-      labelField: "name"
-    },
     access: {
       filter: {
         query: filterOnCompanyRelationOrCompanyAccountancyRelation,
@@ -3742,18 +3736,20 @@ var keystone_default = withAuth(
               where: {
                 pincode: String(pin)
               },
-              query: "id"
+              query: "id isActive"
             });
-            if (pinCheck) {
+            console.log(pinCheck);
+            if (pinCheck && pinCheck.isActive) {
               res.status(200).json({ id: pinCheck.id });
             } else {
               const pinCheckAccountancy = await context.sudo().query.Accountancy.findOne({
                 where: {
                   pincode: String(pin)
                 },
-                query: "id"
+                query: "id isActive"
               });
-              if (pinCheckAccountancy) {
+              console.log(pinCheckAccountancy);
+              if (pinCheckAccountancy && pinCheckAccountancy.isActive) {
                 res.status(200).json({ id: pinCheckAccountancy.id });
               } else {
                 res.status(404).json({ message: "Bad pin" });
