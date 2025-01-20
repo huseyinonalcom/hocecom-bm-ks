@@ -29,7 +29,7 @@ const run = async () => {
     );
     await createZip(tempDir, zipPath);
     await sendEmailWithAttachment(zipPath);
-    console.log(
+    console.info(
       "Worker for dates",
       dateFormatOnlyDate(documents.at(0).date),
       "to",
@@ -39,7 +39,6 @@ const run = async () => {
       "finished"
     );
   } catch (error) {
-    console.log(documents.at(0));
     console.error("An error occurred:", error);
   }
 };

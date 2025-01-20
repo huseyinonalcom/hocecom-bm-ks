@@ -42,15 +42,15 @@ export const sendMail = async ({
 
     transporter.sendMail(mailOptionsClient, (error: any) => {
       if (error) {
-        console.log("mail error", error);
-        return true;
-      } else {
-        console.log("mail sent");
+        console.error("mail error", error);
         return false;
+      } else {
+        console.info("mail sent");
+        return true;
       }
     });
   } catch (e) {
-    console.log("mail error", e);
+    console.error("mail error", e);
     return false;
   }
 };

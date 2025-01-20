@@ -355,14 +355,11 @@ export const lists: Lists = {
         if (resolvedData?.type != "purchase") {
           if (operation === "create" || operation === "update") {
             try {
-              console.log(resolvedData);
-              console.log(item);
               const postedDocument = await context.sudo().query.Document.findOne({
                 where: { id: resolvedData.id },
                 query:
                   "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
               });
-              console.log(document);
               let bcc;
               if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
                 bcc = postedDocument.customer.email2;

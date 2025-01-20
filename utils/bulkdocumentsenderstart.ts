@@ -54,7 +54,7 @@ async function fetchDocuments(companyID: number, docTypes: string[], month: numb
 async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context }: BulkDocumentSenderParameters): Promise<void> {
   const documents = await fetchDocuments(companyID, docTypes, month, year, context);
   if (documents.length === 0) {
-    console.log("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
+    console.info("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
     return;
   }
   const company = await fetchCompany(companyID, context);

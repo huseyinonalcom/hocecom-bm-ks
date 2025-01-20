@@ -1,6 +1,4 @@
 export const formatCurrency = (value: number, currency: string) => {
-  console.log(currency);
-  console.log(value);
   let lang;
   switch (currency) {
     case "TRY":

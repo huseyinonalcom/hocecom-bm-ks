@@ -52,7 +52,6 @@ export const fixOrder = async ({ firstOrderID, lastOrderID, company, type }: { f
           number: numbers[i],
         });
       }
-      console.log(JSON.stringify(newOrders));
       for (let order of newOrders) {
         await payload.update({
           collection: "documents",
@@ -69,6 +68,5 @@ export const fixOrder = async ({ firstOrderID, lastOrderID, company, type }: { f
     return false;
   }
 
-  console.log("Finished fixing order");
   return true;
 };
