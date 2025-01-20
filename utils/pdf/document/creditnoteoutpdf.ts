@@ -1,6 +1,7 @@
 import { formatCurrency } from "../../formatters/formatcurrency";
 import { dateFormatBe } from "../../formatters/dateformatters";
 import { Buffer } from "buffer";
+import { t } from "../../localization/localization";
 
 export async function generateCreditNoteOut({
   document,
@@ -9,6 +10,13 @@ export async function generateCreditNoteOut({
   document: any;
   logoBuffer?: Buffer;
 }): Promise<{ filename: string; content: Buffer; contentType: string }> {
+  const tr = (key: string): string => {
+    try {
+      return t(key, document.customer!.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   const creditNoteDoc = document;
   const establishment = creditNoteDoc.establishment;
   const establishmentAddress = establishment.address;

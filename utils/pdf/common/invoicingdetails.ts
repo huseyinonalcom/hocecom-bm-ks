@@ -1,4 +1,13 @@
+import { t } from "../../localization/localization";
+
 export const pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }: { doc: PDFKit.PDFDocument; invoiceDoc: any; x: number; y: number; width: number }) => {
+  const tr = (key: string): string => {
+    try {
+      return t(key, invoiceDoc.customer!.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   const customer = invoiceDoc.customer;
   const address = invoiceDoc.docAddress;
   doc.fontSize(10).text("Invoicing: " + customer.firstName + " " + customer.lastName, x, y, {

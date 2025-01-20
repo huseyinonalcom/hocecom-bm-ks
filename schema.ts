@@ -351,15 +351,16 @@ export const lists: Lists = {
           console.error(error);
         }
       },
-      afterOperation: async ({ operation, resolvedData, context }) => {
+      afterOperation: async ({ operation, resolvedData, inputData, item, context }) => {
         if (resolvedData?.type != "purchase") {
           if (operation === "create" || operation === "update") {
             try {
               console.log(resolvedData);
-              const postedDocument = await context.query.Document.findOne({
+              console.log(item);
+              const postedDocument = await context.sudo().query.Document.findOne({
                 where: { id: resolvedData.id },
                 query:
-                  "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
+                  "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
               });
               console.log(document);
               let bcc;

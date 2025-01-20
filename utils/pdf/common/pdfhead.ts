@@ -1,3 +1,4 @@
+import { t } from "../../localization/localization";
 import { flexBox } from "./positioning";
 
 export const pdfHead = async ({
@@ -13,6 +14,13 @@ export const pdfHead = async ({
   pageLeft: number;
   pageTop: number;
 }) => {
+  const tr = (key: string): string => {
+    try {
+      return t(key, invoiceDoc.customer!.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   const columnCount = 11;
   const flexBoxHead = ({ flex, column }: { flex: number; column: number }) => flexBox({ pageSize: "A4", originY: pageTop + 5, flex, column, columnCount });
 

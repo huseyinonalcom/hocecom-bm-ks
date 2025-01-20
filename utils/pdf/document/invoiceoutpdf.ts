@@ -1,14 +1,14 @@
+import { PageSize, pageSizesDimensions } from "../common/positioning";
+import { pdfInvoicingDetails } from "../common/invoicingdetails";
 import { formatCurrency } from "../../formatters/formatcurrency";
-import { dateFormatBe } from "../../formatters/dateformatters";
-import { flexBox, PageSize, pageSizesDimensions } from "../common/positioning";
+import { pdfDeliveryDetails } from "../common/deliverydetails";
+import { generateProductTable } from "../common/productstable";
+import { pdfPaymentDetails } from "../common/paymentdetails";
+import { paymentsTable } from "../common/paymenthistory";
+import { t } from "../../localization/localization";
+import { taxTable } from "../common/taxtotals";
 import { pdfHead } from "../common/pdfhead";
 import { Buffer } from "buffer";
-import { pdfPaymentDetails } from "../common/paymentdetails";
-import { pdfInvoicingDetails } from "../common/invoicingdetails";
-import { pdfDeliveryDetails } from "../common/deliverydetails";
-import { generateInvoiceTable } from "../common/productstable";
-import { paymentsTable } from "../common/paymenthistory";
-import { taxTable } from "../common/taxtotals";
 
 export async function generateInvoiceOut({
   document,
@@ -17,6 +17,13 @@ export async function generateInvoiceOut({
   document: any;
   logoBuffer?: Buffer;
 }): Promise<{ filename: string; content: Buffer; contentType: string }> {
+  const tr = (key: string): string => {
+    try {
+      return t(key, invoiceDoc.customer!.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   const invoiceDoc = document;
   const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
@@ -56,7 +63,7 @@ export async function generateInvoiceOut({
         endOfDetailsRow = endOfDeliveryDetails;
       }
 
-      let y = generateInvoiceTable(doc, documentProducts, endOfDetailsRow);
+      generateProductTable(doc, documentProducts, endOfDetailsRow, invoiceDoc);
 
       let totalsXNames = 350;
       let totalXValues = 480;
@@ -69,37 +76,37 @@ export async function generateInvoiceOut({
         .moveTo(350, totalsY - 85)
         .lineTo(575, totalsY - 85)
         .stroke("black");
-      doc.text("To Pay:", totalsXNames, totalsY);
-      doc.text("Already Paid:", totalsXNames, totalsY - 75);
-      doc.text("Total Excl. Tax:", totalsXNames, totalsY - 60);
-      doc.text("Total Tax:", totalsXNames, totalsY - 45);
-      doc.text("Total:", totalsXNames, totalsY - 30);
+
+      doc.text(tr("already-paid"), totalsXNames, totalsY - 75);
+      doc.text(tr("total-value-excl-tax"), totalsXNames, totalsY - 60);
+      doc.text(tr("total-tax"), totalsXNames, totalsY - 45);
+      doc.text(tr("total"), totalsXNames, totalsY - 30);
       doc.lineWidth(1);
       doc
         .lineCap("butt")
         .moveTo(350, totalsY - 10)
         .lineTo(575, totalsY - 10)
         .stroke("black");
-      doc.text("To Pay:", totalsXNames, totalsY);
+      doc.text(tr("to-pay"), totalsXNames, totalsY);
       //
-      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalXValues, totalsY - 75, {
+      doc.text(formatCurrency(Number(invoiceDoc.totalPaid), invoiceDoc.currency), totalXValues, totalsY - 75, {
         align: "right",
       });
-      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)), totalXValues, totalsY - 60, {
+      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax), invoiceDoc.currency), totalXValues, totalsY - 60, {
         align: "right",
       });
-      doc.text(formatCurrency(Number(invoiceDoc.totalTax)), totalXValues, totalsY - 45, {
+      doc.text(formatCurrency(Number(invoiceDoc.totalTax), invoiceDoc.currency), totalXValues, totalsY - 45, {
         align: "right",
       });
-      doc.text(formatCurrency(Number(invoiceDoc.total)), totalXValues, totalsY - 30, {
+      doc.text(formatCurrency(Number(invoiceDoc.total), invoiceDoc.currency), totalXValues, totalsY - 30, {
         align: "right",
       });
       //
-      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalXValues, totalsY, {
+      doc.text(formatCurrency(Number(invoiceDoc.totalToPay), invoiceDoc.currency), totalXValues, totalsY, {
         align: "right",
       });
 
-      paymentsTable({ doc: doc, x: totalsXNames, yEnd: totalsY - 92, payments: payments });
+      paymentsTable({ doc: doc, x: totalsXNames, yEnd: totalsY - 92, payments: payments, invoiceDoc });
 
       taxTable({
         doc: doc,

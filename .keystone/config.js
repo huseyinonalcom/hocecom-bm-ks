@@ -34,14 +34,6 @@ __export(keystone_exports, {
 });
 module.exports = __toCommonJS(keystone_exports);
 
-// utils/formatters/formatcurrency.ts
-var formatCurrency = (value) => {
-  return new Intl.NumberFormat("nl-BE", {
-    style: "currency",
-    currency: "EUR"
-  }).format(value);
-};
-
 // utils/pdf/common/positioning.ts
 var pageSizesDimensions = {
   A4: {
@@ -79,137 +71,1311 @@ var flexBox = ({
   };
 };
 
-// utils/pdf/common/pdfhead.ts
-var pdfHead = async ({
-  doc,
-  invoiceDoc,
-  logoBuffer,
-  pageLeft,
-  pageTop
-}) => {
-  const columnCount = 11;
-  const flexBoxHead = ({ flex, column }) => flexBox({ pageSize: "A4", originY: pageTop + 5, flex, column, columnCount });
-  const imageBox = flexBoxHead({ flex: 4, column: 1 });
-  if (logoBuffer) {
-    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
-  } else {
-    const response = await fetch(invoiceDoc.establishment.logo.url);
-    logoBuffer = Buffer.from(await response.arrayBuffer());
-    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
-  }
-  let establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
-  establishmentDetailsBox.x += 20;
-  establishmentDetailsBox.width -= 20;
-  doc.fontSize(10).text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
-    width: establishmentDetailsBox.width,
-    align: "left"
-  });
-  if (invoiceDoc.establishment.phone) {
-    doc.text(invoiceDoc.establishment.phone, {
-      width: establishmentDetailsBox.width
-    });
-  }
-  if (invoiceDoc.establishment.phone2) {
-    doc.text(invoiceDoc.establishment.phone2, {
-      width: establishmentDetailsBox.width
-    });
-  }
-  if (invoiceDoc.establishment.taxID) {
-    doc.text(invoiceDoc.establishment.taxID, {
-      width: establishmentDetailsBox.width
-    });
-  }
-  let invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
-  const validDate = new Date(invoiceDoc.date);
-  validDate.setDate(validDate.getDate() + 15);
-  invoiceDetailsBox.x += 50;
-  invoiceDetailsBox.width -= 20;
-  doc.fontSize(20).text("INVOICE", invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
-    width: invoiceDetailsBox.width - 5,
-    align: "right"
-  }).fontSize(10).text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
-    width: invoiceDetailsBox.width,
-    align: "left"
-  }).text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width,
-    align: "left"
-  });
-  doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width,
-    align: "left"
-  });
-  if (invoiceDoc.deliveryDate) {
-    doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
-      width: invoiceDetailsBox.width,
-      align: "left"
-    });
-  }
-  if (invoiceDoc.origin) {
-    doc.text("External Service: " + invoiceDoc.origin, {
-      width: invoiceDetailsBox.width,
-      align: "left"
-    });
-  }
-  if (invoiceDoc.externalId) {
-    doc.text("External ID: " + invoiceDoc.externalId, {
-      width: invoiceDetailsBox.width,
-      align: "left"
-    });
-  }
+// utils/localization/locales/en.ts
+var enjson = {
+  "invoice-details": "Invoice Details",
+  "purchase-details": "Purchase Details",
+  "credit_note-details": "Credit Note Details",
+  "debit_note-details": "Debit Note Details",
+  "dispatch-details": "Dispatch Details",
+  accountant: "Accountant",
+  active: "Active",
+  "add-product": "Add Product",
+  "add-supplier": "Add Supplier",
+  "additional-information": "Additional Information",
+  "address-delivery": "Delivery Address",
+  "address-invoice": "Invoice Address",
+  address: "Address",
+  adresses: "Addresses",
+  "already-paid": "Already Paid",
+  amount: "Amount",
+  attention: "Attention",
+  bank_transfer: "Bank Transfer",
+  "block-self": "You cannot block yourself.",
+  blocked: "Blocked",
+  cancel: "Cancel",
+  cancelled: "Cancelled",
+  cash: "Cash",
+  choose: "Choose",
+  city: "City",
+  "client-details": "Client Details",
+  close: "Close",
+  code: "Code",
+  comments: "Comments",
+  company_admin: "Admin",
+  company: "Company",
+  "confirm-exit-text": "Are you sure you want to exit the program?",
+  "confirm-exit": "Exit Program",
+  connect: "Sign In",
+  contact: "Contact",
+  continue: "Continue",
+  "convert-to-delivery_note": "Convert to Delivery Note",
+  "convert-to-invoice": "Convert to Invoice",
+  "convert-to-order": "Convert to Order",
+  "copy-material": "Copy Material",
+  country: "Country",
+  "create-invoice": "New Invoice",
+  "create-order": "New Order",
+  "create-quote": "New Quote",
+  "create-stock-movement": "Create Stock Movement",
+  creator: "Sales Person",
+  credit_card: "Credit Card",
+  credit_note_date: "Credit Note Date",
+  credit_note_details: "Credit Note Details",
+  credit_note: "Credit Note",
+  "current-stock": "Current Stock",
+  "customer-company": "Company",
+  "customer-details": "Customer Details",
+  "customer-tax-id": "VAT Number",
+  customer: "Customer",
+  customers: "Customers",
+  dashboard: "Dashboard",
+  date_credit_note: "Credit Note Date",
+  date_delivery_note: "Delivery Note Date",
+  date_invoice: "Invoice Date",
+  date_order: "Order Date",
+  date_quote: "Quote Date",
+  date_sale: "Order Date",
+  "date-dispatch": "Dispatch Date",
+  "date-sale": "Sale Date",
+  date: "Date",
+  debit_card: "Debit Card",
+  debit_note: "Debit Note",
+  deliveries: "Deliveries",
+  delivery_note_date: "Delivery Note Date",
+  delivery_note_details: "Delivery Note Details",
+  delivery_note: "Dispatch",
+  "delivery-date": "Delivery Date",
+  delivery: "Delivery",
+  description: "Description",
+  "details-customer": "Customer Details",
+  "details-for-payment": "Payment Details",
+  details: "Details",
+  "dialog-warning": "Warning!",
+  dispatch: "Dispatch",
+  document: "Document",
+  documents: "Documents",
+  door: "Door",
+  download_update: "Download Update",
+  drop_files: "Drag or click to add files",
+  ean: "EAN",
+  "edit-customer": "Edit Customer",
+  "edit-document": "Edit Document",
+  email: "Email",
+  employee: "Sales Person",
+  end: "End",
+  "enter-email": "Enter your email address",
+  "error-creating-payment": "Error while saving payment",
+  "error-updating-payment": "Error while updating payment",
+  establishment: "Establishment",
+  establishments: "Establishments",
+  expiration: "Expiration Date",
+  export: "Export",
+  "field-required": "Required field",
+  files: "Files",
+  "fill-all-fields": "Fill in all fields!",
+  filter: "Filter",
+  financing_unverified: "Financing (Unverified)",
+  financing: "Financing",
+  "first-name": "First Name",
+  firstname: "First Name",
+  firstName: "First Name",
+  floor: "Floor",
+  "forgot-password": "I forgot my password.",
+  general_manager: "General Manager",
+  import: "Import",
+  incoming: "Incoming",
+  intern: "Intern",
+  invoice_date: "Invoice Date",
+  invoice_details: "Invoice Details",
+  invoice: "Invoice",
+  invoicing: "Invoicing",
+  "last-name": "Last Name",
+  lastname: "Last Name",
+  lastName: "Last Name",
+  "leave-empty": "Leave empty for automatic number",
+  "list-customers": "Customer List",
+  "list-documents": "Document List",
+  "list-establishments": "Establishments List",
+  "list-materials": "Materials List",
+  "list-suppliers": "Suppliers List",
+  login: "Login",
+  "manager-notes": "Manager Notes",
+  manager: "Manager",
+  materials: "Materials",
+  "modify-dispatch": "Modify Dispatch",
+  "modify-invoice": "Modify Invoice",
+  "modify-material": "Edit Material",
+  "modify-quote": "Modify Quote",
+  "modify-sale": "Modify Order",
+  name: "Name",
+  new_document_credit_note: "New Credit Note",
+  new_document_delivery_note: "New Delivery Note",
+  new_document_invoice: "New Invoice",
+  new_document_order: "New Order",
+  new_document_quote: "New Quote",
+  "new-address": "New Address",
+  "new-customer": "New Customer",
+  "new-document": "New Document",
+  "new-line": "New Line",
+  "new-material": "New Material",
+  "new-supplier": "New Supplier",
+  "new-user": "New User",
+  no: "No",
+  online: "Online",
+  order_date: "Order Date",
+  order_details: "Order Details",
+  order: "Order",
+  outgoing: "Outgoing",
+  owner: "Owner",
+  page: "Page",
+  paid: "Paid",
+  passive: "Passive",
+  password: "Password",
+  "payment-details": "Payment Details",
+  "payment-history": "Payment History",
+  "payment-new": "New Payment",
+  "payment-status": "Payment Status",
+  payments: "Payments",
+  "pdf-export": "PDF Export",
+  PDF: "PDF",
+  phone: "Phone",
+  pincode: "PIN Code",
+  "prefered-language": "Preferred Language",
+  "price-net": "Net Price",
+  price: "Price",
+  "primary-details": "Primary Details",
+  private: "Private",
+  products: "Products",
+  professionnal: "Professional",
+  promissory: "Promissory",
+  province: "Province",
+  purchase: "Purchase",
+  quote_date: "Quote Date",
+  quote_details: "Quote Details",
+  quote: "Quote",
+  reduction: "Discount",
+  reference: "Reference",
+  references: "References",
+  remove: "Remove",
+  rename: "Rename",
+  reset: "Reset",
+  role: "Role",
+  sale: "Order",
+  save_credit_note: "Save Credit Note",
+  save_CreditNote: "Save Credit Note",
+  save_delivery_note: "Save Delivery Note",
+  save_DeliveryNote: "Save Delivery Note",
+  save_invoice: "Save Invoice",
+  save_Invoice: "Save Invoice",
+  save_order: "Save Order",
+  save_Order: "Save Order",
+  save_quote: "Save Quote",
+  save_Quote: "Save Quote",
+  "save-material": "Save Material",
+  save: "Save",
+  search: "Search",
+  "secondary-details": "Additional Details",
+  seller: "Sales Person",
+  send: "Send password reset request",
+  shelf: "Shelf",
+  "signature-customer": "Customer Signature",
+  "signature-delivery": "Sign here to confirm receipt of delivery",
+  "signature-seller": "Seller Signature",
+  start: "Start",
+  "stock-movement-details": "Stock Movement Details",
+  stock: "Stock",
+  street: "Street",
+  subtotal: "Subtotal",
+  "supplier-details": "Supplier Details",
+  supplier: "Supplier",
+  suppliers: "Suppliers",
+  "tax-in": "VAT Incl",
+  "tax-out": "VAT Excl",
+  tax: "VAT",
+  "tax(%)": "VAT(%)",
+  taxId: "VAT Number",
+  taxID: "VAT Number",
+  "timed-out": "You have been logged out due to inactivity. Please log in again.",
+  "to-pay": "To Pay",
+  "total-reduction": "Total Discount",
+  "total-tax": "Total VAT",
+  "total-to-pay": "Total to Pay",
+  "total-value-excl-tax": "Total Excl. VAT",
+  "total-value": "Total Value",
+  total: "Total",
+  type: "Type",
+  unknown: "Other",
+  "user-details": "User Details",
+  "user-modify": "Modify User",
+  user: "User",
+  username: "Username",
+  users: "Users",
+  "valid-until": "Valid Until",
+  value: "Value",
+  warehouse: "Warehouse",
+  worker: "Worker",
+  yes: "Yes",
+  z: "Z",
+  zip: "Postal Code",
+  "please-update": "Please update to continue.",
+  "download-update": "Download Update",
+  delete: "Delete",
+  open: "Open",
+  "choose-language": "Choose Language",
+  "new-establishment": "New Establishment",
+  "details-establishment": "Establishment Details",
+  "modify-establishment": "Modify Establishment",
+  "phone-1": "Phone",
+  "phone-2": "Phone 2",
+  "tax-id": "Tax ID",
+  "bank-account-1": "Bank Account",
+  "bank-account-2": "Bank Account 2",
+  "bank-account-3": "Bank Account 3",
+  "establishment-details": "Establishment Details",
+  "stock-details": "Stock Details",
+  weight: "kg (Weight)",
+  width: "m (Width)",
+  area: "m2 (Area)",
+  length: "m (Length)",
+  volume: "l/m\xB3 (Volume)",
+  height: "m (Height)",
+  "invalid-number": "invalid number",
+  unit: "Unit",
+  collections: "Collections",
+  "add-collection": "Add Collection",
+  "new-tag": "New Tag",
+  edit: "Edit",
+  "collection-details": "Collection Details",
+  "list-payments": "Payments List",
+  "list-users": "Users List",
+  preview: "Preview",
+  "external-id": "External ID",
+  origin: "External Service",
+  "sale-details": "Sale Details",
+  addresses: "Addresses",
+  "convert-to-credit_note": "Convert to Credit Note",
+  "quote-details": "Quote Details",
+  "required-field": "Required field",
+  "user-or-password-invalid": "Username or password is incorrect",
+  date_dispatch: "Dispatch Date",
+  "modify-credit_note": "Modify Credit Note",
+  "change-password": "Change Password",
+  "reset-password": "Reset Password",
+  "current-password": "Current Password",
+  "new-password": "New Password",
+  "password-confirm": "Confirm Password",
+  "password-too-short": "Password must be at least 8 characters",
+  "password-confirm-not-match": "Passwords do not match",
+  "password-must-contain-number": "Password must contain a number",
+  "password-updated": "Password updated",
+  "password-update-failed": "Password update failed",
+  "password-must-contain-letter": "Password must contain a letter",
+  "user-invalid": "User configuration invalid.",
+  "pincode-invalid": "Pincode invalid",
+  "error-updating-document": "Error while updating document",
+  "error-creating-document": "Error while creating document",
+  "no-address": "No address chosen",
+  "confirm-delete": "Confirm Delete",
+  "confirm-delete-text": "Are you sure you want to delete this data? This action cannot be undone.",
+  "address-details": "Address Details",
+  "document-prefixes": "Document Prefixes",
+  companies: "Companies",
+  "modify-purchase": "Modify Purchase",
+  date_purchase: "Date Purchase",
+  other: "Other",
+  cheque: "Cheque",
+  "choose-establishment": "Choose Establishment",
+  "invalid-email": "Invalid Email",
+  "purchase-no-file": "Please upload the this purchase in PDF format."
 };
 
-// utils/pdf/document/invoiceoutpdf.ts
-var import_buffer = require("buffer");
+// utils/localization/locales/fr.ts
+var frjson = {
+  "invoice-details": "Details de Facture",
+  "purchase-details": "D\xE9tails de Achat",
+  "credit_note-details": "Details de Note de Cr\xE9dit",
+  "debit_note-details": "Details de Note de D\xE9bit",
+  "dispatch-details": "D\xE9tails de Exp\xE9dition",
+  accountant: "Comptable",
+  active: "Actif",
+  "add-product": "Ajouter un Produit",
+  "add-supplier": "Ajouter un Fournisseur",
+  "additional-information": "Informations Suppl\xE9mentaires",
+  "address-delivery": "Adresse de Livraison",
+  "address-invoice": "Adresse de Facturation",
+  address: "Adresse",
+  adresses: "Adresses",
+  "already-paid": "D\xE9j\xE0 Pay\xE9",
+  amount: "Montant",
+  attention: "Attention",
+  bank_transfer: "Virement Bancaire",
+  "block-self": "Vous ne pouvez pas vous bloquer.",
+  blocked: "Bloqu\xE9",
+  cancel: "Annuler",
+  cancelled: "Annul\xE9",
+  cash: "Esp\xE8ces",
+  choose: "Choisir",
+  city: "Ville",
+  "client-details": "D\xE9tails Client",
+  close: "Fermer",
+  code: "Code",
+  comments: "Commentaires",
+  company_admin: "Administrateur",
+  company: "Entreprise",
+  "confirm-exit-text": "\xCAtes-vous s\xFBr de vouloir quitter le programme\xA0?",
+  "confirm-exit": "Quitter le programme",
+  connect: "Se Connecter",
+  contact: "Contact",
+  continue: "Continuer",
+  "convert-to-delivery_note": "Convertir en Bon de Livraison",
+  "convert-to-invoice": "Convertir en Facture",
+  "convert-to-order": "Convertir en Commande",
+  "copy-material": "Copier le Mat\xE9riel",
+  country: "Pays",
+  "create-invoice": "Cr\xE9er une Facture",
+  "create-order": "Cr\xE9er une Commande",
+  "create-quote": "Cr\xE9er un Devis",
+  "create-stock-movement": "Cr\xE9er un Mouvement de Stock",
+  creator: "Cr\xE9ateur",
+  credit_card: "Carte de Cr\xE9dit",
+  credit_note_date: "Date de Note de Cr\xE9dit",
+  credit_note_details: "D\xE9tails de Note de Cr\xE9dit",
+  credit_note: "Note de Cr\xE9dit",
+  "current-stock": "Stock Actuel",
+  "customer-company": "Entreprise",
+  "customer-details": "D\xE9tails du Client",
+  "customer-tax-id": "Num\xE9ro de TVA",
+  customer: "Client",
+  customers: "Clients",
+  dashboard: "Tableau de Bord",
+  date_credit_note: "Date de Note de Cr\xE9dit",
+  date_delivery_note: "Date du Bon de Livraison",
+  date_invoice: "Date de la Facture",
+  date_order: "Date de la Commande",
+  date_quote: "Date du Devis",
+  date_sale: "Date de Vente",
+  "date-dispatch": "Date d'Exp\xE9dition",
+  "date-sale": "Date de Commande",
+  date: "Date",
+  debit_card: "Carte de D\xE9bit",
+  debit_note: "Note de D\xE9bit",
+  deliveries: "Livraisons",
+  delivery_note_date: "Date du Bon de Livraison",
+  delivery_note_details: "D\xE9tails du Bon de Livraison",
+  delivery_note: "Bon de Livraison",
+  "delivery-date": "Date de Livraison",
+  delivery: "Livraison",
+  description: "Description",
+  "details-customer": "D\xE9tails du Client",
+  "details-for-payment": "D\xE9tails de Paiement",
+  details: "D\xE9tails",
+  "dialog-warning": "Attention\xA0!",
+  dispatch: "Exp\xE9dition",
+  document: "Document",
+  documents: "Documents",
+  door: "Porte",
+  download_update: "T\xE9l\xE9charger la Mise \xE0 Jour",
+  drop_files: "D\xE9poser ou cliquer pour ajouter des fichiers",
+  ean: "Ean",
+  "edit-customer": "Modifier le Client",
+  "edit-document": "Modifier le Document",
+  email: "E-mail",
+  employee: "Employ\xE9",
+  end: "Fin",
+  "enter-email": "Saisissez votre adresse e-mail",
+  "error-creating-payment": "Erreur lors de la cr\xE9ation du paiement",
+  "error-updating-payment": "Erreur lors de la mise \xE0 jour du paiement",
+  establishment: "\xC9tablissement",
+  establishments: "\xC9tablissements",
+  expiration: "Date d'Expiration",
+  export: "Exporter",
+  "field-required": "Champ obligatoire",
+  files: "Fichiers",
+  "fill-all-fields": "Veuillez remplir tous les champs\xA0!",
+  filter: "Filtre",
+  financing_unverified: "Financement (Non v\xE9rifi\xE9)",
+  financing: "Financement",
+  "first-name": "Pr\xE9nom",
+  firstname: "Pr\xE9nom",
+  firstName: "Pr\xE9nom",
+  floor: "\xC9tage",
+  "forgot-password": "Mot de passe oubli\xE9.",
+  general_manager: "Directeur G\xE9n\xE9ral",
+  import: "Importer",
+  incoming: "Entrant",
+  intern: "Stagiaire",
+  invoice_date: "Date de Facture",
+  invoice_details: "D\xE9tails de la Facture",
+  invoice: "Facture",
+  invoicing: "Facturation",
+  "last-name": "Nom",
+  lastname: "Nom",
+  lastName: "Nom",
+  "leave-empty": "Laisser vide pour num\xE9ro automatique",
+  "list-customers": "Liste des Clients",
+  "list-documents": "Liste des Documents",
+  "list-establishments": "Liste des \xC9tablissements",
+  "list-materials": "Liste des Mat\xE9riaux",
+  "list-suppliers": "Liste des Fournisseurs",
+  login: "Connexion",
+  "manager-notes": "Notes du Manager",
+  manager: "Manager",
+  materials: "Mat\xE9riaux",
+  "modify-dispatch": "Modifier l'Exp\xE9dition",
+  "modify-invoice": "Modifier la Facture",
+  "modify-material": "Modifier le Mat\xE9riel",
+  "modify-quote": "Modifier le Devis",
+  "modify-sale": "Modifier la Commande",
+  name: "Nom",
+  new_document_credit_note: "Nouvel Note de Cr\xE9dit",
+  new_document_delivery_note: "Nouveau Bon de Livraison",
+  new_document_invoice: "Nouvelle Facture",
+  new_document_order: "Nouvelle Commande",
+  new_document_quote: "Nouveau Devis",
+  "new-address": "Nouvelle Adresse",
+  "new-customer": "Nouveau Client",
+  "new-document": "Nouveau Document",
+  "new-line": "Nouvelle Ligne",
+  "new-material": "Nouveau Mat\xE9riel",
+  "new-supplier": "Nouveau Fournisseur",
+  "new-user": "Nouvel Utilisateur",
+  no: "Non",
+  online: "En ligne",
+  order_date: "Date de Commande",
+  order_details: "D\xE9tails de la Commande",
+  order: "Commande",
+  outgoing: "Sortant",
+  owner: "Propri\xE9taire",
+  page: "Page",
+  paid: "Pay\xE9",
+  passive: "Passif",
+  password: "Mot de passe",
+  "payment-details": "D\xE9tails de Paiement",
+  "payment-history": "Historique des Paiements",
+  "payment-new": "Nouveau Paiement",
+  "payment-status": "Statut du Paiement",
+  payments: "Paiements",
+  "pdf-export": "Exportation PDF",
+  PDF: "PDF",
+  phone: "T\xE9l\xE9phone",
+  pincode: "Code PIN",
+  "prefered-language": "Langue Pr\xE9f\xE9r\xE9e",
+  "price-net": "Prix Net",
+  price: "Prix",
+  "primary-details": "D\xE9tails Principaux",
+  private: "Priv\xE9",
+  products: "Produits",
+  professionnal: "Professionnel",
+  promissory: "Promesse",
+  province: "Province",
+  purchase: "Achat",
+  quote_date: "Date de Devis",
+  quote_details: "D\xE9tails du Devis",
+  quote: "Devis",
+  reduction: "R\xE9duction",
+  reference: "R\xE9f\xE9rence",
+  references: "R\xE9f\xE9rences",
+  remove: "Supprimer",
+  rename: "Renommer",
+  reset: "R\xE9initialiser",
+  role: "R\xF4le",
+  sale: "Vente",
+  save_credit_note: "Enregistrer Note de Cr\xE9dit",
+  save_CreditNote: "Enregistrer Note de Cr\xE9dit",
+  save_delivery_note: "Enregistrer Bon de Livraison",
+  save_DeliveryNote: "Enregistrer Bon de Livraison",
+  save_invoice: "Enregistrer Facture",
+  save_Invoice: "Enregistrer Facture",
+  save_order: "Enregistrer Commande",
+  save_Order: "Enregistrer Commande",
+  save_quote: "Enregistrer Devis",
+  save_Quote: "Enregistrer Devis",
+  "save-material": "Enregistrer Mat\xE9riel",
+  save: "Enregistrer",
+  search: "Rechercher",
+  "secondary-details": "D\xE9tails Secondaires",
+  seller: "Vendeur",
+  send: "Envoyer une demande de r\xE9cup\xE9ration de mot de passe",
+  shelf: "\xC9tag\xE8re",
+  "signature-customer": "Signature Client",
+  "signature-delivery": "Signez ici pour confirmer que vous avez re\xE7u la livraison",
+  "signature-seller": "Signature Vendeur",
+  start: "D\xE9but",
+  "stock-movement-details": "D\xE9tails Mouvement de Stock",
+  stock: "Stock",
+  street: "Rue",
+  subtotal: "Sous-total",
+  "supplier-details": "D\xE9tails Fournisseur",
+  supplier: "Fournisseur",
+  suppliers: "Fournisseurs",
+  "tax-in": "TVA Incluse",
+  "tax-out": "TVA Exclue",
+  tax: "TVA",
+  "tax(%)": "TVA(%)",
+  taxId: "Num\xE9ro de TVA",
+  taxID: "Num\xE9ro de TVA",
+  "timed-out": "Vous avez \xE9t\xE9 d\xE9connect\xE9 pour inactivit\xE9. Veuillez vous reconnecter.",
+  "to-pay": "\xC0 Payer",
+  "total-reduction": "R\xE9duction Totale",
+  "total-tax": "Total TVA",
+  "total-to-pay": "Montant \xE0 Payer",
+  "total-value-excl-tax": "Total Hors TVA",
+  "total-value": "Valeur Totale",
+  total: "Total",
+  type: "Type",
+  unknown: "Autre",
+  "user-details": "D\xE9tails Utilisateur",
+  "user-modify": "Modifier Utilisateur",
+  user: "Utilisateur",
+  username: "Nom d'Utilisateur",
+  users: "Utilisateurs",
+  "valid-until": "Valable Jusqu'\xE0",
+  value: "Valeur",
+  warehouse: "Entrep\xF4t",
+  worker: "Ouvrier",
+  yes: "Oui",
+  z: "Z",
+  zip: "Code Postal",
+  "please-update": "Veuillez mettre \xE0 jour pour continuer.",
+  "download-update": "T\xE9l\xE9charger la Mise \xE0 Jour",
+  delete: "Supprimer",
+  open: "Ouvrir",
+  "choose-language": "Choisir Langue",
+  "new-establishment": "Nouvel \xC9tablissement",
+  "details-establishment": "D\xE9tails de l'\xC9tablissement",
+  "modify-establishment": "Modifier l'\xC9tablissement",
+  "phone-1": "T\xE9l\xE9phone",
+  "phone-2": "T\xE9l\xE9phone 2",
+  "tax-id": "Num\xE9ro de TVA",
+  "bank-account-1": "Compte Bancaire",
+  "bank-account-2": "Compte Bancaire 2",
+  "bank-account-3": "Compte Bancaire 3",
+  "establishment-details": "D\xE9tails de l'\xC9tablissement",
+  "stock-details": "D\xE9tails du Stock",
+  weight: "kg (Poids)",
+  width: "m (Largeur)",
+  area: "m2 (Surface)",
+  length: "m (Longueur)",
+  volume: "l/m\xB3 (Volume)",
+  height: "m (Hauteur)",
+  "invalid-number": "Num\xE9ro invalide",
+  unit: "Unit\xE9",
+  collections: "Collections",
+  "add-collection": "Ajouter Collection",
+  "new-tag": "Nouveau Etiquette",
+  edit: "Modifier",
+  "collection-details": "D\xE9tails de Collection",
+  "list-payments": "Liste des Paiements",
+  "list-users": "Liste des Utilisateurs",
+  preview: "Aper\xE7u",
+  "external-id": "ID Externe",
+  origin: "Service Externe",
+  "sale-details": "D\xE9tails de Vente",
+  addresses: "Adresses",
+  "convert-to-credit_note": "Convertir en Note de Cr\xE9dit",
+  "quote-details": "D\xE9tails de Devis",
+  "required-field": "Champ requis",
+  "user-or-password-invalid": "Utilisateur ou mot de passe invalide",
+  date_dispatch: "Date de Exp\xE9dition",
+  "modify-credit_note": "Modifier la Note de Cr\xE9dit",
+  "change-password": "Modifier mot de passe",
+  "reset-password": "R\xE9initialiser le mot de passe",
+  "current-password": "Mot de passe actuel",
+  "new-password": "Nouveau mot de passe",
+  "password-confirm": "Confirmer le mot de passe",
+  "password-too-short": "Mot de passe doit comporter au moins 8 caract\xE8res",
+  "password-confirm-not-match": "Les mots de passe ne correspondent pas",
+  "password-must-contain-number": "Mot de passe doit comporter un chiffre",
+  "password-updated": "Mot de passe mis \xE0 jour",
+  "password-update-failed": "\xC9chec de la mise \xE0 jour du mot de passe",
+  "password-must-contain-letter": "Mot de passe doit comporter une lettre",
+  "user-invalid": "Configuration utilisateur invalide.",
+  "pincode-invalid": "Code PIN invalide",
+  "error-updating-document": "Une erreur s'est produite lors de la mise \xE0 jour du document",
+  "error-creating-document": "Une erreur s'est produite lors de la cr\xE9ation du document",
+  "no-address": "Aucune adresse choisie",
+  "confirm-delete": "Confirmer la suppression",
+  "confirm-delete-text": "\xCAtes-vous s\xFBr de vouloir supprimer ces donn\xE9es? Cette action ne peut pas \xEAtre annul\xE9e.",
+  "address-details": "D\xE9tails de l'Adresse",
+  "document-prefixes": "Pr\xE9fixes de Document",
+  companies: "Entreprises",
+  "modify-purchase": "Modifier Achat",
+  date_purchase: "Date Achat",
+  other: "Autre",
+  cheque: "Ch\xE8que",
+  "choose-establishment": "Choisissez un \xE9tablissement",
+  "invalid-email": "E-mail invalide",
+  "purchase-no-file": "Veuillez t\xE9l\xE9charger le document PDF de cet achat."
+};
 
-// utils/pdf/common/paymentdetails.ts
-var pdfPaymentDetails = ({ doc, invoiceDoc, x, y, width }) => {
-  const establishment = invoiceDoc.establishment;
-  const address = establishment.address;
-  doc.fontSize(10).text(address.street + " " + address.door, x, y, {
-    width,
-    align: "left"
-  });
-  if (address.floor) {
-    doc.text("Floor: " + address.floor, {
-      width,
-      align: "left"
-    });
+// utils/localization/locales/nl.ts
+var nljson = {
+  "invoice-details": "Factuur Details",
+  "purchase-details": "Aankoop Details",
+  "credit_note-details": "Creditnota Details",
+  "debit_note-details": "Debit Nota Details",
+  "dispatch-details": "Verzending Details",
+  accountant: "Boekhouder",
+  active: "Actief",
+  "add-product": "Product Toevoegen",
+  "add-supplier": "Leverancier toevoegen",
+  "additional-information": "Bijkomende Informatie",
+  "address-delivery": "Afleveradres",
+  "address-invoice": "Facturatie Adres",
+  address: "Adres",
+  adresses: "Adressen",
+  "already-paid": "Al Betaald",
+  amount: "Aantal",
+  attention: "Let op",
+  bank_transfer: "Overschrijving",
+  "block-self": "U kan uwzelf niet blokkeren.",
+  blocked: "Geblokkeerd",
+  cancel: "Annuleren",
+  cancelled: "Geannuleerd",
+  cash: "Cash",
+  choose: "Kies",
+  city: "Stad",
+  "client-details": "Klant Details",
+  close: "Afsluiten",
+  code: "Code",
+  comments: "Kommentaar",
+  company_admin: "Admin",
+  company: "Bedrijf",
+  "confirm-exit-text": "Bent u zeker dat u het programma wilt afsluiten?",
+  "confirm-exit": "Programma afsluiten",
+  connect: "Aanmelden",
+  contact: "Contact",
+  continue: "Doorgaan",
+  "convert-to-delivery_note": "Converteren naar Verzendnota",
+  "convert-to-invoice": "Omzetten naar Factuur",
+  "convert-to-order": "Omzetten naar Bestelling",
+  "copy-material": "Kopieer materiaal",
+  country: "Land",
+  "create-invoice": "Nieuwe Factuur",
+  "create-order": "Nieuwe Bestelling",
+  "create-quote": "Nieuwe Offerte",
+  "create-stock-movement": "Voorraadbeweging maken",
+  creator: "Verkoper",
+  credit_card: "Krediet kaart",
+  credit_note_date: "Kredietnota Datum",
+  credit_note_details: "Creditnota Details",
+  credit_note: "Creditnota",
+  "current-stock": "Huidige voorraad",
+  "customer-company": "Bedrijf",
+  "customer-details": "Klantdetails",
+  "customer-tax-id": "BTW Nummer",
+  customer: "Klant",
+  customers: "Klanten",
+  dashboard: "Dashboard",
+  date_credit_note: "Creditnota Datum",
+  date_delivery_note: "Leveringsbon Datum",
+  date_invoice: "Factuur Datum",
+  date_order: "Bestelling Datum",
+  date_quote: "Offerte Datum",
+  date_sale: "Bestellingsdatum",
+  "date-dispatch": "Datum Verzending",
+  "date-sale": "Datum Bestelling",
+  date: "Datum",
+  debit_card: "Bankkaart",
+  debit_note: "Debit Nota",
+  deliveries: "Leveringen",
+  delivery_note_date: "Verzendnota datum",
+  delivery_note_details: "Leveringsbon Details",
+  delivery_note: "Leveringsbon",
+  "delivery-date": "Leveringsdatum",
+  delivery: "Levering",
+  description: "Beschrijving",
+  "details-customer": "Klant Details",
+  "details-for-payment": "Betalingsdetails",
+  details: "Details",
+  "dialog-warning": "Waarschuwing!",
+  dispatch: "Verzending",
+  document: "Document",
+  documents: "Documenten",
+  door: "Deur",
+  download_update: "Download Update",
+  drop_files: "Sleep of klik om bestanden toe te voegen",
+  ean: "Ean",
+  "edit-customer": "Klant Wijzigen",
+  "edit-document": "Document Wijzigen",
+  email: "E-mail",
+  employee: "Verkoper",
+  end: "Einde",
+  "enter-email": "Vul uw e-mailadres in",
+  "error-creating-payment": "Fout tijdens opslaan van betaling",
+  "error-updating-payment": "Fout tijdens wijziging van betaling",
+  establishment: "Vestiging",
+  establishments: "Vestigingen",
+  expiration: "Vervaldatum",
+  export: "Exporteren",
+  "field-required": "Verplicht veld",
+  files: "Bestanden",
+  "fill-all-fields": "Vul alle velden in!",
+  filter: "Filter",
+  financing_unverified: "Lening (Ongeverifieerd)",
+  financing: "Lening",
+  "first-name": "Voornaam",
+  firstname: "Voornaam",
+  firstName: "Voornaam",
+  floor: "Verdieping",
+  "forgot-password": "Ik heb mijn wachtwoord vergeten.",
+  general_manager: "Algemene Manager",
+  import: "import",
+  incoming: "Binnenkomend",
+  intern: "Stagiair",
+  invoice_date: "Factuur Datum",
+  invoice_details: "Factuur Details",
+  invoice: "Factuur",
+  invoicing: "Facturatie",
+  "last-name": "Achternaam",
+  lastname: "Achternaam",
+  lastName: "Achternaam",
+  "leave-empty": "Laat leeg voor automatisch nummer",
+  "list-customers": "Klantenlijst",
+  "list-documents": "Documenten lijst",
+  "list-establishments": "Vestigingen Lijst",
+  "list-materials": "Materialenlijst",
+  "list-suppliers": "Leverancierslijst",
+  login: "Inloggen",
+  "manager-notes": "Beheerder Notities",
+  manager: "Manager",
+  materials: "Materialen",
+  "modify-dispatch": "Verzending Wijzigen",
+  "modify-invoice": "Factuur Wijzigen",
+  "modify-material": "Materiaal bewerken",
+  "modify-quote": "Offerte Wijzigen",
+  "modify-sale": "Bestelling Wijzigen",
+  name: "Naam",
+  new_document_credit_note: "Nieuwe Creditnota",
+  new_document_delivery_note: "Nieuwe Leveringsbon",
+  new_document_invoice: "Nieuwe Factuur",
+  new_document_order: "Nieuwe Bestelling",
+  new_document_quote: "Nieuwe Offerte",
+  "new-address": "Nieuw Adres",
+  "new-customer": "Nieuw Klant",
+  "new-document": "Nieuw Document",
+  "new-line": "Nieuwe Rij",
+  "new-material": "Nieuw materiaal",
+  "new-supplier": "Nieuwe leverancier",
+  "new-user": "Nieuwe gebruiker",
+  no: "Nee",
+  online: "Online",
+  order_date: "Bestellingsdatum",
+  order_details: "Bestelling Details",
+  order: "Bestelling",
+  outgoing: "Uitgaand",
+  owner: "Zaakvoerder",
+  page: "Pagina",
+  paid: "Betaald",
+  passive: "Passief",
+  password: "Wachtwoord",
+  "payment-details": "Betalingsdetails",
+  "payment-history": "Betalingsgeschiedenis",
+  "payment-new": "Nieuwe Betaling",
+  "payment-status": "Betalingsstatus",
+  payments: "Betalingen",
+  "pdf-export": "PDF Export",
+  PDF: "PDF",
+  phone: "Telefoon",
+  pincode: "Pincode",
+  "prefered-language": "Voorkeurstaal",
+  "price-net": "Nettoprijs",
+  price: "Prijs",
+  "primary-details": "Primaire gegevens",
+  private: "Priv\xE9",
+  products: "Producten",
+  professionnal: "Professioneel",
+  promissory: "Promesse",
+  province: "Provincie",
+  purchase: "Aankoop",
+  quote_date: "Offerte Datum",
+  quote_details: "Offerte Details",
+  quote: "Offerte",
+  reduction: "Korting",
+  reference: "Referentie",
+  references: "Referentie",
+  remove: "Verwijderen",
+  rename: "Hernoemen",
+  reset: "Reset",
+  role: "Rol",
+  sale: "Bestelling",
+  save_credit_note: "Creditnota Opslaan",
+  save_CreditNote: "Creditnota Opslaan",
+  save_delivery_note: "Leveringsbon Opslaan",
+  save_DeliveryNote: "Leveringsbon Opslaan",
+  save_invoice: "Factuur Opslaan",
+  save_Invoice: "Factuur Opslaan",
+  save_order: "Bestelling Opslaan",
+  save_Order: "Bestelling Opslaan",
+  save_quote: "Offerte Opslaan",
+  save_Quote: "Offerte Opslaan",
+  "save-material": "Materiaal opslaan",
+  save: "Opslaan",
+  search: "Zoeken",
+  "secondary-details": "Bijkomende Details",
+  seller: "Verkoper",
+  send: "Stuur wachtwoord herstel verzoek",
+  shelf: "Schap",
+  "signature-customer": "Handtekening Klant",
+  "signature-delivery": "Teken hier om te bevestigen dat u de levering heeft ontvangen",
+  "signature-seller": "Handtekening Verkoper",
+  start: "Start",
+  "stock-movement-details": "Details voorraadbeweging",
+  stock: "Voorraad",
+  street: "Straat",
+  subtotal: "Subtotaal",
+  "supplier-details": "Leveranciersdetails",
+  supplier: "Leverancier",
+  suppliers: "Leveranciers",
+  "tax-in": "BTW Incl",
+  "tax-out": "BTW Excl",
+  tax: "BTW",
+  "tax(%)": "BTW(%)",
+  taxId: "BTW-nummer",
+  taxID: "BTW-nummer",
+  "timed-out": "U bent afgemeld wegens inactiviteit. Log opnieuw in.",
+  "to-pay": "Te Betalen",
+  "total-reduction": "Totaal Korting",
+  "total-tax": "Totaal BTW",
+  "total-to-pay": "Te Betalen",
+  "total-value-excl-tax": "Totaal Excl. BTW",
+  "total-value": "Totaal Waarde",
+  total: "Totaal",
+  type: "Soort",
+  unknown: "Andere",
+  "user-details": "Gebruikersgegevens",
+  "user-modify": "Gebruiker Wijzigen",
+  user: "Gebruiker",
+  username: "Gebruikersnaam",
+  users: "Gebruikers",
+  "valid-until": "Vervaldatum",
+  value: "Waarde",
+  warehouse: "Magazijn",
+  worker: "Arbeider",
+  yes: "Ja",
+  z: "Z",
+  zip: "Postcode",
+  "please-update": "Gelieve te updaten om door te gaan.",
+  "download-update": "Update Downloaden",
+  delete: "Verwijderen",
+  open: "Openen",
+  "choose-language": "Kies Taal",
+  "new-establishment": "Nieuwe Vestiging",
+  "details-establishment": "Vestiging Details",
+  "modify-establishment": "Wijzig Vestiging",
+  "phone-1": "Telefoon",
+  "phone-2": "Telefoon 2",
+  "tax-id": "BTW Nummer",
+  "bank-account-1": "Bank Rekening",
+  "bank-account-2": "Bank Rekening 2",
+  "bank-account-3": "Bank Rekening 3",
+  "establishment-details": "Vestiging Details",
+  "stock-details": "Voorraad Details",
+  weight: "kg (Gewicht)",
+  width: "m (Breedte)",
+  area: "m2 (Oppervlakte)",
+  length: "m (Lengte)",
+  volume: "l/m\xB3 (Volume)",
+  height: "m (Hoogte)",
+  "invalid-number": "Ongeldig nummer",
+  unit: "Eenheid",
+  collections: "Collectie",
+  "add-collection": "Collectie Toevoegen",
+  "new-tag": "Nieuwe Etiket",
+  edit: "Bewerken",
+  "collection-details": "Collectie Details",
+  "list-payments": "Betalingslijst",
+  "list-users": "Gebruikerslijst",
+  preview: "Voorbeeld",
+  "external-id": "Externe ID",
+  origin: "Externe Service",
+  "sale-details": "Verkoopdetails",
+  addresses: "Adressen",
+  "convert-to-credit_note": "Converteren naar Creditnota",
+  "quote-details": "Offerte Details",
+  "required-field": "Verplicht veld",
+  "user-or-password-invalid": "Gebruiker of wachtwoord ongeldig",
+  date_dispatch: "Levering Datum",
+  "modify-credit_note": "Creditnota Wijzigen",
+  "change-password": "Wachtwoord wijzigen",
+  "reset-password": "Reset Wachtwoord",
+  "current-password": "Huidig wachtwoord",
+  "new-password": "Nieuw wachtwoord",
+  "password-confirm": "Bevestig wachtwoord",
+  "password-too-short": "Wachtwoord moet minstens 8 tekens bevatten",
+  "password-confirm-not-match": "Wachtwoorden komen niet overeen",
+  "password-must-contain-number": "Wachtwoord moet een nummer bevatten",
+  "password-updated": "Wachtwoord bijgewerkt",
+  "password-update-failed": "Wachtwoord update mislukt",
+  "password-must-contain-letter": "Wachtwoord moet een letter bevatten",
+  "user-invalid": "Gebruiker configuratie ongeldig.",
+  "pincode-invalid": "Pincode ongeldig",
+  "error-updating-document": "Fout tijdens het bijwerken van het document",
+  "error-creating-document": "Fout tijdens het creatie van het document",
+  "no-address": "Geen adres geselecteerd",
+  "confirm-delete": "Bevestig verwijderen",
+  "confirm-delete-text": "Weet u zeker dat u deze gegevens wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+  "address-details": "Adres Details",
+  "document-prefixes": "Documentvoorvoegsels",
+  companies: "Bedrijven",
+  "modify-purchase": "Aankoop Wijzigen",
+  date_purchase: "Datum Aankoop",
+  other: "Andere",
+  cheque: "Cheque",
+  "choose-establishment": "Kies een Vestiging",
+  "invalid-email": "Ongeldig E-mail",
+  "purchase-no-file": "Voeg het aankoop toe aan deze document in PDF formaat."
+};
+
+// utils/localization/locales/tr.ts
+var trjson = {
+  "invoice-details": "Fatura Detaylar\u0131",
+  "purchase-details": "Sat\u0131nalma Detaylar\u0131",
+  "credit_note-details": "Alacak Notu Detaylar\u0131",
+  "debit_note-details": "Bor\xE7 Notu Detaylar\u0131",
+  "dispatch-details": "\u0130rsaliye Detaylar\u0131",
+  accountant: "Muhasebeci",
+  active: "Aktif",
+  "add-product": "\xDCr\xFCn Ekle",
+  "add-supplier": "Tedarik\xE7i Ekle",
+  "additional-information": "Ek Bilgi",
+  "address-delivery": "Teslimat Adresi",
+  "address-invoice": "Fatura Adresi",
+  address: "Adres",
+  adresses: "Adresler",
+  "already-paid": "Zaten \xD6dendi",
+  amount: "Miktar",
+  attention: "Dikkat",
+  bank_transfer: "Banka Havalesi",
+  "block-self": "Kendinizi engelleyemezsiniz.",
+  blocked: "Engellendi",
+  cancel: "\u0130ptal",
+  cancelled: "\u0130ptal Edildi",
+  cash: "Nakit",
+  choose: "Se\xE7",
+  city: "\u015Eehir",
+  "client-details": "M\xFC\u015Fteri Detaylar\u0131",
+  close: "Kapat",
+  code: "Kod",
+  comments: "Yorumlar",
+  company_admin: "Y\xF6netici",
+  company: "\u015Eirket",
+  "confirm-exit-text": "Programdan \xE7\u0131kmak istedi\u011Finize emin misiniz?",
+  "confirm-exit": "Programdan \xC7\u0131k",
+  connect: "Giri\u015F Yap",
+  contact: "\u0130leti\u015Fim",
+  continue: "Devam Et",
+  "convert-to-delivery_note": "\u0130rsaliye Olu\u015Ftur",
+  "convert-to-invoice": "Faturaya D\xF6n\xFC\u015Ft\xFCr",
+  "convert-to-order": "Sipari\u015Fe D\xF6n\xFC\u015Ft\xFCr",
+  "copy-material": "Malzeme Kopyala",
+  country: "\xDClke",
+  "create-invoice": "Yeni Fatura",
+  "create-order": "Yeni Sipari\u015F",
+  "create-quote": "Yeni Teklif",
+  "create-stock-movement": "Stok Hareketi Olu\u015Ftur",
+  creator: "Sat\u0131\u015F Temsilcisi",
+  credit_card: "Kredi Kart\u0131",
+  credit_note_date: "Alacak Notu Tarihi",
+  credit_note_details: "Alacak Notu Detaylar\u0131",
+  credit_note: "Alacak Notu",
+  "current-stock": "Mevcut Stok",
+  "customer-company": "\u015Eirket",
+  "customer-details": "M\xFC\u015Fteri Detaylar\u0131",
+  "customer-tax-id": "Vergi Numaras\u0131",
+  customer: "M\xFC\u015Fteri",
+  customers: "M\xFC\u015Fteriler",
+  dashboard: "G\xF6sterge Paneli",
+  date_credit_note: "Alacak Notu Tarihi",
+  date_delivery_note: "\u0130rsaliye Tarihi",
+  date_invoice: "Fatura Tarihi",
+  date_order: "Sipari\u015F Tarihi",
+  date_quote: "Teklif Tarihi",
+  date_sale: "Sat\u0131\u015F Tarihi",
+  "date-dispatch": "\u0130rsaliye Tarihi",
+  "date-sale": "Sat\u0131\u015F Tarihi",
+  date: "Tarih",
+  debit_card: "Banka Kart\u0131",
+  debit_note: "Bor\xE7 Notu",
+  deliveries: "Teslimatlar",
+  delivery_note_date: "\u0130rsaliye Tarihi",
+  delivery_note_details: "\u0130rsaliye Detaylar\u0131",
+  delivery_note: "\u0130rsaliye",
+  "delivery-date": "Teslim Tarihi",
+  delivery: "Teslimat",
+  description: "A\xE7\u0131klama",
+  "details-customer": "M\xFC\u015Fteri Detaylar\u0131",
+  "details-for-payment": "\xD6deme Detaylar\u0131",
+  details: "Detaylar",
+  "dialog-warning": "Uyar\u0131!",
+  dispatch: "\u0130rsaliye",
+  document: "D\xF6k\xFCman",
+  documents: "D\xF6k\xFCmanlar",
+  door: "Kap\u0131",
+  download_update: "G\xFCncelleme \u0130ndir",
+  drop_files: "Dosyalar\u0131 s\xFCr\xFCkleyin veya t\u0131klay\u0131n",
+  ean: "EAN",
+  "edit-customer": "M\xFC\u015Fteri D\xFCzenle",
+  "edit-document": "D\xF6k\xFCman\u0131 D\xFCzenle",
+  email: "E-posta",
+  employee: "Sat\u0131\u015F Temsilcisi",
+  end: "Son",
+  "enter-email": "E-posta adresinizi girin",
+  "error-creating-payment": "\xD6deme kaydedilirken hata olu\u015Ftu",
+  "error-updating-payment": "\xD6deme g\xFCncellenirken hata olu\u015Ftu",
+  establishment: "Kurulu\u015F",
+  establishments: "Kurulu\u015Flar",
+  expiration: "Son Kullanma Tarihi",
+  export: "D\u0131\u015Fa Aktar",
+  "field-required": "Gerekli alan",
+  files: "Dosyalar",
+  "fill-all-fields": "T\xFCm alanlar\u0131 doldurun!",
+  filter: "Filtre",
+  financing_unverified: "Finansman (Do\u011Frulanmam\u0131\u015F)",
+  financing: "Finansman",
+  "first-name": "Ad",
+  firstname: "Ad",
+  firstName: "Ad",
+  floor: "Kat",
+  "forgot-password": "\u015Eifremi unuttum.",
+  general_manager: "Genel M\xFCd\xFCr",
+  import: "\u0130\xE7e Aktar",
+  incoming: "Gelen",
+  intern: "Stajyer",
+  invoice_date: "Fatura Tarihi",
+  invoice_details: "Fatura Detaylar\u0131",
+  invoice: "Fatura",
+  invoicing: "Faturalama",
+  "last-name": "Soyad",
+  lastname: "Soyad",
+  lastName: "Soyad",
+  "leave-empty": "Otomatik numara i\xE7in bo\u015F b\u0131rak\u0131n",
+  "list-customers": "M\xFC\u015Fteri Listesi",
+  "list-documents": "D\xF6k\xFCman Listesi",
+  "list-establishments": "Kurulu\u015F Listesi",
+  "list-materials": "Malzeme Listesi",
+  "list-suppliers": "Tedarik\xE7i Listesi",
+  login: "Giri\u015F",
+  "manager-notes": "Y\xF6netici Notlar\u0131",
+  manager: "Y\xF6netici",
+  materials: "Malzemeler",
+  "modify-dispatch": "\u0130rsaliye D\xFCzenle",
+  "modify-invoice": "Fatura D\xFCzenle",
+  "modify-material": "Malzeme D\xFCzenle",
+  "modify-quote": "Teklif D\xFCzenle",
+  "modify-sale": "Sipari\u015F D\xFCzenle",
+  name: "Ad",
+  new_document_credit_note: "Yeni Alacak Notu",
+  new_document_delivery_note: "Yeni Teslimat Notu",
+  new_document_invoice: "Yeni Fatura",
+  new_document_order: "Yeni Sipari\u015F",
+  new_document_quote: "Yeni Teklif",
+  "new-address": "Yeni Adres",
+  "new-customer": "Yeni M\xFC\u015Fteri",
+  "new-document": "Yeni D\xF6k\xFCman",
+  "new-line": "Yeni Sat\u0131r",
+  "new-material": "Yeni Malzeme",
+  "new-supplier": "Yeni Tedarik\xE7i",
+  "new-user": "Yeni Kullan\u0131c\u0131",
+  no: "Hay\u0131r",
+  online: "\xC7evrimi\xE7i",
+  order_date: "Sipari\u015F Tarihi",
+  order_details: "Sipari\u015F Detaylar\u0131",
+  order: "Sipari\u015F",
+  outgoing: "Giden",
+  owner: "Sahip",
+  page: "Sayfa",
+  paid: "\xD6dendi",
+  passive: "Pasif",
+  password: "\u015Eifre",
+  "payment-details": "\xD6deme Detaylar\u0131",
+  "payment-history": "\xD6deme Ge\xE7mi\u015Fi",
+  "payment-new": "Yeni \xD6deme",
+  "payment-status": "\xD6deme Durumu",
+  payments: "\xD6demeler",
+  "pdf-export": "PDF D\u0131\u015Fa Aktar",
+  PDF: "PDF",
+  phone: "Telefon",
+  pincode: "PIN Kodu",
+  "prefered-language": "Tercih Edilen Dil",
+  "price-net": "Net Fiyat",
+  price: "Fiyat",
+  "primary-details": "Ana Detaylar",
+  private: "\xD6zel",
+  products: "\xDCr\xFCnler",
+  professionnal: "Profesyonel",
+  promissory: "Senet",
+  province: "\u0130l",
+  purchase: "Sat\u0131n Alma",
+  quote_date: "Teklif Tarihi",
+  quote_details: "Teklif Detaylar\u0131",
+  quote: "Teklif",
+  reduction: "\u0130ndirim",
+  reference: "Referans",
+  references: "Referanslar",
+  remove: "Kald\u0131r",
+  rename: "Yeniden Adland\u0131r",
+  reset: "S\u0131f\u0131rla",
+  role: "Rol",
+  sale: "Sat\u0131\u015F",
+  save_credit_note: "Alacak Notu Kaydet",
+  save_CreditNote: "Alacak Notu Kaydet",
+  save_delivery_note: "\u0130rsaliye Kaydet",
+  save_DeliveryNote: "\u0130rsaliye Kaydet",
+  save_invoice: "Fatura Kaydet",
+  save_Invoice: "Fatura Kaydet",
+  save_order: "Sipari\u015F Kaydet",
+  save_Order: "Sipari\u015F Kaydet",
+  save_quote: "Teklif Kaydet",
+  save_Quote: "Teklif Kaydet",
+  "save-material": "Malzeme Kaydet",
+  save: "Kaydet",
+  search: "Ara",
+  "secondary-details": "Ek Detaylar",
+  seller: "Sat\u0131\u015F Temsilcisi",
+  send: "\u015Eifre s\u0131f\u0131rlama talebi g\xF6nder",
+  shelf: "Raf",
+  "signature-customer": "M\xFC\u015Fteri \u0130mzas\u0131",
+  "signature-delivery": "Teslimat\u0131 onaylamak i\xE7in imzalay\u0131n",
+  "signature-seller": "Sat\u0131c\u0131 \u0130mzas\u0131",
+  start: "Ba\u015Flat",
+  "stock-movement-details": "Stok Hareketi Detaylar\u0131",
+  stock: "Stok",
+  street: "Sokak",
+  subtotal: "Ara Toplam",
+  "supplier-details": "Tedarik\xE7i Detaylar\u0131",
+  supplier: "Tedarik\xE7i",
+  suppliers: "Tedarik\xE7iler",
+  "tax-in": "KDV Dahil",
+  "tax-out": "KDV Hari\xE7",
+  tax: "KDV",
+  "tax(%)": "KDV(%)",
+  taxId: "KDV Numaras\u0131",
+  taxID: "KDV Numaras\u0131",
+  "timed-out": "Hareketsizlik nedeniyle oturumunuz kapat\u0131ld\u0131. L\xFCtfen tekrar giri\u015F yap\u0131n.",
+  "to-pay": "\xD6denecek",
+  "total-reduction": "Toplam \u0130ndirim",
+  "total-tax": "Toplam KDV",
+  "total-to-pay": "\xD6denecek Toplam",
+  "total-value-excl-tax": "KDV Hari\xE7 Toplam",
+  "total-value": "Toplam De\u011Fer",
+  total: "Toplam",
+  type: "T\xFCr",
+  unknown: "Di\u011Fer",
+  "user-details": "Kullan\u0131c\u0131 Detaylar\u0131",
+  "user-modify": "Kullan\u0131c\u0131y\u0131 D\xFCzenle",
+  user: "Kullan\u0131c\u0131",
+  username: "Kullan\u0131c\u0131 Ad\u0131",
+  users: "Kullan\u0131c\u0131lar",
+  "valid-until": "Ge\xE7erlilik Tarihi",
+  value: "De\u011Fer",
+  warehouse: "Depo",
+  worker: "\xC7al\u0131\u015Fan",
+  yes: "Evet",
+  z: "Z",
+  zip: "Posta Kodu",
+  "please-update": "Devam etmek i\xE7in l\xFCtfen g\xFCncelleyin.",
+  "download-update": "G\xFCncellemeyi \u0130ndir",
+  delete: "Sil",
+  open: "A\xE7",
+  "choose-language": "Dil Se\xE7in",
+  "new-establishment": "Yeni Kurulu\u015F",
+  "details-establishment": "Kurulu\u015F Detaylar\u0131",
+  "modify-establishment": "Kurulu\u015Fu D\xFCzenle",
+  "phone-1": "Telefon",
+  "phone-2": "Telefon 2",
+  "tax-id": "Vergi Numaras\u0131",
+  "bank-account-1": "Banka Hesab\u0131",
+  "bank-account-2": "Banka Hesab\u0131 2",
+  "bank-account-3": "Banka Hesab\u0131 3",
+  "establishment-details": "Kurulu\u015F Detaylar\u0131",
+  "stock-details": "Stok Detaylar\u0131",
+  weight: "kg (A\u011F\u0131rl\u0131k)",
+  width: "m (Geni\u015Flik)",
+  area: "m\xB2 (Alan)",
+  length: "m (Uzunluk)",
+  volume: "l/m\xB3 (Hacim)",
+  height: "m (Y\xFCkseklik)",
+  "invalid-number": "Ge\xE7ersiz numara",
+  unit: "Birim",
+  collections: "Koleksiyonlar",
+  "add-collection": "Koleksiyon Ekle",
+  "new-tag": "Yeni Etiket",
+  edit: "D\xFCzenle",
+  "collection-details": "Koleksiyon Detaylar\u0131",
+  "list-payments": "\xD6deme Listesi",
+  "list-users": "Kullan\u0131c\u0131 Listesi",
+  preview: "\xD6nizleme",
+  "external-id": "Ba\u011Fl\u0131 Numara",
+  origin: "Ba\u011Fl\u0131 Servis",
+  "sale-details": "Sat\u0131\u015F Detaylar\u0131",
+  addresses: "Adresler",
+  "convert-to-credit_note": "Alacak Notu Olu\u015Ftur",
+  "quote-details": "Teklif Detaylar\u0131",
+  "required-field": "Gerekli alan",
+  "user-or-password-invalid": "Kullan\u0131c\u0131 veya \u015Fifre ge\xE7ersiz",
+  date_dispatch: "\u0130rsaliye Tarihi",
+  "modify-credit_note": "Alacak Notu D\xFCzenle",
+  "change-password": "\u015Eifre de\u011Fi\u015Ftir",
+  "reset-password": "\u015Eifreyi s\u0131f\u0131rla",
+  "current-password": "Mevcut \u015Eifre",
+  "new-password": "Yeni \u015Eifre",
+  "password-confirm": "\u015Eifreyi Onayla",
+  "password-too-short": "\u015Eifre en az 8 karakter uzunlu\u011Funda olmal\u0131d\u0131r",
+  "password-confirm-not-match": "\u015Eifreler e\u015Fle\u015Fmiyor",
+  "password-must-contain-number": "\u015Eifre en az bir say\u0131 i\xE7ermelidir",
+  "password-updated": "\u015Eifre g\xFCncellendi",
+  "password-update-failed": "\u015Eifre g\xFCncelleme ba\u015Far\u0131s\u0131z oldu",
+  "password-must-contain-letter": "\u015Eifre en az bir harf i\xE7ermelidir",
+  "user-invalid": "Kullan\u0131c\u0131 yap\u0131land\u0131rmas\u0131 ge\xE7ersiz.",
+  "pincode-invalid": "Pin kodu ge\xE7ersiz",
+  "error-updating-document": "Dok\xFCman g\xFCncellenirken hata olu\u015Ftu",
+  "error-creating-document": "Dok\xFCman olu\u015Fturulurken hata olu\u015Ftu",
+  "no-address": "Hi\xE7bir adres se\xE7ilmedi",
+  "confirm-delete": "Silme Onayla",
+  "confirm-delete-text": "Bu verileri silmek istedi\u011Finize emin misiniz? Bu i\u015Flem geri al\u0131namaz.",
+  "address-details": "Adres Detaylar\u0131",
+  "document-prefixes": "Dok\xFCman \xD6nekleri",
+  companies: "\u015Eirketler",
+  "modify-purchase": "Sat\u0131n Al\u0131m\u0131 De\u011Fi\u015Ftir",
+  date_purchase: "Sat\u0131n Al\u0131m Tarihi",
+  other: "Di\u011Fer",
+  cheque: "\xC7ek",
+  "choose-establishment": "Kurum Se\xE7",
+  "invalid-email": "Ge\xE7ersiz E-posta",
+  "purchase-no-file": "Sat\u0131n Alma faturas\u0131n\u0131 PDF bi\xE7iminde y\xFCkleyin."
+};
+
+// utils/localization/localization.ts
+var locales = {
+  en: enjson,
+  fr: frjson,
+  tr: trjson,
+  nl: nljson
+};
+var t = (key, lang) => {
+  let res = key;
+  console.log(lang);
+  let locale = lang.toLowerCase();
+  try {
+    res = locales[locale][key];
+  } catch (e) {
+    console.error("Translation not found for key:", key, "lang:", lang);
+    console.error(e);
   }
-  if (address.zip || address.city) {
-    doc.text(address.zip + " " + address.city, {
-      width,
-      align: "left"
-    });
-  }
-  if (address.province || address.country) {
-    doc.text(address.province + " " + address.country, {
-      width,
-      align: "left"
-    });
-  }
-  if (establishment.bankAccount1) {
-    doc.text(establishment.bankAccount1, {
-      width,
-      align: "left"
-    });
-  }
-  if (establishment.bankAccount2) {
-    doc.text(establishment.bankAccount2, {
-      width,
-      align: "left"
-    });
-  }
-  if (establishment.bankAccount3) {
-    doc.text(establishment.bankAccount3, {
-      width,
-      align: "left"
-    });
-  }
-  return doc.y;
+  return res;
 };
 
 // utils/pdf/common/invoicingdetails.ts
 var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
+  const tr = (key) => {
+    try {
+      return t(key, invoiceDoc.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   const customer = invoiceDoc.customer;
   const address = invoiceDoc.docAddress;
   doc.fontSize(10).text("Invoicing: " + customer.firstName + " " + customer.lastName, x, y, {
@@ -241,8 +1407,25 @@ var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
   return doc.y;
 };
 
+// utils/formatters/formatcurrency.ts
+var formatCurrency = (value, currency) => {
+  console.log(currency);
+  console.log(value);
+  return new Intl.NumberFormat("nl-BE", {
+    style: "currency",
+    currency
+  }).format(value);
+};
+
 // utils/pdf/common/deliverydetails.ts
 var pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }) => {
+  const tr = (key) => {
+    try {
+      return t(key, invoiceDoc.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   const address = invoiceDoc.delAddress;
   doc.fontSize(10).text("Delivery:", x, y, {
     width,
@@ -319,13 +1502,31 @@ var generateTableRow = (doc, y, name, description, price, amount, reduction, tax
   }
   return newY + 5;
 };
-var generateInvoiceTable = (doc, documentProducts, y) => {
+var generateProductTable = (doc, documentProducts, y, invoiceDoc) => {
+  const tr = (key) => {
+    try {
+      return t(key, invoiceDoc.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   let invoiceTableTop = y + 5;
   let showReduction = false;
   if (documentProducts.find((dp) => dp.reduction && Number(dp.reduction) > 0)) {
     showReduction = true;
   }
-  let position = generateTableRow(doc, invoiceTableTop, "Name", "Description", "Price", "Amount", showReduction ? "Reduction" : "", "Tax", "Subtotal", true);
+  let position = generateTableRow(
+    doc,
+    invoiceTableTop,
+    tr("name"),
+    tr("description"),
+    tr("price"),
+    tr("amount"),
+    showReduction ? tr("reduction") : "",
+    tr("tax"),
+    tr("subtotal"),
+    true
+  );
   for (let i = 0; i < documentProducts.length; i++) {
     const item = documentProducts[i];
     position = generateTableRow(
@@ -333,12 +1534,66 @@ var generateInvoiceTable = (doc, documentProducts, y) => {
       position,
       item.name,
       item.description,
-      formatCurrency(Number(item.price)),
+      formatCurrency(Number(item.price), invoiceDoc.currency),
       Number(item.amount).toFixed(2),
       showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
-      formatCurrency(Number(item.totalTax)),
-      formatCurrency(Number(item.totalWithTaxAfterReduction))
+      formatCurrency(Number(item.totalTax), invoiceDoc.currency),
+      formatCurrency(Number(item.totalWithTaxAfterReduction), invoiceDoc.currency)
     );
+  }
+  return doc.y;
+};
+
+// utils/pdf/common/paymentdetails.ts
+var pdfPaymentDetails = ({ doc, invoiceDoc, x, y, width }) => {
+  const tr = (key) => {
+    try {
+      return t(key, invoiceDoc.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
+  const establishment = invoiceDoc.establishment;
+  const address = establishment.address;
+  doc.fontSize(10).text(address.street + " " + address.door, x, y, {
+    width,
+    align: "left"
+  });
+  if (address.floor) {
+    doc.text("Floor: " + address.floor, {
+      width,
+      align: "left"
+    });
+  }
+  if (address.zip || address.city) {
+    doc.text(address.zip + " " + address.city, {
+      width,
+      align: "left"
+    });
+  }
+  if (address.province || address.country) {
+    doc.text(address.province + " " + address.country, {
+      width,
+      align: "left"
+    });
+  }
+  if (establishment.bankAccount1) {
+    doc.text(establishment.bankAccount1, {
+      width,
+      align: "left"
+    });
+  }
+  if (establishment.bankAccount2) {
+    doc.text(establishment.bankAccount2, {
+      width,
+      align: "left"
+    });
+  }
+  if (establishment.bankAccount3) {
+    doc.text(establishment.bankAccount3, {
+      width,
+      align: "left"
+    });
   }
   return doc.y;
 };
@@ -350,22 +1605,30 @@ var dateFormatBe = (date) => {
 };
 
 // utils/pdf/common/paymenthistory.ts
-var paymentsTable = ({ doc, x, yEnd, payments }) => {
+var paymentsTable = ({ doc, x, yEnd, payments, invoiceDoc }) => {
+  const tr = (key) => {
+    try {
+      return t(key, invoiceDoc.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   doc.fontSize(8);
   payments.forEach((payment, i) => {
     doc.text(dateFormatBe(payment.timestamp), x, yEnd - 10 * (i + 1));
-    doc.text(payment.type, x + 55, yEnd - 10 * (i + 1));
-    doc.text(formatCurrency(Number(payment.value)), x + 150, yEnd - 10 * (i + 1), {
+    doc.text(tr(payment.type), x + 55, yEnd - 10 * (i + 1));
+    doc.text(formatCurrency(Number(payment.value), invoiceDoc.currency), x + 150, yEnd - 10 * (i + 1), {
       width: 75,
       align: "right"
     });
   });
   doc.fontSize(10);
-  doc.text("Payment History:", x, yEnd - 10 * payments.length - 15);
+  doc.text(`${tr("payment-history")}:`, x, yEnd - 10 * payments.length - 15);
 };
 
 // utils/pdf/common/taxtotals.ts
 var taxTable = ({ doc, x, endY, document: document2 }) => {
+  const tr = (key) => t(key, document2.customer.preferredLanguage);
   let taxRates = [];
   const documentProducts = document2.products;
   documentProducts.forEach((docProd, i) => {
@@ -375,9 +1638,10 @@ var taxTable = ({ doc, x, endY, document: document2 }) => {
   });
   taxRates = taxRates.sort((a, b) => a - b);
   taxRates.map((taxRate, index) => {
-    doc.text("Total Tax " + Number(taxRate).toFixed(0) + "%:", x, endY - index * 15).text(
+    doc.text(`${tr("total-tax")} ` + Number(taxRate).toFixed(0) + "%:", x, endY - index * 15).text(
       formatCurrency(
-        documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0)
+        documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0),
+        document2.currency
       ),
       x + 80,
       endY - index * 15,
@@ -390,11 +1654,105 @@ var taxTable = ({ doc, x, endY, document: document2 }) => {
   return endY - taxRates.length * 15;
 };
 
+// utils/pdf/common/pdfhead.ts
+var pdfHead = async ({
+  doc,
+  invoiceDoc,
+  logoBuffer,
+  pageLeft,
+  pageTop
+}) => {
+  const tr = (key) => {
+    try {
+      return t(key, invoiceDoc.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
+  const columnCount = 11;
+  const flexBoxHead = ({ flex, column }) => flexBox({ pageSize: "A4", originY: pageTop + 5, flex, column, columnCount });
+  const imageBox = flexBoxHead({ flex: 4, column: 1 });
+  if (logoBuffer) {
+    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
+  } else {
+    const response = await fetch(invoiceDoc.establishment.logo.url);
+    logoBuffer = Buffer.from(await response.arrayBuffer());
+    doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
+  }
+  let establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
+  establishmentDetailsBox.x += 20;
+  establishmentDetailsBox.width -= 20;
+  doc.fontSize(10).text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
+    width: establishmentDetailsBox.width,
+    align: "left"
+  });
+  if (invoiceDoc.establishment.phone) {
+    doc.text(invoiceDoc.establishment.phone, {
+      width: establishmentDetailsBox.width
+    });
+  }
+  if (invoiceDoc.establishment.phone2) {
+    doc.text(invoiceDoc.establishment.phone2, {
+      width: establishmentDetailsBox.width
+    });
+  }
+  if (invoiceDoc.establishment.taxID) {
+    doc.text(invoiceDoc.establishment.taxID, {
+      width: establishmentDetailsBox.width
+    });
+  }
+  let invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
+  const validDate = new Date(invoiceDoc.date);
+  validDate.setDate(validDate.getDate() + 15);
+  invoiceDetailsBox.x += 50;
+  invoiceDetailsBox.width -= 20;
+  doc.fontSize(20).text("INVOICE", invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
+    width: invoiceDetailsBox.width - 5,
+    align: "right"
+  }).fontSize(10).text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
+    width: invoiceDetailsBox.width,
+    align: "left"
+  }).text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
+    width: invoiceDetailsBox.width,
+    align: "left"
+  });
+  doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
+    width: invoiceDetailsBox.width,
+    align: "left"
+  });
+  if (invoiceDoc.deliveryDate) {
+    doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
+      width: invoiceDetailsBox.width,
+      align: "left"
+    });
+  }
+  if (invoiceDoc.origin) {
+    doc.text("External Service: " + invoiceDoc.origin, {
+      width: invoiceDetailsBox.width,
+      align: "left"
+    });
+  }
+  if (invoiceDoc.externalId) {
+    doc.text("External ID: " + invoiceDoc.externalId, {
+      width: invoiceDetailsBox.width,
+      align: "left"
+    });
+  }
+};
+
 // utils/pdf/document/invoiceoutpdf.ts
+var import_buffer = require("buffer");
 async function generateInvoiceOut({
   document: document2,
   logoBuffer
 }) {
+  const tr = (key) => {
+    try {
+      return t(key, invoiceDoc.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   const invoiceDoc = document2;
   const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
@@ -428,37 +1786,36 @@ async function generateInvoiceOut({
       if (endOfDeliveryDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfDeliveryDetails;
       }
-      let y = generateInvoiceTable(doc, documentProducts, endOfDetailsRow);
+      generateProductTable(doc, documentProducts, endOfDetailsRow, invoiceDoc);
       let totalsXNames = 350;
       let totalXValues = 480;
       let totalsY = pageSizesDimensions[pageSize].height - 40;
       doc.fontSize(13);
       doc.lineWidth(1);
       doc.lineCap("butt").moveTo(350, totalsY - 85).lineTo(575, totalsY - 85).stroke("black");
-      doc.text("To Pay:", totalsXNames, totalsY);
-      doc.text("Already Paid:", totalsXNames, totalsY - 75);
-      doc.text("Total Excl. Tax:", totalsXNames, totalsY - 60);
-      doc.text("Total Tax:", totalsXNames, totalsY - 45);
-      doc.text("Total:", totalsXNames, totalsY - 30);
+      doc.text(tr("already-paid"), totalsXNames, totalsY - 75);
+      doc.text(tr("total-value-excl-tax"), totalsXNames, totalsY - 60);
+      doc.text(tr("total-tax"), totalsXNames, totalsY - 45);
+      doc.text(tr("total"), totalsXNames, totalsY - 30);
       doc.lineWidth(1);
       doc.lineCap("butt").moveTo(350, totalsY - 10).lineTo(575, totalsY - 10).stroke("black");
-      doc.text("To Pay:", totalsXNames, totalsY);
-      doc.text(formatCurrency(Number(invoiceDoc.totalPaid)), totalXValues, totalsY - 75, {
+      doc.text(tr("to-pay"), totalsXNames, totalsY);
+      doc.text(formatCurrency(Number(invoiceDoc.totalPaid), invoiceDoc.currency), totalXValues, totalsY - 75, {
         align: "right"
       });
-      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax)), totalXValues, totalsY - 60, {
+      doc.text(formatCurrency(Number(invoiceDoc.total) - Number(invoiceDoc.totalTax), invoiceDoc.currency), totalXValues, totalsY - 60, {
         align: "right"
       });
-      doc.text(formatCurrency(Number(invoiceDoc.totalTax)), totalXValues, totalsY - 45, {
+      doc.text(formatCurrency(Number(invoiceDoc.totalTax), invoiceDoc.currency), totalXValues, totalsY - 45, {
         align: "right"
       });
-      doc.text(formatCurrency(Number(invoiceDoc.total)), totalXValues, totalsY - 30, {
+      doc.text(formatCurrency(Number(invoiceDoc.total), invoiceDoc.currency), totalXValues, totalsY - 30, {
         align: "right"
       });
-      doc.text(formatCurrency(Number(invoiceDoc.totalToPay)), totalXValues, totalsY, {
+      doc.text(formatCurrency(Number(invoiceDoc.totalToPay), invoiceDoc.currency), totalXValues, totalsY, {
         align: "right"
       });
-      paymentsTable({ doc, x: totalsXNames, yEnd: totalsY - 92, payments });
+      paymentsTable({ doc, x: totalsXNames, yEnd: totalsY - 92, payments, invoiceDoc });
       taxTable({
         doc,
         x: totalsXNames - 150,
@@ -794,7 +2151,7 @@ var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 var bolApiUrl = "https://api.bol.com/retailer";
 var bolTokens = [];
 function bolHeaders(headersType, clientId) {
-  const tokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  const tokenEntry = bolTokens.find((t2) => t2.clientId === clientId);
   if (!tokenEntry) {
     return;
   }
@@ -806,7 +2163,7 @@ function bolHeaders(headersType, clientId) {
   };
 }
 async function authenticateBolCom(clientId, clientSecret) {
-  const existingTokenEntry = bolTokens.find((t) => t.clientId === clientId);
+  const existingTokenEntry = bolTokens.find((t2) => t2.clientId === clientId);
   if (existingTokenEntry && /* @__PURE__ */ new Date() < existingTokenEntry.expiration) {
     return existingTokenEntry.token;
   }
@@ -1079,7 +2436,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
           }
         },
         amount: orderProduct.quantity.toFixed(4),
-        tax: eutaxes.find((t) => t.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
+        tax: eutaxes.find((t2) => t2.code == docAddress.country)?.standard.toFixed(4) ?? "21.0000",
         name: product.name
       });
     }
@@ -2105,14 +3462,15 @@ var lists = {
           console.error(error);
         }
       },
-      afterOperation: async ({ operation, resolvedData, context }) => {
+      afterOperation: async ({ operation, resolvedData, inputData, item, context }) => {
         if (resolvedData?.type != "purchase") {
           if (operation === "create" || operation === "update") {
             try {
               console.log(resolvedData);
-              const postedDocument = await context.query.Document.findOne({
+              console.log(item);
+              const postedDocument = await context.sudo().query.Document.findOne({
                 where: { id: resolvedData.id },
-                query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
+                query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
               });
               console.log(document);
               let bcc;
@@ -3796,7 +5154,7 @@ var keystone_default = withAuth(
         const generateTestPDF = async () => {
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
-              query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city floor province country } logo { url } }",
+              query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
               where: {
                 id: "cm5glkpe00039gx56xni3eab3"
               }

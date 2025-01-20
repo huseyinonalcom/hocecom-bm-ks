@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../formatters/formatcurrency";
+import { t } from "../../localization/localization";
 import { flexBox } from "./positioning";
 
 const generateTableRow = (
@@ -63,13 +64,31 @@ const generateTableRow = (
   return newY + 5;
 };
 
-export const generateInvoiceTable = (doc: any, documentProducts: any[], y: number) => {
+export const generateProductTable = (doc: any, documentProducts: any[], y: number, invoiceDoc: any) => {
+  const tr = (key: string): string => {
+    try {
+      return t(key, invoiceDoc.customer!.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
   let invoiceTableTop = y + 5;
   let showReduction = false;
   if (documentProducts.find((dp) => dp.reduction && Number(dp.reduction) > 0)) {
     showReduction = true;
   }
-  let position = generateTableRow(doc, invoiceTableTop, "Name", "Description", "Price", "Amount", showReduction ? "Reduction" : "", "Tax", "Subtotal", true);
+  let position = generateTableRow(
+    doc,
+    invoiceTableTop,
+    tr("name"),
+    tr("description"),
+    tr("price"),
+    tr("amount"),
+    showReduction ? tr("reduction") : "",
+    tr("tax"),
+    tr("subtotal"),
+    true
+  );
   for (let i = 0; i < documentProducts.length; i++) {
     const item = documentProducts[i];
     position = generateTableRow(
@@ -77,11 +96,11 @@ export const generateInvoiceTable = (doc: any, documentProducts: any[], y: numbe
       position,
       item.name,
       item.description,
-      formatCurrency(Number(item.price)),
+      formatCurrency(Number(item.price), invoiceDoc.currency),
       Number(item.amount).toFixed(2),
       showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
-      formatCurrency(Number(item.totalTax)),
-      formatCurrency(Number(item.totalWithTaxAfterReduction))
+      formatCurrency(Number(item.totalTax), invoiceDoc.currency),
+      formatCurrency(Number(item.totalWithTaxAfterReduction), invoiceDoc.currency)
     );
   }
   return doc.y;
