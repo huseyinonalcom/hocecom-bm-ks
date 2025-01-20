@@ -10,7 +10,7 @@ export const pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }: { doc: PDF
   };
   const customer = invoiceDoc.customer;
   const address = invoiceDoc.docAddress;
-  doc.fontSize(10).text("Invoicing: " + customer.firstName + " " + customer.lastName, x, y, {
+  doc.fontSize(10).text(`${tr("invoicing")}: ` + customer.firstName + " " + customer.lastName, x, y, {
     width: width,
     align: "left",
   });
@@ -21,7 +21,7 @@ export const pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }: { doc: PDF
   });
 
   if (address.floor) {
-    doc.text("floor: " + address.floor, {
+    doc.text(`${tr("floor")}: ` + address.floor, {
       width: width,
       align: "left",
     });

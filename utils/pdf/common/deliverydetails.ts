@@ -9,7 +9,7 @@ export const pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }: { doc: PDFK
     }
   };
   const address = invoiceDoc.delAddress;
-  doc.fontSize(10).text("Delivery:", x, y, {
+  doc.fontSize(10).text(`${tr("delivery")}: `, x, y, {
     width: width,
     align: "left",
   });
@@ -20,7 +20,7 @@ export const pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }: { doc: PDFK
   });
 
   if (address.floor) {
-    doc.text("floor: " + address.floor, {
+    doc.text(`${tr("floor")}: ` + address.floor, {
       width: width,
       align: "left",
     });

@@ -68,40 +68,40 @@ export const pdfHead = async ({
   invoiceDetailsBox.width -= 20;
   doc
     .fontSize(20)
-    .text("INVOICE", invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
+    .text(tr("invoice").toUpperCase(), invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
       width: invoiceDetailsBox.width - 5,
       align: "right",
     })
     .fontSize(10)
-    .text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
+    .text(`${tr("invoice")}: ` + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
       width: invoiceDetailsBox.width,
       align: "left",
     })
-    .text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
+    .text(`${tr("date")}: ` + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
       width: invoiceDetailsBox.width,
       align: "left",
     });
 
-  doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
+  doc.text(`${tr("valid-until")}: ` + validDate.toLocaleDateString("fr-be"), {
     width: invoiceDetailsBox.width,
     align: "left",
   });
 
   if (invoiceDoc.deliveryDate) {
-    doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
+    doc.text(`${tr("date-dispatch")}: ` + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
       width: invoiceDetailsBox.width,
       align: "left",
     });
   }
 
   if (invoiceDoc.origin) {
-    doc.text("External Service: " + invoiceDoc.origin, {
+    doc.text(`${tr("origin")}: ` + invoiceDoc.origin, {
       width: invoiceDetailsBox.width,
       align: "left",
     });
   }
   if (invoiceDoc.externalId) {
-    doc.text("External ID: " + invoiceDoc.externalId, {
+    doc.text(`${tr("external-id")}: ` + invoiceDoc.externalId, {
       width: invoiceDetailsBox.width,
       align: "left",
     });

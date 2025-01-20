@@ -1356,7 +1356,6 @@ var locales = {
 };
 var t = (key, lang) => {
   let res = key;
-  console.log(lang);
   let locale = lang.toLowerCase();
   if (!lang) {
     locale = "en";
@@ -1381,7 +1380,7 @@ var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
   };
   const customer = invoiceDoc.customer;
   const address = invoiceDoc.docAddress;
-  doc.fontSize(10).text("Invoicing: " + customer.firstName + " " + customer.lastName, x, y, {
+  doc.fontSize(10).text(`${tr("invoicing")}: ` + customer.firstName + " " + customer.lastName, x, y, {
     width,
     align: "left"
   });
@@ -1390,7 +1389,7 @@ var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
     align: "left"
   });
   if (address.floor) {
-    doc.text("floor: " + address.floor, {
+    doc.text(`${tr("floor")}: ` + address.floor, {
       width,
       align: "left"
     });
@@ -1412,8 +1411,6 @@ var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
 
 // utils/formatters/formatcurrency.ts
 var formatCurrency = (value, currency) => {
-  console.log(currency);
-  console.log(value);
   let lang;
   switch (currency) {
     case "TRY":
@@ -1442,7 +1439,7 @@ var pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }) => {
     }
   };
   const address = invoiceDoc.delAddress;
-  doc.fontSize(10).text("Delivery:", x, y, {
+  doc.fontSize(10).text(`${tr("delivery")}: `, x, y, {
     width,
     align: "left"
   });
@@ -1451,7 +1448,7 @@ var pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }) => {
     align: "left"
   });
   if (address.floor) {
-    doc.text("floor: " + address.floor, {
+    doc.text(`${tr("floor")}: ` + address.floor, {
       width,
       align: "left"
     });
@@ -1642,10 +1639,10 @@ var paymentsTable = ({ doc, x, yEnd, payments, invoiceDoc }) => {
 };
 
 // utils/pdf/common/taxtotals.ts
-var taxTable = ({ doc, x, endY, document: document2 }) => {
-  const tr = (key) => t(key, document2.customer.preferredLanguage);
+var taxTable = ({ doc, x, endY, document }) => {
+  const tr = (key) => t(key, document.customer.preferredLanguage);
   let taxRates = [];
-  const documentProducts = document2.products;
+  const documentProducts = document.products;
   documentProducts.forEach((docProd, i) => {
     if (!taxRates.includes(docProd.tax)) {
       taxRates.push(docProd.tax);
@@ -1656,7 +1653,7 @@ var taxTable = ({ doc, x, endY, document: document2 }) => {
     doc.text(`${tr("total-tax")} ` + Number(taxRate).toFixed(0) + "%:", x, endY - index * 15).text(
       formatCurrency(
         documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.totalTax), 0),
-        document2.currency
+        document.currency
       ),
       x + 80,
       endY - index * 15,
@@ -1721,34 +1718,34 @@ var pdfHead = async ({
   validDate.setDate(validDate.getDate() + 15);
   invoiceDetailsBox.x += 50;
   invoiceDetailsBox.width -= 20;
-  doc.fontSize(20).text("INVOICE", invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
+  doc.fontSize(20).text(tr("invoice").toUpperCase(), invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
     width: invoiceDetailsBox.width - 5,
     align: "right"
-  }).fontSize(10).text("Invoice: " + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
+  }).fontSize(10).text(`${tr("invoice")}: ` + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
     width: invoiceDetailsBox.width,
     align: "left"
-  }).text("Date: " + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
+  }).text(`${tr("date")}: ` + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
     width: invoiceDetailsBox.width,
     align: "left"
   });
-  doc.text("Valid Until: " + validDate.toLocaleDateString("fr-be"), {
+  doc.text(`${tr("valid-until")}: ` + validDate.toLocaleDateString("fr-be"), {
     width: invoiceDetailsBox.width,
     align: "left"
   });
   if (invoiceDoc.deliveryDate) {
-    doc.text("Delivery Date: " + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
+    doc.text(`${tr("date-dispatch")}: ` + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
       width: invoiceDetailsBox.width,
       align: "left"
     });
   }
   if (invoiceDoc.origin) {
-    doc.text("External Service: " + invoiceDoc.origin, {
+    doc.text(`${tr("origin")}: ` + invoiceDoc.origin, {
       width: invoiceDetailsBox.width,
       align: "left"
     });
   }
   if (invoiceDoc.externalId) {
-    doc.text("External ID: " + invoiceDoc.externalId, {
+    doc.text(`${tr("external-id")}: ` + invoiceDoc.externalId, {
       width: invoiceDetailsBox.width,
       align: "left"
     });
@@ -1758,7 +1755,7 @@ var pdfHead = async ({
 // utils/pdf/document/invoiceoutpdf.ts
 var import_buffer = require("buffer");
 async function generateInvoiceOut({
-  document: document2,
+  document,
   logoBuffer
 }) {
   const tr = (key) => {
@@ -1768,7 +1765,7 @@ async function generateInvoiceOut({
       return key;
     }
   };
-  const invoiceDoc = document2;
+  const invoiceDoc = document;
   const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
   return new Promise(async (resolve, reject) => {
@@ -1836,13 +1833,13 @@ async function generateInvoiceOut({
         doc,
         x: totalsXNames - 150,
         endY: pageSizesDimensions[pageSize].height - 40,
-        document: document2
+        document
       });
       doc.end();
       doc.on("end", () => {
         const pdfData = import_buffer.Buffer.concat(buffers);
         resolve({
-          filename: `invoice_${document2.number}.pdf`,
+          filename: `invoice_${document.number}.pdf`,
           content: pdfData,
           contentType: "application/pdf"
         });
@@ -1894,7 +1891,7 @@ async function fetchDocuments(companyID, docTypes, month, year, context) {
 async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context }) {
   const documents = await fetchDocuments(companyID, docTypes, month, year, context);
   if (documents.length === 0) {
-    console.log("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
+    console.info("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
     return;
   }
   const company = await fetchCompany(companyID, context);
@@ -2364,7 +2361,7 @@ async function createProduct({ productDetails, company, context }) {
   return newProduct;
 }
 var saveDocument = async ({ bolDoc, company, context }) => {
-  let document2 = {
+  let document = {
     externalId: bolDoc.orderId,
     date: bolDoc.orderPlacedDateTime,
     company: {
@@ -2413,7 +2410,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
     if (!customer) {
       customer = await createCustomer({ orderDetails: bolDoc, company, context });
     }
-    document2.customer = {
+    document.customer = {
       connect: {
         id: customer.id
       }
@@ -2421,7 +2418,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
     let docAddress = customer.customerAddresses.find(
       (address) => address.street.toLowerCase() == bolDoc.billingDetails.streetName.toLowerCase() && address.door.toLowerCase() == bolDoc.billingDetails.houseNumber.toLowerCase() + (bolDoc.billingDetails.houseNumberExtension ?? "").toLowerCase() && address.zip.toLowerCase() == bolDoc.billingDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.billingDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.billingDetails.countryCode.toLowerCase()
     );
-    document2.docAddress = {
+    document.docAddress = {
       connect: {
         id: docAddress.id
       }
@@ -2429,7 +2426,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
     let delAddress = customer.customerAddresses.find(
       (address) => address.street.toLowerCase() == bolDoc.shipmentDetails.streetName.toLowerCase() && address.door.toLowerCase().includes(bolDoc.shipmentDetails.houseNumber.toLowerCase()) && address.zip.toLowerCase() == bolDoc.shipmentDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.shipmentDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.shipmentDetails.countryCode.toLowerCase()
     );
-    document2.delAddress = {
+    document.delAddress = {
       connect: {
         id: delAddress.id
       }
@@ -2439,7 +2436,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
       if (!product) {
         product = await createProduct({ productDetails: orderProduct, company, context });
       }
-      document2.products.create.push({
+      document.products.create.push({
         price: orderProduct.unitPrice.toFixed(4),
         company: {
           connect: {
@@ -2457,7 +2454,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
       });
     }
     await context.sudo().query.Document.createOne({
-      data: document2,
+      data: document,
       query: "id"
     });
   } catch (error) {
@@ -2855,15 +2852,15 @@ var sendMail = async ({
     };
     transporter.sendMail(mailOptionsClient, (error) => {
       if (error) {
-        console.log("mail error", error);
-        return true;
-      } else {
-        console.log("mail sent");
+        console.error("mail error", error);
         return false;
+      } else {
+        console.info("mail sent");
+        return true;
       }
     });
   } catch (e) {
-    console.log("mail error", e);
+    console.error("mail error", e);
     return false;
   }
 };
@@ -3482,13 +3479,10 @@ var lists = {
         if (resolvedData?.type != "purchase") {
           if (operation === "create" || operation === "update") {
             try {
-              console.log(resolvedData);
-              console.log(item);
               const postedDocument = await context.sudo().query.Document.findOne({
                 where: { id: resolvedData.id },
                 query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
               });
-              console.log(document);
               let bcc;
               if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
                 bcc = postedDocument.customer.email2;
@@ -5129,7 +5123,6 @@ var keystone_default = withAuth(
               },
               query: "id isActive"
             });
-            console.log(pinCheck);
             if (pinCheck && pinCheck.isActive) {
               res.status(200).json({ id: pinCheck.id });
             } else {
@@ -5139,7 +5132,6 @@ var keystone_default = withAuth(
                 },
                 query: "id isActive"
               });
-              console.log(pinCheckAccountancy);
               if (pinCheckAccountancy && pinCheckAccountancy.isActive) {
                 res.status(200).json({ id: pinCheckAccountancy.id });
               } else {
@@ -5154,7 +5146,6 @@ var keystone_default = withAuth(
         });
         cron.schedule("*/5 * * * *", async () => {
           try {
-            console.log("Running Cron Job for Bol Orders");
             syncBolOrders({ context });
           } catch (error) {
             console.error("Error running cron job", error);
