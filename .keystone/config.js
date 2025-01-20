@@ -1358,6 +1358,9 @@ var t = (key, lang) => {
   let res = key;
   console.log(lang);
   let locale = lang.toLowerCase();
+  if (!lang) {
+    locale = "en";
+  }
   try {
     res = locales[locale][key];
   } catch (e) {
@@ -1411,7 +1414,19 @@ var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
 var formatCurrency = (value, currency) => {
   console.log(currency);
   console.log(value);
-  return new Intl.NumberFormat("nl-BE", {
+  let lang;
+  switch (currency) {
+    case "TRY":
+      lang = "tr-TR";
+      break;
+    case "USD":
+      lang = "en-US";
+      break;
+    case "EUR":
+      lang = "nl-BE";
+      break;
+  }
+  return new Intl.NumberFormat(lang, {
     style: "currency",
     currency
   }).format(value);
@@ -1476,23 +1491,23 @@ var generateTableRow = (doc, y, name, description, price, amount, reduction, tax
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(price, 225, nameBox.y, { width: 70, align: "left" });
+  doc.text(price, 225, nameBox.y, { width: 70, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(amount, 300, nameBox.y, { width: 50, align: "left" });
+  doc.text(amount, 300, nameBox.y, { width: 50, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(reduction, 365, nameBox.y, { width: 50, align: "left" });
+  doc.text(reduction, 365, nameBox.y, { width: 50, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(tax, 425, nameBox.y, { width: 70, align: "left" });
+  doc.text(tax, 425, nameBox.y, { width: 70, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(subtotal, 500, nameBox.y, { width: 65, align: "left" });
+  doc.text(subtotal, 500, nameBox.y, { width: 65, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
@@ -1764,6 +1779,7 @@ async function generateInvoiceOut({
       const PDFDocument = require("pdfkit");
       const doc = new PDFDocument({ size: pageSize, margin: 20 });
       const buffers = [];
+      doc.font("./utils/fonts/Roboto-Regular.ttf");
       doc.on("data", buffers.push.bind(buffers));
       await pdfHead({
         doc,
@@ -5151,12 +5167,12 @@ var keystone_default = withAuth(
             console.error("Error starting bulk document sender", error);
           }
         });
-        const generateTestPDF = async () => {
+        const generateTestPDF = async ({ id }) => {
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
               query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
               where: {
-                id: "cm5glkpe00039gx56xni3eab3"
+                id
               }
             });
             const pdf = await generateInvoiceOut({ document: postedDocument });
@@ -5167,7 +5183,9 @@ var keystone_default = withAuth(
             console.error("Error generating test pdf", error);
           }
         };
-        generateTestPDF();
+        generateTestPDF({ id: "cm5glkpe00039gx56xni3eab3" });
+        generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
+        generateTestPDF({ id: "cm653n2gx005nbkce1hv5o101" });
       }
     },
     lists,

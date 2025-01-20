@@ -13,7 +13,10 @@ const locales = {
 export const t = (key: string, lang: "en" | "tr" | "fr" | "nl"): string => {
   let res = key;
   console.log(lang);
-  let locale = lang.toLowerCase();
+  let locale = lang.toLowerCase() as "en" | "tr" | "fr" | "nl";
+  if (!lang) {
+    locale = "en";
+  }
   try {
     res = (locales[locale] as any)[key] as string;
   } catch (e) {

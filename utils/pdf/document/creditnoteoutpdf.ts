@@ -31,6 +31,8 @@ export async function generateCreditNoteOut({
       const doc = new PDFDocument({ size: "A4", margin: 20 });
       const buffers: Uint8Array[] = [];
 
+      doc.font("../../fonts/Roboto-Regular.ttf");
+
       doc.on("data", buffers.push.bind(buffers));
 
       if (logoBuffer) {

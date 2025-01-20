@@ -35,23 +35,23 @@ const generateTableRow = (
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(price, 225, nameBox.y, { width: 70, align: "left" });
+  doc.text(price, 225, nameBox.y, { width: 70, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(amount, 300, nameBox.y, { width: 50, align: "left" });
+  doc.text(amount, 300, nameBox.y, { width: 50, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(reduction, 365, nameBox.y, { width: 50, align: "left" });
+  doc.text(reduction, 365, nameBox.y, { width: 50, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(tax, 425, nameBox.y, { width: 70, align: "left" });
+  doc.text(tax, 425, nameBox.y, { width: 70, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }
-  doc.text(subtotal, 500, nameBox.y, { width: 65, align: "left" });
+  doc.text(subtotal, 500, nameBox.y, { width: 65, align: "right" });
   if (doc.y > newY) {
     newY = doc.y;
   }

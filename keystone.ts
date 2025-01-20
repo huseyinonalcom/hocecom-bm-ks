@@ -120,13 +120,13 @@ export default withAuth(
           }
         });
 
-        const generateTestPDF = async () => {
+        const generateTestPDF = async ({ id }: { id: string }) => {
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
               query:
                 "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
               where: {
-                id: "cm5glkpe00039gx56xni3eab3",
+                id,
               },
             });
 
@@ -138,7 +138,9 @@ export default withAuth(
             console.error("Error generating test pdf", error);
           }
         };
-        generateTestPDF();
+        generateTestPDF({ id: "cm5glkpe00039gx56xni3eab3" });
+        generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
+        generateTestPDF({ id: "cm653n2gx005nbkce1hv5o101" });
       },
     },
     lists,
