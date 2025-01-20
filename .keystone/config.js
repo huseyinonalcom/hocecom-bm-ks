@@ -365,9 +365,9 @@ var paymentsTable = ({ doc, x, yEnd, payments }) => {
 };
 
 // utils/pdf/common/taxtotals.ts
-var taxTable = ({ doc, x, endY, document }) => {
+var taxTable = ({ doc, x, endY, document: document2 }) => {
   let taxRates = [];
-  const documentProducts = document.products;
+  const documentProducts = document2.products;
   documentProducts.forEach((docProd, i) => {
     if (!taxRates.includes(docProd.tax)) {
       taxRates.push(docProd.tax);
@@ -392,10 +392,10 @@ var taxTable = ({ doc, x, endY, document }) => {
 
 // utils/pdf/document/invoiceoutpdf.ts
 async function generateInvoiceOut({
-  document,
+  document: document2,
   logoBuffer
 }) {
-  const invoiceDoc = document;
+  const invoiceDoc = document2;
   const documentProducts = invoiceDoc.products;
   const payments = invoiceDoc.payments;
   return new Promise(async (resolve, reject) => {
@@ -463,13 +463,13 @@ async function generateInvoiceOut({
         doc,
         x: totalsXNames - 150,
         endY: pageSizesDimensions[pageSize].height - 40,
-        document
+        document: document2
       });
       doc.end();
       doc.on("end", () => {
         const pdfData = import_buffer.Buffer.concat(buffers);
         resolve({
-          filename: `invoice_${document.number}.pdf`,
+          filename: `invoice_${document2.number}.pdf`,
           content: pdfData,
           contentType: "application/pdf"
         });
@@ -781,343 +781,6 @@ function generateRandomString(length) {
   return result;
 }
 
-// utils/sendmail.ts
-var sendMail = async ({
-  recipient,
-  bcc,
-  company,
-  establishment,
-  subject,
-  html,
-  attachments
-}) => {
-  try {
-    const nodemailer = require("nodemailer");
-    let transporter = nodemailer.createTransport({
-      host: company.emailHost,
-      port: company.emailPort,
-      secure: false,
-      auth: {
-        user: company.emailUser,
-        pass: company.emailPassword
-      }
-    });
-    let mailOptionsClient = {
-      from: `"${company.emailUser}" <${company.emailUser}>`,
-      to: recipient,
-      bcc,
-      attachments,
-      subject,
-      html: templatedMail({
-        content: html,
-        img64: establishment.logo.url
-      })
-    };
-    transporter.sendMail(mailOptionsClient, (error) => {
-      if (error) {
-        console.log("mail error", error);
-        return true;
-      } else {
-        console.log("mail sent");
-        return false;
-      }
-    });
-  } catch (e) {
-    console.log("mail error", e);
-    return false;
-  }
-};
-function templatedMail({ content, img64 }) {
-  return mailPart1({ img64 }) + content + mailPart2;
-}
-var mailPart1 = ({ img64 }) => {
-  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
-  <head>
-    <!-- Compiled with Bootstrap Email version: 1.5.1 -->
-    <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <meta name="x-apple-disable-message-reformatting" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <style type="text/css">
-      body,
-      table,
-      td {
-        font-family: Helvetica, Arial, sans-serif !important;
-      }
-      .ExternalClass {
-        width: 100%;
-      }
-      .ExternalClass,
-      .ExternalClass p,
-      .ExternalClass span,
-      .ExternalClass font,
-      .ExternalClass td,
-      .ExternalClass div {
-        line-height: 150%;
-      }
-      a {
-        text-decoration: none;
-      }
-      * {
-        color: inherit;
-      }
-      a[x-apple-data-detectors],
-      u + #body a,
-      #MessageViewBody a {
-        color: inherit;
-        text-decoration: none;
-        font-size: inherit;
-        font-family: inherit;
-        font-weight: inherit;
-        line-height: inherit;
-      }
-      img {
-        -ms-interpolation-mode: bicubic;
-      }
-      table:not([class^="s-"]) {
-        font-family: Helvetica, Arial, sans-serif;
-        mso-table-lspace: 0pt;
-        mso-table-rspace: 0pt;
-        border-spacing: 0px;
-        border-collapse: collapse;
-      }
-      table:not([class^="s-"]) td {
-        border-spacing: 0px;
-        border-collapse: collapse;
-      }
-      @media screen and (max-width: 600px) {
-        .w-full,
-        .w-full > tbody > tr > td {
-          width: 100% !important;
-        }
-        .w-8,
-        .w-8 > tbody > tr > td {
-          width: 32px !important;
-        }
-        .h-16,
-        .h-16 > tbody > tr > td {
-          height: 64px !important;
-        }
-        .p-lg-10:not(table),
-        .p-lg-10:not(.btn) > tbody > tr > td,
-        .p-lg-10.btn td a {
-          padding: 0 !important;
-        }
-        .pr-4:not(table),
-        .pr-4:not(.btn) > tbody > tr > td,
-        .pr-4.btn td a,
-        .px-4:not(table),
-        .px-4:not(.btn) > tbody > tr > td,
-        .px-4.btn td a {
-          padding-right: 16px !important;
-        }
-        .pl-4:not(table),
-        .pl-4:not(.btn) > tbody > tr > td,
-        .pl-4.btn td a,
-        .px-4:not(table),
-        .px-4:not(.btn) > tbody > tr > td,
-        .px-4.btn td a {
-          padding-left: 16px !important;
-        }
-        .pb-6:not(table),
-        .pb-6:not(.btn) > tbody > tr > td,
-        .pb-6.btn td a,
-        .py-6:not(table),
-        .py-6:not(.btn) > tbody > tr > td,
-        .py-6.btn td a {
-          padding-bottom: 24px !important;
-        }
-        .pt-8:not(table),
-        .pt-8:not(.btn) > tbody > tr > td,
-        .pt-8.btn td a,
-        .py-8:not(table),
-        .py-8:not(.btn) > tbody > tr > td,
-        .py-8.btn td a {
-          padding-top: 32px !important;
-        }
-        .pb-8:not(table),
-        .pb-8:not(.btn) > tbody > tr > td,
-        .pb-8.btn td a,
-        .py-8:not(table),
-        .py-8:not(.btn) > tbody > tr > td,
-        .py-8.btn td a {
-          padding-bottom: 32px !important;
-        }
-        *[class*="s-lg-"] > tbody > tr > td {
-          font-size: 0 !important;
-          line-height: 0 !important;
-          height: 0 !important;
-        }
-        .s-6 > tbody > tr > td {
-          font-size: 24px !important;
-          line-height: 24px !important;
-          height: 24px !important;
-        }
-      }
-    </style>
-  </head>
-  <body
-    class="bg-blue-100"
-    style="
-      outline: 0;
-      width: 100%;
-      min-width: 100%;
-      height: 100%;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-      font-family: Helvetica, Arial, sans-serif;
-      line-height: 24px;
-      font-weight: normal;
-      font-size: 16px;
-      -moz-box-sizing: border-box;
-      -webkit-box-sizing: border-box;
-      box-sizing: border-box;
-      color: #000000;
-      margin: 0;
-      padding: 0;
-      border-width: 0;
-    "
-    bgcolor="#cfe2ff"
-  >
-    <table
-      class="bg-blue-100 body"
-      valign="top"
-      role="presentation"
-      border="0"
-      cellpadding="0"
-      cellspacing="0"
-      style="
-        outline: 0;
-        width: 100%;
-        min-width: 100%;
-        height: 100%;
-        -webkit-text-size-adjust: 100%;
-        -ms-text-size-adjust: 100%;
-        font-family: Helvetica, Arial, sans-serif;
-        line-height: 24px;
-        font-weight: normal;
-        font-size: 16px;
-        -moz-box-sizing: border-box;
-        -webkit-box-sizing: border-box;
-        box-sizing: border-box;
-        color: #000000;
-        margin: 0;
-        padding: 0;
-        border-width: 0;
-      "
-      bgcolor="#cfe2ff"
-    >
-      <tbody>
-        <tr>
-          <td valign="top" style="line-height: 24px; font-size: 16px; margin: 0" align="left" bgcolor="#cfe2ff">
-            <table class="container" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%">
-              <tbody>
-                <tr>
-                  <td align="center" style="line-height: 24px; font-size: 16px; margin: 0; padding: 0 16px">
-                    <!--[if (gte mso 9)|(IE)]>
-                                          <table align="center" role="presentation">
-                                            <tbody>
-                                              <tr>
-                                                <td width="600">
-                                        <![endif]-->
-                    <table align="center" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px; margin: 0 auto">
-                      <tbody>
-                        <tr>
-                          <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
-                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
-                                    &#160;
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table class="ax-center" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
-                                    <img
-                                      class="h-16"
-                                      src="${img64}"
-                                      style="
-                                        height: 64px;
-                                        line-height: 100%;
-                                        outline: none;
-                                        text-decoration: none;
-                                        display: block;
-                                        border-style: none;
-                                        border-width: 0;
-                                      "
-                                      height="64"
-                                    />
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
-                                    &#160;
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table
-                              class="card rounded-3xl px-4 py-8 p-lg-10"
-                              role="presentation"
-                              border="0"
-                              cellpadding="0"
-                              cellspacing="0"
-                              style="border-radius: 24px; border-collapse: separate !important; width: 100%; overflow: hidden; border: 1px solid #e2e8f0"
-                              bgcolor="#ffffff"
-                            >
-                              <tbody>
-                                <tr>
-                                  <td
-                                    style="line-height: 24px; font-size: 16px; width: 100%; border-radius: 24px; margin: 0; padding: 40px"
-                                    align="left"
-                                    bgcolor="#ffffff"
-                                  >`;
-};
-var mailPart2 = `</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
-                              <tbody>
-                                <tr>
-                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
-                                    &#160;
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <!--[if (gte mso 9)|(IE)]>
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                        <![endif]-->
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </body>
-</html>
-`;
-
 // utils/utils.ts
 var transformEmail = ({ email, companyId }) => {
   let parts = email.split("@");
@@ -1328,7 +991,7 @@ async function createProduct({ productDetails, company, context }) {
   return newProduct;
 }
 var saveDocument = async ({ bolDoc, company, context }) => {
-  let document = {
+  let document2 = {
     externalId: bolDoc.orderId,
     date: bolDoc.orderPlacedDateTime,
     company: {
@@ -1377,7 +1040,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
     if (!customer) {
       customer = await createCustomer({ orderDetails: bolDoc, company, context });
     }
-    document.customer = {
+    document2.customer = {
       connect: {
         id: customer.id
       }
@@ -1385,7 +1048,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
     let docAddress = customer.customerAddresses.find(
       (address) => address.street.toLowerCase() == bolDoc.billingDetails.streetName.toLowerCase() && address.door.toLowerCase() == bolDoc.billingDetails.houseNumber.toLowerCase() + (bolDoc.billingDetails.houseNumberExtension ?? "").toLowerCase() && address.zip.toLowerCase() == bolDoc.billingDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.billingDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.billingDetails.countryCode.toLowerCase()
     );
-    document.docAddress = {
+    document2.docAddress = {
       connect: {
         id: docAddress.id
       }
@@ -1393,7 +1056,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
     let delAddress = customer.customerAddresses.find(
       (address) => address.street.toLowerCase() == bolDoc.shipmentDetails.streetName.toLowerCase() && address.door.toLowerCase().includes(bolDoc.shipmentDetails.houseNumber.toLowerCase()) && address.zip.toLowerCase() == bolDoc.shipmentDetails.zipCode.toLowerCase() && address.city.toLowerCase() == bolDoc.shipmentDetails.city.toLowerCase() && address.country.toLowerCase() == bolDoc.shipmentDetails.countryCode.toLowerCase()
     );
-    document.delAddress = {
+    document2.delAddress = {
       connect: {
         id: delAddress.id
       }
@@ -1403,7 +1066,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
       if (!product) {
         product = await createProduct({ productDetails: orderProduct, company, context });
       }
-      document.products.create.push({
+      document2.products.create.push({
         price: orderProduct.unitPrice.toFixed(4),
         company: {
           connect: {
@@ -1420,22 +1083,10 @@ var saveDocument = async ({ bolDoc, company, context }) => {
         name: product.name
       });
     }
-    const postedDocument = await context.sudo().query.Document.createOne({
-      data: document,
-      query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city floor province country } logo { url } }"
+    await context.sudo().query.Document.createOne({
+      data: document2,
+      query: "id"
     });
-    try {
-      sendMail({
-        establishment: postedDocument.establishment,
-        recipient: "test@huseyinonal.com",
-        subject: `Bestelling ${postedDocument.prefix ?? ""}${postedDocument.number}`,
-        company,
-        attachments: [await generateInvoiceOut({ document: postedDocument })],
-        html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het factuur voor uw recentste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
-      });
-    } catch (error) {
-      console.error(error);
-    }
   } catch (error) {
     console.error(error);
   }
@@ -1797,6 +1448,343 @@ var filterOnIdAccountancyOrAccountancyCompanyRelation = ({ session: session2 }) 
   }
 };
 
+// utils/sendmail.ts
+var sendMail = async ({
+  recipient,
+  bcc,
+  company,
+  establishment,
+  subject,
+  html,
+  attachments
+}) => {
+  try {
+    const nodemailer = require("nodemailer");
+    let transporter = nodemailer.createTransport({
+      host: company.emailHost,
+      port: company.emailPort,
+      secure: false,
+      auth: {
+        user: company.emailUser,
+        pass: company.emailPassword
+      }
+    });
+    let mailOptionsClient = {
+      from: `"${company.emailUser}" <${company.emailUser}>`,
+      to: recipient,
+      bcc,
+      attachments,
+      subject,
+      html: templatedMail({
+        content: html,
+        img64: establishment.logo.url
+      })
+    };
+    transporter.sendMail(mailOptionsClient, (error) => {
+      if (error) {
+        console.log("mail error", error);
+        return true;
+      } else {
+        console.log("mail sent");
+        return false;
+      }
+    });
+  } catch (e) {
+    console.log("mail error", e);
+    return false;
+  }
+};
+function templatedMail({ content, img64 }) {
+  return mailPart1({ img64 }) + content + mailPart2;
+}
+var mailPart1 = ({ img64 }) => {
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <!-- Compiled with Bootstrap Email version: 1.5.1 -->
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+      body,
+      table,
+      td {
+        font-family: Helvetica, Arial, sans-serif !important;
+      }
+      .ExternalClass {
+        width: 100%;
+      }
+      .ExternalClass,
+      .ExternalClass p,
+      .ExternalClass span,
+      .ExternalClass font,
+      .ExternalClass td,
+      .ExternalClass div {
+        line-height: 150%;
+      }
+      a {
+        text-decoration: none;
+      }
+      * {
+        color: inherit;
+      }
+      a[x-apple-data-detectors],
+      u + #body a,
+      #MessageViewBody a {
+        color: inherit;
+        text-decoration: none;
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+      }
+      table:not([class^="s-"]) {
+        font-family: Helvetica, Arial, sans-serif;
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+        border-spacing: 0px;
+        border-collapse: collapse;
+      }
+      table:not([class^="s-"]) td {
+        border-spacing: 0px;
+        border-collapse: collapse;
+      }
+      @media screen and (max-width: 600px) {
+        .w-full,
+        .w-full > tbody > tr > td {
+          width: 100% !important;
+        }
+        .w-8,
+        .w-8 > tbody > tr > td {
+          width: 32px !important;
+        }
+        .h-16,
+        .h-16 > tbody > tr > td {
+          height: 64px !important;
+        }
+        .p-lg-10:not(table),
+        .p-lg-10:not(.btn) > tbody > tr > td,
+        .p-lg-10.btn td a {
+          padding: 0 !important;
+        }
+        .pr-4:not(table),
+        .pr-4:not(.btn) > tbody > tr > td,
+        .pr-4.btn td a,
+        .px-4:not(table),
+        .px-4:not(.btn) > tbody > tr > td,
+        .px-4.btn td a {
+          padding-right: 16px !important;
+        }
+        .pl-4:not(table),
+        .pl-4:not(.btn) > tbody > tr > td,
+        .pl-4.btn td a,
+        .px-4:not(table),
+        .px-4:not(.btn) > tbody > tr > td,
+        .px-4.btn td a {
+          padding-left: 16px !important;
+        }
+        .pb-6:not(table),
+        .pb-6:not(.btn) > tbody > tr > td,
+        .pb-6.btn td a,
+        .py-6:not(table),
+        .py-6:not(.btn) > tbody > tr > td,
+        .py-6.btn td a {
+          padding-bottom: 24px !important;
+        }
+        .pt-8:not(table),
+        .pt-8:not(.btn) > tbody > tr > td,
+        .pt-8.btn td a,
+        .py-8:not(table),
+        .py-8:not(.btn) > tbody > tr > td,
+        .py-8.btn td a {
+          padding-top: 32px !important;
+        }
+        .pb-8:not(table),
+        .pb-8:not(.btn) > tbody > tr > td,
+        .pb-8.btn td a,
+        .py-8:not(table),
+        .py-8:not(.btn) > tbody > tr > td,
+        .py-8.btn td a {
+          padding-bottom: 32px !important;
+        }
+        *[class*="s-lg-"] > tbody > tr > td {
+          font-size: 0 !important;
+          line-height: 0 !important;
+          height: 0 !important;
+        }
+        .s-6 > tbody > tr > td {
+          font-size: 24px !important;
+          line-height: 24px !important;
+          height: 24px !important;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-blue-100"
+    style="
+      outline: 0;
+      width: 100%;
+      min-width: 100%;
+      height: 100%;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      font-family: Helvetica, Arial, sans-serif;
+      line-height: 24px;
+      font-weight: normal;
+      font-size: 16px;
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      color: #000000;
+      margin: 0;
+      padding: 0;
+      border-width: 0;
+    "
+    bgcolor="#cfe2ff"
+  >
+    <table
+      class="bg-blue-100 body"
+      valign="top"
+      role="presentation"
+      border="0"
+      cellpadding="0"
+      cellspacing="0"
+      style="
+        outline: 0;
+        width: 100%;
+        min-width: 100%;
+        height: 100%;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        font-family: Helvetica, Arial, sans-serif;
+        line-height: 24px;
+        font-weight: normal;
+        font-size: 16px;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        color: #000000;
+        margin: 0;
+        padding: 0;
+        border-width: 0;
+      "
+      bgcolor="#cfe2ff"
+    >
+      <tbody>
+        <tr>
+          <td valign="top" style="line-height: 24px; font-size: 16px; margin: 0" align="left" bgcolor="#cfe2ff">
+            <table class="container" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%">
+              <tbody>
+                <tr>
+                  <td align="center" style="line-height: 24px; font-size: 16px; margin: 0; padding: 0 16px">
+                    <!--[if (gte mso 9)|(IE)]>
+                                          <table align="center" role="presentation">
+                                            <tbody>
+                                              <tr>
+                                                <td width="600">
+                                        <![endif]-->
+                    <table align="center" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px; margin: 0 auto">
+                      <tbody>
+                        <tr>
+                          <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="ax-center" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 16px; margin: 0" align="left">
+                                    <img
+                                      class="h-16"
+                                      src="${img64}"
+                                      style="
+                                        height: 64px;
+                                        line-height: 100%;
+                                        outline: none;
+                                        text-decoration: none;
+                                        display: block;
+                                        border-style: none;
+                                        border-width: 0;
+                                      "
+                                      height="64"
+                                    />
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table
+                              class="card rounded-3xl px-4 py-8 p-lg-10"
+                              role="presentation"
+                              border="0"
+                              cellpadding="0"
+                              cellspacing="0"
+                              style="border-radius: 24px; border-collapse: separate !important; width: 100%; overflow: hidden; border: 1px solid #e2e8f0"
+                              bgcolor="#ffffff"
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style="line-height: 24px; font-size: 16px; width: 100%; border-radius: 24px; margin: 0; padding: 40px"
+                                    align="left"
+                                    bgcolor="#ffffff"
+                                  >`;
+};
+var mailPart2 = `</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%" width="100%">
+                              <tbody>
+                                <tr>
+                                  <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0" align="left" width="100%" height="24">
+                                    &#160;
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <!--[if (gte mso 9)|(IE)]>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                        <![endif]-->
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
+`;
+
 // schema.ts
 var lists = {
   Accountancy: (0, import_core.list)({
@@ -2115,6 +2103,35 @@ var lists = {
           }
         } catch (error) {
           console.error(error);
+        }
+      },
+      afterOperation: async ({ operation, resolvedData, context }) => {
+        if (resolvedData?.type != "purchase") {
+          if (operation === "create" || operation === "update") {
+            try {
+              console.log(resolvedData);
+              const postedDocument = await context.query.Document.findOne({
+                where: { id: resolvedData.id },
+                query: "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
+              });
+              console.log(document);
+              let bcc;
+              if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
+                bcc = postedDocument.customer.email2;
+              }
+              sendMail({
+                establishment: postedDocument.establishment,
+                recipient: postedDocument.customer.email,
+                bcc,
+                subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
+                company: postedDocument.company,
+                attachments: [await generateInvoiceOut({ document: postedDocument })],
+                html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
+              });
+            } catch (error) {
+              console.error(error);
+            }
+          }
         }
       }
     },

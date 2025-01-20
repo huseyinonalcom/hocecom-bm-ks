@@ -28,6 +28,8 @@ import {
   filterOnIdAccountancy,
   filterOnCompanyRelationOrCompanyAccountancyRelation,
 } from "./utils/accesscontrol/tenantac";
+import { sendMail } from "./utils/sendmail";
+import { generateInvoiceOut } from "./utils/pdf/document/invoiceoutpdf";
 
 export const lists: Lists = {
   Accountancy: list({
@@ -347,6 +349,40 @@ export const lists: Lists = {
           }
         } catch (error) {
           console.error(error);
+        }
+      },
+      afterOperation: async ({ operation, resolvedData, context }) => {
+        if (resolvedData?.type != "purchase") {
+          if (operation === "create" || operation === "update") {
+            try {
+              console.log(resolvedData);
+              const postedDocument = await context.query.Document.findOne({
+                where: { id: resolvedData.id },
+                query:
+                  "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
+              });
+              console.log(document);
+              let bcc;
+              if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
+                bcc = postedDocument.customer.email2;
+              }
+              sendMail({
+                establishment: postedDocument.establishment,
+                recipient: postedDocument.customer.email,
+                bcc,
+                subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
+                company: postedDocument.company,
+                attachments: [await generateInvoiceOut({ document: postedDocument })],
+                html: `<p>Beste ${
+                  postedDocument.customer!.firstName + " " + postedDocument.customer!.lastName
+                },</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${
+                  postedDocument.establishment.name
+                }</p>`,
+              });
+            } catch (error) {
+              console.error(error);
+            }
+          }
         }
       },
     },

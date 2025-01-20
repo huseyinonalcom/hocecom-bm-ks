@@ -343,28 +343,10 @@ const saveDocument = async ({ bolDoc, company, context }: { bolDoc: any; company
       });
     }
 
-    const postedDocument = await context.sudo().query.Document.createOne({
+    await context.sudo().query.Document.createOne({
       data: document,
-      query:
-        "prefix number date externalId origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email firstName lastName phone customerCompany customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 address { street door zip city floor province country } logo { url } }",
+      query: "id",
     });
-
-    try {
-      sendMail({
-        establishment: postedDocument.establishment,
-        recipient: "test@huseyinonal.com",
-        subject: `Bestelling ${postedDocument.prefix ?? ""}${postedDocument.number}`,
-        company: company,
-        attachments: [await generateInvoiceOut({ document: postedDocument })],
-        html: `<p>Beste ${
-          postedDocument.customer!.firstName + " " + postedDocument.customer!.lastName
-        },</p><p>In bijlage vindt u het factuur voor uw recentste bestelling bij ons.</p><p>Met vriendelijke groeten.</p><p>${
-          postedDocument.establishment.name
-        }</p>`,
-      });
-    } catch (error) {
-      console.error(error);
-    }
   } catch (error) {
     console.error(error);
   }
