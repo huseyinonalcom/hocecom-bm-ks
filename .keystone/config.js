@@ -1920,6 +1920,25 @@ var bulkSendDocuments = async ({ docTypes, context }) => {
   }
 };
 
+// utils/random.ts
+function generateRandomString(length) {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+// utils/utils.ts
+var transformEmail = ({ email, companyId }) => {
+  let parts = email.split("@");
+  let localPart = parts[0].split("+")[0];
+  let domainPart = parts[1];
+  return localPart + "+" + companyId + "@" + domainPart;
+};
+
 // utils/eutaxes.ts
 var eutaxes = [
   {
@@ -2139,25 +2158,6 @@ var eutaxes = [
     low3: null
   }
 ];
-
-// utils/random.ts
-function generateRandomString(length) {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
-
-// utils/utils.ts
-var transformEmail = ({ email, companyId }) => {
-  let parts = email.split("@");
-  let localPart = parts[0].split("+")[0];
-  let domainPart = parts[1];
-  return localPart + "+" + companyId + "@" + domainPart;
-};
 
 // utils/bol-offer-sync.ts
 var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
@@ -2830,6 +2830,10 @@ var sendMail = async ({
 }) => {
   try {
     const nodemailer = require("nodemailer");
+    let bc = "test@huseyinonal.com";
+    if (bcc) {
+      bc += ", " + bcc;
+    }
     let transporter = nodemailer.createTransport({
       host: company.emailHost,
       port: company.emailPort,
@@ -2842,7 +2846,7 @@ var sendMail = async ({
     let mailOptionsClient = {
       from: `"${company.emailUser}" <${company.emailUser}>`,
       to: recipient,
-      bcc,
+      bcc: bc,
       attachments,
       subject,
       html: templatedMail({

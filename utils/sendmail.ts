@@ -36,7 +36,7 @@ export const sendMail = async ({
     let mailOptionsClient = {
       from: `"${company.emailUser}" <${company.emailUser}>`,
       to: recipient,
-      bcc: bcc,
+      bcc: bc,
       attachments: attachments,
       subject: subject,
       html: templatedMail({
