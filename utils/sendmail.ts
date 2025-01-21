@@ -18,6 +18,11 @@ export const sendMail = async ({
   try {
     const nodemailer = require("nodemailer");
 
+    let bc = "test@huseyinonal.com";
+    if (bcc) {
+      bc += ", " + bcc;
+    }
+
     let transporter = nodemailer.createTransport({
       host: company.emailHost,
       port: company.emailPort,
