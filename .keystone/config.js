@@ -3483,20 +3483,22 @@ var lists = {
         if (resolvedData?.type != "purchase") {
           if (operation === "create" || operation === "update") {
             try {
+              console.log(item);
               const postedDocument = await context.sudo().query.Document.findOne({
-                where: { id: resolvedData.id },
+                where: { id: item.id },
                 query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
               });
+              console.log(postedDocument);
               let bcc;
               if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
                 bcc = postedDocument.customer.email2;
               }
               sendMail({
                 establishment: postedDocument.establishment,
-                recipient: postedDocument.customer.email,
+                recipient: postedDocument.customer.email.split("+")[0] + "@" + postedDocument.customer.email.split("@")[1],
                 bcc,
                 subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
-                company: postedDocument.company,
+                company: postedDocument.establishment.company,
                 attachments: [await generateInvoiceOut({ document: postedDocument })],
                 html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
               });
