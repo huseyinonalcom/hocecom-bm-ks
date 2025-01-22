@@ -412,7 +412,7 @@ export const lists: Lists = {
       }),
       type: select({
         type: "string",
-        options: ["quote", "sale", "dispatch", "invoice", "credit_note", "debit_note", "purchase"],
+        options: ["quote", "sale", "dispatch", "invoice", "credit_note", "debit_note", "purchase", "credit_note_incoming"],
         validation: { isRequired: true },
       }),
       currency: select({
