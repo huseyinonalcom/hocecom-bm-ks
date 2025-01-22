@@ -18,7 +18,7 @@ export const invoiceToXml = (
   // Convert string values to numbers consistently
   const documentProducts = document.products;
 
-  let taxRates: { rate: any; totalBeforeTax: number; totalTax: number }[] | number[] = [];
+  let taxRates: any[] = [];
 
   // First collect unique tax rates
   documentProducts.forEach((product: any) => {
@@ -247,8 +247,9 @@ export const invoiceToXml = (
   })}
 </Invoice>`;
 
+  let contentCleaned = content.replaceAll("&", "&amp;").replaceAll("'", "&apos;");
   return {
-    content,
+    content: contentCleaned,
     filename,
   };
 };
@@ -269,7 +270,7 @@ export const purchaseToXml = (
   // Convert string values to numbers consistently
   const documentProducts = document.products;
 
-  let taxRates: { rate: any; totalBeforeTax: number; totalTax: number }[] | number[] = [];
+  let taxRates: any[] = [];
 
   // First collect unique tax rates
   documentProducts.forEach((product: { tax: any }) => {
@@ -498,7 +499,7 @@ export const purchaseToXml = (
   </cac:InvoiceLine>`;
   })}
 </Invoice>`;
-  let contentCleaned = content.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+  let contentCleaned = content.replaceAll("&", "&amp;").replaceAll("'", "&apos;");
   return {
     content: contentCleaned,
     filename,

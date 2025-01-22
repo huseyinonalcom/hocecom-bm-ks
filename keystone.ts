@@ -109,6 +109,8 @@ export default withAuth(
           }
         });
 
+        bulkSendDocuments({ docTypes: [ "purchase"], context });
+
         cron.schedule("0 0 2 * *", async () => {
           try {
             bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });

@@ -1914,6 +1914,10 @@ var bulkSendDocuments = async ({ docTypes, context }) => {
     dateToSend.setDate(-1);
     for (let company of companiesWithMonthlyReportsActive) {
       startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() + 1, year: dateToSend.getFullYear() });
+      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth(), year: dateToSend.getFullYear() });
+      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 1, year: dateToSend.getFullYear() });
+      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 2, year: dateToSend.getFullYear() });
+      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 3, year: dateToSend.getFullYear() });
     }
   } catch (error) {
     console.error("Error occurred while starting bulkdocumentsender with params: ", docTypes, "error: ", error);
@@ -5157,6 +5161,7 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
+        bulkSendDocuments({ docTypes: ["purchase"], context });
         cron.schedule("0 0 2 * *", async () => {
           try {
             bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });

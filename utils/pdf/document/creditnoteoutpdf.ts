@@ -92,10 +92,10 @@ export async function generateCreditNoteOut({
             position,
             item.name,
             item.description,
-            formatCurrency(item.value.toFixed(2)),
+            formatCurrency(item.value.toFixed(2), document.currency),
             item.amount,
-            formatCurrency(Number(item.subTotalTax)),
-            formatCurrency(Number(item.subTotal))
+            formatCurrency(Number(item.subTotalTax), creditNoteDoc.currency),
+            formatCurrency(Number(item.subTotal), creditNoteDoc.currency)
           );
         }
         return creditNoteTableTop + (documentProducts.length + 1) * 40;
@@ -157,16 +157,24 @@ export async function generateCreditNoteOut({
         taxRates = taxRates.sort((a, b) => a - b);
 
         doc.fontSize(10).text("Total Tax:", x, y + 50);
-        doc.text(formatCurrency(documentProducts.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)), x + 80, y + 50);
+        doc.text(
+          formatCurrency(
+            documentProducts.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0),
+            creditNoteDoc.currency
+          ),
+          x + 80,
+          y + 50
+        );
 
         taxRates.map((taxRate, index) => {
-          doc
-            .text("Total Tax " + taxRate + "%:", x, y + 50 + (index + 1) * 15)
-            .text(
-              formatCurrency(documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.subTotalTax), 0)),
-              x + 80,
-              y + 50 + (index + 1) * 15
-            );
+          doc.text("Total Tax " + taxRate + "%:", x, y + 50 + (index + 1) * 15).text(
+            formatCurrency(
+              documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.subTotalTax), 0),
+              creditNoteDoc.currency
+            ),
+            x + 80,
+            y + 50 + (index + 1) * 15
+          );
         });
 
         return y + taxRates.length * 15 + 50;
@@ -224,13 +232,21 @@ export async function generateCreditNoteOut({
       doc.text(
         formatCurrency(
           documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotal), 0) -
-            documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotalTax), 0)
+            documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotalTax), 0),
+          creditNoteDoc.currency
         ),
         totalsX + 70,
         y + 50
       );
       doc.text("Total:", totalsX, y + 65);
-      doc.text(formatCurrency(documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotal), 0)), totalsX + 70, y + 65);
+      doc.text(
+        formatCurrency(
+          documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotal), 0),
+          creditNoteDoc.currency
+        ),
+        totalsX + 70,
+        y + 65
+      );
 
       doc.end();
       doc.on("end", () => {
