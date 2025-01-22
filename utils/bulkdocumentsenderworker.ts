@@ -76,6 +76,15 @@ async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): Promise
             contentType: "application/pdf",
           };
           xml = purchaseToXml(doc, pdf);
+        } else if (doc.type == "credit_note_incoming") {
+          const response = await fetch(doc.files[0].url);
+          const buffer = await response.arrayBuffer();
+          pdf = {
+            filename: doc.files[0].name,
+            content: Buffer.from(buffer),
+            contentType: "application/pdf",
+          };
+          xml = purchaseToXml(doc, pdf);
         }
 
         if (!xml) {
@@ -143,7 +152,7 @@ async function sendEmailWithAttachment(zipPath: string): Promise<void> {
     establishment: documents.at(0).establishment,
     attachments: [
       {
-        filename: zipPath.split("/").at(-1),
+        filename: zipPath.replaceAll("\\", "/").split("/").at(-1),
         path: zipPath,
       },
     ],

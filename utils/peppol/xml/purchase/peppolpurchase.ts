@@ -9,84 +9,85 @@ export const purchaseToXml = (
     contentType: string;
   }
 ) => {
-  const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "")}.xml`;
+  try {
+    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
 
-  const establishment = document.establishment;
-  const supplier = document.supplier;
+    const establishment = document.establishment;
+    const supplier = document.supplier;
 
-  // Convert string values to numbers consistently
-  const documentProducts = document.products;
+    // Convert string values to numbers consistently
+    const documentProducts = document.products;
 
-  let taxRates: any[] = [];
+    let taxRates: any[] = [];
 
-  // First collect unique tax rates
-  documentProducts.forEach((product: { tax: any }) => {
-    if (!taxRates.includes(Number(product.tax))) {
-      taxRates.push(Number(product.tax));
-    }
-  });
-
-  // Calculate totals with explicit number conversion
-  taxRates = taxRates.map((tax) => {
-    const totalBeforeTax = documentProducts.reduce((acc: number, product: { tax: any; totalWithTaxAfterReduction: any }) => {
-      if (Number(product.tax) === tax) {
-        const subTotal = Number(product.totalWithTaxAfterReduction);
-        return acc + subTotal / (1 + tax / 100);
+    // First collect unique tax rates
+    documentProducts.forEach((product: { tax: any }) => {
+      if (!taxRates.includes(Number(product.tax))) {
+        taxRates.push(Number(product.tax));
       }
-      return acc;
-    }, 0);
+    });
 
-    const totalTax = documentProducts.reduce((acc: number, product: { tax: any; totalWithTaxAfterReduction: any }) => {
-      if (Number(product.tax) === tax) {
-        const subTotal = Number(product.totalWithTaxAfterReduction);
-        const beforeTax = subTotal / (1 + tax / 100);
-        return acc + (subTotal - beforeTax);
-      }
-      return acc;
-    }, 0);
+    // Calculate totals with explicit number conversion
+    taxRates = taxRates.map((tax) => {
+      const totalBeforeTax = documentProducts.reduce((acc: number, product: { tax: any; totalWithTaxAfterReduction: any }) => {
+        if (Number(product.tax) === tax) {
+          const subTotal = Number(product.totalWithTaxAfterReduction);
+          return acc + subTotal / (1 + tax / 100);
+        }
+        return acc;
+      }, 0);
 
-    return {
-      rate: tax,
-      totalBeforeTax: Number(totalBeforeTax.toFixed(2)),
-      totalTax: Number(totalTax.toFixed(2)),
-    };
-  });
+      const totalTax = documentProducts.reduce((acc: number, product: { tax: any; totalWithTaxAfterReduction: any }) => {
+        if (Number(product.tax) === tax) {
+          const subTotal = Number(product.totalWithTaxAfterReduction);
+          const beforeTax = subTotal / (1 + tax / 100);
+          return acc + (subTotal - beforeTax);
+        }
+        return acc;
+      }, 0);
 
-  // Calculate final totals with explicit number conversion
-  const totalTax = Number(taxRates.reduce((acc, taxRate) => acc + taxRate.totalTax, 0).toFixed(2));
+      return {
+        rate: tax,
+        totalBeforeTax: Number(totalBeforeTax.toFixed(2)),
+        totalTax: Number(totalTax.toFixed(2)),
+      };
+    });
 
-  const total = Number(
-    documentProducts.reduce((acc: number, product: { totalWithTaxAfterReduction: any }) => acc + Number(product.totalWithTaxAfterReduction), 0).toFixed(2)
-  );
+    // Calculate final totals with explicit number conversion
+    const totalTax = Number(taxRates.reduce((acc, taxRate) => acc + taxRate.totalTax, 0).toFixed(2));
 
-  const totalBeforeTax = Number((total - totalTax).toFixed(2));
-
-  // Add validation
-  if (isNaN(total) || isNaN(totalBeforeTax) || isNaN(totalTax)) {
-    console.error(
-      "Calculation error purchase:",
-      JSON.stringify({
-        documentNumber: document.number,
-        values: {
-          total,
-          totalBeforeTax,
-          totalTax,
-          taxRates,
-          documentProducts: documentProducts.map((p: { totalWithTaxAfterReduction: any; tax: any }) =>
-            JSON.stringify({
-              ...p,
-              subTotal: Number(p.totalWithTaxAfterReduction),
-              tax: Number(p.tax),
-            })
-          ),
-        },
-      })
+    const total = Number(
+      documentProducts.reduce((acc: number, product: { totalWithTaxAfterReduction: any }) => acc + Number(product.totalWithTaxAfterReduction), 0).toFixed(2)
     );
-  }
 
-  const taxIdCleaned = establishment.taxID.slice(2).replaceAll(".", "").trim();
+    const totalBeforeTax = Number((total - totalTax).toFixed(2));
 
-  const content = `<?xml version="1.0" encoding="utf-8"?>
+    // Add validation
+    if (isNaN(total) || isNaN(totalBeforeTax) || isNaN(totalTax)) {
+      console.error(
+        "Calculation error purchase:",
+        JSON.stringify({
+          documentNumber: document.number,
+          values: {
+            total,
+            totalBeforeTax,
+            totalTax,
+            taxRates,
+            documentProducts: documentProducts.map((p: { totalWithTaxAfterReduction: any; tax: any }) =>
+              JSON.stringify({
+                ...p,
+                subTotal: Number(p.totalWithTaxAfterReduction),
+                tax: Number(p.tax),
+              })
+            ),
+          },
+        })
+      );
+    }
+
+    const taxIdCleaned = establishment.taxID.slice(2).replaceAll(".", "").trim();
+
+    const content = `<?xml version="1.0" encoding="utf-8"?>
 <Invoice xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"
   xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
   xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
@@ -256,8 +257,15 @@ export const purchaseToXml = (
   </cac:InvoiceLine>`;
   })}
 </Invoice>`;
-  return {
-    content,
-    filename,
-  };
+    return {
+      content,
+      filename,
+    };
+  } catch (error) {
+    console.error("Error generating xml for purchase document: ", error);
+    return {
+      content: "",
+      filename: "",
+    };
+  }
 };

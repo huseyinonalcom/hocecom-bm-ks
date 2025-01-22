@@ -9,7 +9,7 @@ export const invoiceToXml = (
     contentType: string;
   }
 ) => {
-  const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number}.xml`;
+  const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
 
   const establishment = document.establishment;
   const customer = document.customer;
