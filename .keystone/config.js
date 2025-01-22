@@ -1752,7 +1752,7 @@ var pdfHead = async ({
   }
 };
 
-// utils/pdf/document/invoiceoutpdf.ts
+// utils/pdf/document/invoicepdf.ts
 var import_buffer = require("buffer");
 async function generateInvoiceOut({
   document,
@@ -5161,10 +5161,10 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
-        bulkSendDocuments({ docTypes: ["purchase"], context });
+        bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
         cron.schedule("0 0 2 * *", async () => {
           try {
-            bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });
+            bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase", "credit_note_incoming"], context });
           } catch (error) {
             console.error("Error starting bulk document sender", error);
           }

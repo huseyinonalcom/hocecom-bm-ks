@@ -1,4 +1,4 @@
-import { generateInvoiceOut } from "./utils/pdf/document/invoiceoutpdf";
+import { generateInvoiceOut } from "./utils/pdf/document/invoicepdf";
 import { bulkSendDocuments } from "./utils/bulkdocumentsenderstart";
 import { syncBolOrders } from "./utils/bol-offer-sync";
 import { fileUpload } from "./utils/fileupload";
@@ -109,11 +109,11 @@ export default withAuth(
           }
         });
 
-        bulkSendDocuments({ docTypes: [ "purchase"], context });
+        bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
 
         cron.schedule("0 0 2 * *", async () => {
           try {
-            bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase"], context });
+            bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase", "credit_note_incoming"], context });
           } catch (error) {
             console.error("Error starting bulk document sender", error);
           }

@@ -29,7 +29,7 @@ import {
   filterOnCompanyRelationOrCompanyAccountancyRelation,
 } from "./utils/accesscontrol/tenantac";
 import { sendMail } from "./utils/sendmail";
-import { generateInvoiceOut } from "./utils/pdf/document/invoiceoutpdf";
+import { generateInvoiceOut } from "./utils/pdf/document/invoicepdf";
 
 export const lists: Lists = {
   Accountancy: list({

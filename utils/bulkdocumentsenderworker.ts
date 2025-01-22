@@ -1,13 +1,14 @@
 import { dateFormatBe, dateFormatOnlyDate } from "../utils/formatters/dateformatters";
-import { generateCreditNoteOut } from "./pdf/document/creditnoteoutpdf";
-import { invoiceToXml, purchaseToXml } from "./peppol/peppolxml";
+import { generateCreditNoteOut } from "./pdf/document/creditnotepdf";
+import { purchaseToXml } from "./peppol/xml/purchase/peppolpurchase";
+import { generateInvoiceOut } from "./pdf/document/invoicepdf";
+import { invoiceToXml } from "./peppol/xml/invoice/peppolinvoice";
 import { sendMail } from "../utils/sendmail";
 import { workerData } from "worker_threads";
 import archiver from "archiver";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { generateInvoiceOut } from "./pdf/document/invoiceoutpdf";
 
 const documents = workerData.documents;
 const company = workerData.company;
@@ -136,7 +137,7 @@ async function createZip(tempDir: string, zipPath: string): Promise<void> {
 
 async function sendEmailWithAttachment(zipPath: string): Promise<void> {
   await sendMail({
-    recipient: "test@huseyinonal.com",
+    recipient: company.accountantEmail,
     subject: `Documenten ${company.name} ${dateFormatBe(documents.at(0).date)} - ${dateFormatBe(documents.at(-1).date)}`,
     company: company,
     establishment: documents.at(0).establishment,
