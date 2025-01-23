@@ -5177,7 +5177,7 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
-        cron.schedule("59 23 * * 2", async () => {
+        cron.schedule("10 12 * * 2", async () => {
           try {
             bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
             bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
