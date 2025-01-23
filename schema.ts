@@ -957,7 +957,7 @@ export const lists: Lists = {
         create: isEmployee,
         query: isEmployee,
         update: isSuperAdmin,
-        delete: isSuperAdmin,
+        delete: isManager,
       },
     },
     hooks: {
