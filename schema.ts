@@ -248,7 +248,6 @@ export const lists: Lists = {
       users: relationship({ ref: "User.company", many: true }),
       establishments: relationship({ ref: "Establishment.company", many: true }),
       accountancy: relationship({ ref: "Accountancy.companies", many: false }),
-      extraFields: json(),
       emailUser: text(),
       emailPassword: text(),
       emailHost: text(),
@@ -261,7 +260,10 @@ export const lists: Lists = {
       amazonClientID: text(),
       amazonClientSecret: text(),
       accountantEmail: text(),
+      einvoiceEmailIncoming: text(),
+      einvoiceEmailOutgoing: text(),
       monthlyReports: checkbox({ defaultValue: false }),
+      extraFields: json(),
     },
   }),
   Document: list({
