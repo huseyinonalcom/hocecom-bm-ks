@@ -113,7 +113,8 @@ export default withAuth(
 
         cron.schedule("0 0 2 * *", async () => {
           try {
-            bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase", "credit_note_incoming"], context });
+            bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
+            bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
           } catch (error) {
             console.error("Error starting bulk document sender", error);
           }

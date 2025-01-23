@@ -15,6 +15,7 @@ const company = workerData.company;
 
 const run = async () => {
   try {
+    documents.sort((a: { date: any }, b: { date: any }) => a.date - b.date);
     const tempDir = path.join(os.tmpdir(), "pdf_temp" + company.id + dateFormatOnlyDate(documents.at(0).date));
     await fs.emptyDir(tempDir);
     await writeAllXmlsToTempDir(tempDir, documents);
@@ -146,7 +147,8 @@ async function createZip(tempDir: string, zipPath: string): Promise<void> {
 
 async function sendEmailWithAttachment(zipPath: string): Promise<void> {
   await sendMail({
-    recipient: company.accountantEmail,
+    recipient:
+      documents.at(0).type == "credit_note_incoming" || documents.at(0).type == "purchase" ? company.einvoiceEmailIncoming : company.einvoiceEmailOutgoing,
     subject: `Documenten ${company.name} ${dateFormatBe(documents.at(0).date)} - ${dateFormatBe(documents.at(-1).date)}`,
     company: company,
     establishment: documents.at(0).establishment,
