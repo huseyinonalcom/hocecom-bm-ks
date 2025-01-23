@@ -34,7 +34,7 @@ function getMondayAndSundayTwoWeeksAgo(): { monday: Date; sunday: Date } {
   mondayThisWeek.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
 
   const mondayTwoWeeksAgo = new Date(mondayThisWeek);
-  mondayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() - 21);
+  mondayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() - 7);
 
   const sundayTwoWeeksAgo = new Date(mondayTwoWeeksAgo);
   sundayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() + 6);

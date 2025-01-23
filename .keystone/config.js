@@ -1870,7 +1870,7 @@ function getMondayAndSundayTwoWeeksAgo() {
   const mondayThisWeek = new Date(today);
   mondayThisWeek.setDate(today.getDate() - (dayOfWeek + 6) % 7);
   const mondayTwoWeeksAgo = new Date(mondayThisWeek);
-  mondayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() - 7);
+  mondayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() - 21);
   const sundayTwoWeeksAgo = new Date(mondayTwoWeeksAgo);
   sundayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() + 6);
   return { monday: mondayTwoWeeksAgo, sunday: sundayTwoWeeksAgo };
@@ -1895,8 +1895,8 @@ async function fetchDocuments(companyID, docTypes, month, year, context) {
         in: docTypes
       },
       date: {
-        gte: new Date(year, month - 1, 1),
-        lte: new Date(year, month, 1)
+        gte: monday,
+        lte: sunday
       }
     }
   });
@@ -1928,11 +1928,6 @@ var bulkSendDocuments = async ({ docTypes, context }) => {
     dateToSend.setDate(-1);
     for (let company of companiesWithMonthlyReportsActive) {
       startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() + 1, year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth(), year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 1, year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 2, year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 3, year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 4, year: dateToSend.getFullYear() });
     }
   } catch (error) {
     console.error("Error occurred while starting bulkdocumentsender with params: ", docTypes, "error: ", error);
@@ -5177,6 +5172,7 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
+        bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
         cron.schedule("10 12 * * 2", async () => {
           try {
             bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });

@@ -78,7 +78,7 @@ export const invoiceToXml = (
     });
   }
 
-  const taxIdCleaned = establishment.taxId.replace("BE", "").replaceAll(".", "").trim();
+  const taxIdCleaned = establishment.taxID.replace("BE", "").replaceAll(".", "").trim();
 
   const content = `<?xml version="1.0" encoding="utf-8"?>
 <Invoice xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"
