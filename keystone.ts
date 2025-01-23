@@ -108,6 +108,8 @@ export default withAuth(
             console.error("Error running cron job", error);
           }
         });
+        
+        bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
 
         cron.schedule("10 12 * * 2", async () => {
           try {
