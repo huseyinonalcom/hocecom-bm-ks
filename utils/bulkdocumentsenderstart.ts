@@ -15,7 +15,7 @@ async function fetchCompany(companyID: number, context: KeystoneContext) {
   await context
     .sudo()
     .query.Company.findOne({
-      query: "id name accountantEmail einvoiceEmailIncoming einvoiceEmailOutgoing logo { url } emailHost emailPort emailUser emailPassword",
+      query: "id name einvoiceEmailIncoming einvoiceEmailOutgoing logo { url } emailHost emailPort emailUser emailPassword",
       where: { id: companyID },
     })
     .then((res) => {

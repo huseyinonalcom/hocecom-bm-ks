@@ -259,7 +259,6 @@ export const lists: Lists = {
       bolClientSecret: text(),
       amazonClientID: text(),
       amazonClientSecret: text(),
-      accountantEmail: text(),
       einvoiceEmailIncoming: text(),
       einvoiceEmailOutgoing: text(),
       monthlyReports: checkbox({ defaultValue: false }),
