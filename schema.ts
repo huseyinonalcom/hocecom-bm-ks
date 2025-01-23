@@ -701,7 +701,7 @@ export const lists: Lists = {
       price: decimal({ validation: { isRequired: true } }),
       pricedBy: select({
         type: "string",
-        options: ["amount", "volume", "length", "weight", "area"],
+        options: ["amount", "volume", "length", "weight", "area", "time"],
         defaultValue: "amount",
       }),
       reduction: decimal({ defaultValue: "0" }),

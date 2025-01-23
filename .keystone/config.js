@@ -1870,7 +1870,7 @@ function getMondayAndSundayTwoWeeksAgo() {
   const mondayThisWeek = new Date(today);
   mondayThisWeek.setDate(today.getDate() - (dayOfWeek + 6) % 7);
   const mondayTwoWeeksAgo = new Date(mondayThisWeek);
-  mondayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() - 21);
+  mondayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() - 7);
   const sundayTwoWeeksAgo = new Date(mondayTwoWeeksAgo);
   sundayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() + 6);
   return { monday: mondayTwoWeeksAgo, sunday: sundayTwoWeeksAgo };
@@ -3825,7 +3825,7 @@ var lists = {
       price: (0, import_fields.decimal)({ validation: { isRequired: true } }),
       pricedBy: (0, import_fields.select)({
         type: "string",
-        options: ["amount", "volume", "length", "weight", "area"],
+        options: ["amount", "volume", "length", "weight", "area", "time"],
         defaultValue: "amount"
       }),
       reduction: (0, import_fields.decimal)({ defaultValue: "0" }),
@@ -5172,7 +5172,6 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
-        bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
         cron.schedule("10 12 * * 2", async () => {
           try {
             bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
@@ -5199,7 +5198,6 @@ var keystone_default = withAuth(
         };
         generateTestPDF({ id: "cm5glkpe00039gx56xni3eab3" });
         generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
-        generateTestPDF({ id: "cm653n2gx005nbkce1hv5o101" });
       }
     },
     lists,
