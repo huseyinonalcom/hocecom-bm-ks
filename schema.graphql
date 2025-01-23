@@ -358,7 +358,6 @@ type Company {
   establishments(where: EstablishmentWhereInput! = {}, orderBy: [EstablishmentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: EstablishmentWhereUniqueInput): [Establishment!]
   establishmentsCount(where: EstablishmentWhereInput! = {}): Int
   accountancy: Accountancy
-  extraFields: JSON
   emailUser: String
   emailPassword: String
   emailHost: String
@@ -370,8 +369,10 @@ type Company {
   bolClientSecret: String
   amazonClientID: String
   amazonClientSecret: String
-  accountantEmail: String
+  einvoiceEmailIncoming: String
+  einvoiceEmailOutgoing: String
   monthlyReports: Boolean
+  extraFields: JSON
 }
 
 input CompanyWhereUniqueInput {
@@ -403,7 +404,8 @@ input CompanyWhereInput {
   bolClientSecret: StringFilter
   amazonClientID: StringFilter
   amazonClientSecret: StringFilter
-  accountantEmail: StringFilter
+  einvoiceEmailIncoming: StringFilter
+  einvoiceEmailOutgoing: StringFilter
   monthlyReports: BooleanFilter
 }
 
@@ -429,7 +431,8 @@ input CompanyOrderByInput {
   bolClientSecret: OrderDirection
   amazonClientID: OrderDirection
   amazonClientSecret: OrderDirection
-  accountantEmail: OrderDirection
+  einvoiceEmailIncoming: OrderDirection
+  einvoiceEmailOutgoing: OrderDirection
   monthlyReports: OrderDirection
 }
 
@@ -442,7 +445,6 @@ input CompanyUpdateInput {
   users: UserRelateToManyForUpdateInput
   establishments: EstablishmentRelateToManyForUpdateInput
   accountancy: AccountancyRelateToOneForUpdateInput
-  extraFields: JSON
   emailUser: String
   emailPassword: String
   emailHost: String
@@ -454,8 +456,10 @@ input CompanyUpdateInput {
   bolClientSecret: String
   amazonClientID: String
   amazonClientSecret: String
-  accountantEmail: String
+  einvoiceEmailIncoming: String
+  einvoiceEmailOutgoing: String
   monthlyReports: Boolean
+  extraFields: JSON
 }
 
 input EstablishmentRelateToManyForUpdateInput {
@@ -485,7 +489,6 @@ input CompanyCreateInput {
   users: UserRelateToManyForCreateInput
   establishments: EstablishmentRelateToManyForCreateInput
   accountancy: AccountancyRelateToOneForCreateInput
-  extraFields: JSON
   emailUser: String
   emailPassword: String
   emailHost: String
@@ -497,8 +500,10 @@ input CompanyCreateInput {
   bolClientSecret: String
   amazonClientID: String
   amazonClientSecret: String
-  accountantEmail: String
+  einvoiceEmailIncoming: String
+  einvoiceEmailOutgoing: String
   monthlyReports: Boolean
+  extraFields: JSON
 }
 
 input EstablishmentRelateToManyForCreateInput {

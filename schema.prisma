@@ -80,7 +80,6 @@ model Company {
   establishments                  Establishment[]      @relation("Establishment_company")
   accountancy                     Accountancy?         @relation("Company_accountancy", fields: [accountancyId], references: [id])
   accountancyId                   String?              @map("accountancy")
-  extraFields                     Json?
   emailUser                       String               @default("")
   emailPassword                   String               @default("")
   emailHost                       String               @default("")
@@ -92,8 +91,10 @@ model Company {
   bolClientSecret                 String               @default("")
   amazonClientID                  String               @default("")
   amazonClientSecret              String               @default("")
-  accountantEmail                 String               @default("")
+  einvoiceEmailIncoming           String               @default("")
+  einvoiceEmailOutgoing           String               @default("")
   monthlyReports                  Boolean              @default(false)
+  extraFields                     Json?
   from_Address_company            Address[]            @relation("Address_company")
   from_AssemblyComponent_company  AssemblyComponent[]  @relation("AssemblyComponent_company")
   from_Document_company           Document[]           @relation("Document_company")

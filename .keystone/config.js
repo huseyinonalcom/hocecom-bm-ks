@@ -1857,7 +1857,7 @@ var import_path = __toESM(require("path"));
 async function fetchCompany(companyID, context) {
   let company;
   await context.sudo().query.Company.findOne({
-    query: "id name accountantEmail logo { url } emailHost emailPort emailUser emailPassword",
+    query: "id name einvoiceEmailIncoming einvoiceEmailOutgoing logo { url } emailHost emailPort emailUser emailPassword",
     where: { id: companyID }
   }).then((res) => {
     company = res;
@@ -1914,10 +1914,6 @@ var bulkSendDocuments = async ({ docTypes, context }) => {
     dateToSend.setDate(-1);
     for (let company of companiesWithMonthlyReportsActive) {
       startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() + 1, year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth(), year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 1, year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 2, year: dateToSend.getFullYear() });
-      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() - 3, year: dateToSend.getFullYear() });
     }
   } catch (error) {
     console.error("Error occurred while starting bulkdocumentsender with params: ", docTypes, "error: ", error);
@@ -3381,7 +3377,6 @@ var lists = {
       users: (0, import_fields.relationship)({ ref: "User.company", many: true }),
       establishments: (0, import_fields.relationship)({ ref: "Establishment.company", many: true }),
       accountancy: (0, import_fields.relationship)({ ref: "Accountancy.companies", many: false }),
-      extraFields: (0, import_fields.json)(),
       emailUser: (0, import_fields.text)(),
       emailPassword: (0, import_fields.text)(),
       emailHost: (0, import_fields.text)(),
@@ -3393,8 +3388,10 @@ var lists = {
       bolClientSecret: (0, import_fields.text)(),
       amazonClientID: (0, import_fields.text)(),
       amazonClientSecret: (0, import_fields.text)(),
-      accountantEmail: (0, import_fields.text)(),
-      monthlyReports: (0, import_fields.checkbox)({ defaultValue: false })
+      einvoiceEmailIncoming: (0, import_fields.text)(),
+      einvoiceEmailOutgoing: (0, import_fields.text)(),
+      monthlyReports: (0, import_fields.checkbox)({ defaultValue: false }),
+      extraFields: (0, import_fields.json)()
     }
   }),
   Document: (0, import_core.list)({
@@ -3487,12 +3484,10 @@ var lists = {
         if (resolvedData?.type != "purchase") {
           if (operation === "create" || operation === "update") {
             try {
-              console.log(item);
               const postedDocument = await context.sudo().query.Document.findOne({
                 where: { id: item.id },
                 query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
               });
-              console.log(postedDocument);
               let bcc;
               if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
                 bcc = postedDocument.customer.email2;
@@ -4067,7 +4062,7 @@ var lists = {
         create: isEmployee,
         query: isEmployee,
         update: isSuperAdmin,
-        delete: isSuperAdmin
+        delete: isManager
       }
     },
     hooks: {
@@ -5164,7 +5159,8 @@ var keystone_default = withAuth(
         bulkSendDocuments({ docTypes: ["credit_note_incoming"], context });
         cron.schedule("0 0 2 * *", async () => {
           try {
-            bulkSendDocuments({ docTypes: ["invoice", "credit_note", "purchase", "credit_note_incoming"], context });
+            bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
+            bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
           } catch (error) {
             console.error("Error starting bulk document sender", error);
           }
