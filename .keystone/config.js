@@ -2569,7 +2569,9 @@ var s3Client = new import_client_s3.S3Client({
 });
 var fileUpload = async (file) => {
   const randomString = Math.random().toString(36).substring(2, 15);
-  const newFileName = `${Date.now()}-${randomString}-${file.originalname}`;
+  const fileName = file.originalname;
+  let sanitizedFileName = fileName.replaceAll(" ", "").replaceAll("/", "").replaceAll("\\", "");
+  const newFileName = `${Date.now()}-${randomString}-${sanitizedFileName}`;
   const params = {
     Bucket: process.env.BUCKET_NAME,
     Key: `uploads/${newFileName}`,
