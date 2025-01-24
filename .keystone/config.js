@@ -4419,7 +4419,20 @@ var lists = {
       reference: (0, import_fields.text)(),
       type: (0, import_fields.select)({
         type: "string",
-        options: ["cash", "debit_card", "credit_card", "online", "bank_transfer", "financing", "financing_unverified", "promissory", "cheque", "other"],
+        options: [
+          "cash",
+          "debit_card",
+          "credit_card",
+          "online",
+          "bank_transfer",
+          "financing",
+          "financing_unverified",
+          "promissory",
+          "cheque",
+          "cashing",
+          "trade",
+          "other"
+        ],
         defaultValue: "cash",
         validation: { isRequired: true }
       }),
