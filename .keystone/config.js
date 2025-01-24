@@ -4404,6 +4404,14 @@ var lists = {
       out: (0, import_fields.checkbox)({ defaultValue: false }),
       isDeleted: (0, import_fields.checkbox)({ defaultValue: false }),
       isVerified: (0, import_fields.checkbox)({ defaultValue: false }),
+      drawnPayments: (0, import_fields.relationship)({
+        ref: "Payment.originPayment",
+        many: false
+      }),
+      originPayment: (0, import_fields.relationship)({
+        ref: "Payment.drawnPayments",
+        many: true
+      }),
       creator: (0, import_fields.relationship)({
         ref: "User.payments",
         many: false

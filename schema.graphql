@@ -1646,6 +1646,9 @@ type Payment {
   out: Boolean
   isDeleted: Boolean
   isVerified: Boolean
+  drawnPayments: Payment
+  originPayment(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
+  originPaymentCount(where: PaymentWhereInput! = {}): Int
   creator: User
   reference: String
   type: String
@@ -1672,6 +1675,8 @@ input PaymentWhereInput {
   out: BooleanFilter
   isDeleted: BooleanFilter
   isVerified: BooleanFilter
+  drawnPayments: PaymentWhereInput
+  originPayment: PaymentManyRelationFilter
   creator: UserWhereInput
   reference: StringFilter
   type: StringFilter
@@ -1705,6 +1710,8 @@ input PaymentUpdateInput {
   out: Boolean
   isDeleted: Boolean
   isVerified: Boolean
+  drawnPayments: PaymentRelateToOneForUpdateInput
+  originPayment: PaymentRelateToManyForUpdateInput
   creator: UserRelateToOneForUpdateInput
   reference: String
   type: String
@@ -1714,6 +1721,12 @@ input PaymentUpdateInput {
   supplier: SupplierRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
+}
+
+input PaymentRelateToOneForUpdateInput {
+  create: PaymentCreateInput
+  connect: PaymentWhereUniqueInput
+  disconnect: Boolean
 }
 
 input NoteRelateToManyForUpdateInput {
@@ -1734,6 +1747,8 @@ input PaymentCreateInput {
   out: Boolean
   isDeleted: Boolean
   isVerified: Boolean
+  drawnPayments: PaymentRelateToOneForCreateInput
+  originPayment: PaymentRelateToManyForCreateInput
   creator: UserRelateToOneForCreateInput
   reference: String
   type: String
@@ -1743,6 +1758,11 @@ input PaymentCreateInput {
   supplier: SupplierRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
+}
+
+input PaymentRelateToOneForCreateInput {
+  create: PaymentCreateInput
+  connect: PaymentWhereUniqueInput
 }
 
 input NoteRelateToManyForCreateInput {
