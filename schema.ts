@@ -1282,6 +1282,14 @@ export const lists: Lists = {
       out: checkbox({ defaultValue: false }),
       isDeleted: checkbox({ defaultValue: false }),
       isVerified: checkbox({ defaultValue: false }),
+      drawnPayments: relationship({
+        ref: "Payment.originPayment",
+        many: false,
+      }),
+      originPayment: relationship({
+        ref: "Payment.drawnPayments",
+        many: true,
+      }),
       creator: relationship({
         ref: "User.payments",
         many: false,
