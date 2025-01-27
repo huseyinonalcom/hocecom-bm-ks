@@ -1,3 +1,4 @@
+import { generateCreditNoteOut } from "./utils/pdf/document/creditnotepdf";
 import { generateInvoiceOut } from "./utils/pdf/document/invoicepdf";
 import { bulkSendDocuments } from "./utils/bulkdocumentsenderstart";
 import { syncBolOrders } from "./utils/bol-offer-sync";
@@ -7,7 +8,6 @@ import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
-import { generateCreditNoteOut } from "./utils/pdf/document/creditnotepdf";
 
 export default withAuth(
   config({
@@ -110,14 +110,14 @@ export default withAuth(
           }
         });
 
-        cron.schedule("10 12 * * 2", async () => {
+        /*    cron.schedule("10 12 * * 2", async () => {
           try {
             bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
             bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
           } catch (error) {
             console.error("Error starting bulk document sender", error);
           }
-        });
+        }); */
 
         const generateTestPDF = async ({ id }: { id: string }) => {
           try {
