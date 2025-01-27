@@ -934,6 +934,7 @@ export const lists: Lists = {
       address: relationship({ ref: "Address", many: false }),
       documents: relationship({ ref: "Document.establishment", many: true }),
       company: relationship({ ref: "Company.establishments", many: false }),
+      payments: relationship({ ref: "Payment.establishment", many: true }),
       defaultPrefixes: json({
         defaultValue: {
           quote: "",
@@ -1291,6 +1292,7 @@ export const lists: Lists = {
       out: checkbox({ defaultValue: false }),
       isDeleted: checkbox({ defaultValue: false }),
       isVerified: checkbox({ defaultValue: false }),
+      establishment: relationship({ ref: "Establishment.payments", many: false }),
       drawnPayments: relationship({
         ref: "Payment.originPayment",
         many: false,
