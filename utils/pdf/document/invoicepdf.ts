@@ -43,7 +43,7 @@ export async function generateInvoiceOut({
 
       await pdfHead({
         doc,
-        invoiceDoc,
+        document: invoiceDoc,
         logoBuffer,
         pageLeft,
         pageTop,
@@ -52,15 +52,15 @@ export async function generateInvoiceOut({
       const detailsRowY = doc.y;
 
       let endOfDetailsRow = doc.y;
-      const endOfPaymentDetails = pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
+      const endOfPaymentDetails = pdfPaymentDetails({ doc, document: invoiceDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
       if (endOfPaymentDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfPaymentDetails;
       }
-      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, invoiceDoc, x: 200, y: detailsRowY, width: 165 });
+      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, document: invoiceDoc, x: 200, y: detailsRowY, width: 165 });
       if (endOfInvoicingDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfInvoicingDetails;
       }
-      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, invoiceDoc, x: 380, y: detailsRowY, width: 165 });
+      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, document: invoiceDoc, x: 380, y: detailsRowY, width: 165 });
       if (endOfDeliveryDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfDeliveryDetails;
       }

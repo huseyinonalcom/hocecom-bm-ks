@@ -15,6 +15,7 @@ export const taxTable = ({ doc, x, endY, document }: { doc: any; x: number; endY
 
   taxRates = taxRates.sort((a, b) => a - b);
 
+  doc.fontSize(10);
   taxRates.map((taxRate, index) => {
     doc.text(`${tr("total-tax")} ` + Number(taxRate).toFixed(0) + "%:", x, endY - index * 15).text(
       formatCurrency(

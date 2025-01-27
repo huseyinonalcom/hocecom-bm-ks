@@ -1,7 +1,13 @@
+import { PageSize, pageSizesDimensions } from "../common/positioning";
 import { formatCurrency } from "../../formatters/formatcurrency";
-import { dateFormatBe } from "../../formatters/dateformatters";
-import { Buffer } from "buffer";
+import { pdfInvoicingDetails } from "../common/invoicingdetails";
+import { generateProductTable } from "../common/productstable";
+import { pdfDeliveryDetails } from "../common/deliverydetails";
+import { pdfPaymentDetails } from "../common/paymentdetails";
 import { t } from "../../localization/localization";
+import { taxTable } from "../common/taxtotals";
+import { pdfHead } from "../common/pdfhead";
+import { Buffer } from "buffer";
 
 export async function generateCreditNoteOut({
   document,
@@ -18,235 +24,82 @@ export async function generateCreditNoteOut({
     }
   };
   const creditNoteDoc = document;
-  const establishment = creditNoteDoc.establishment;
-  const establishmentAddress = establishment.address;
-  const customer = creditNoteDoc.customer;
-  const documentProducts = creditNoteDoc.documentProducts;
+  const documentProducts = creditNoteDoc.products;
 
   return new Promise(async (resolve, reject) => {
     const pageLeft = 20;
     const pageTop = 40;
+    const pageSize: PageSize = "A4";
     try {
-      const PDFDocument = require("pdfkit");
-      const doc = new PDFDocument({ size: "A4", margin: 20 });
+      const PDFDocument: PDFKit.PDFDocument = require("pdfkit");
+      const doc = new PDFDocument({ size: pageSize, margin: 20 });
       const buffers: Uint8Array[] = [];
 
       doc.font("./utils/fonts/Roboto-Regular.ttf");
 
       doc.on("data", buffers.push.bind(buffers));
 
-      if (logoBuffer) {
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      } else {
-        const response = await fetch(establishment.logo.url);
-        logoBuffer = await Buffer.from(await response.arrayBuffer());
-        doc.image(logoBuffer, pageLeft, pageTop, { height: 50 });
-      }
-      const columns = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
-
-      const generateTableRow = (
-        doc: any,
-        y: number,
-        name: string,
-        description: string,
-        price: string,
-        amount: string,
-        tax: string,
-        subtotal: string,
-        isHeader = false
-      ) => {
-        if (isHeader) {
-          doc.lineWidth(25);
-          const bgY = y + 5;
-          doc.lineCap("butt").moveTo(30, bgY).lineTo(550, bgY).stroke("black");
-          doc
-            .fontSize(10)
-            .fillColor("white")
-            .text(name, columns[0], y)
-            .text(description, columns[4], y)
-            .text(price, columns[6], y)
-            .text(amount, columns[7], y)
-            .text(tax, columns[8], y)
-            .text(subtotal, columns[9], y);
-        } else {
-          doc
-            .fontSize(10)
-            .fillColor("black")
-            .text(name, columns[0], y, { width: columns[3] - columns[0] })
-            .text(description, columns[4], y)
-            .text(price, columns[6], y)
-            .text(amount, columns[7] + 20, y)
-            .text(tax, columns[8], y)
-            .text(subtotal, columns[9], y);
-        }
-      };
-
-      const generateCreditNoteTable = (doc: any, documentProducts: any[], y: number) => {
-        let creditNoteTableTop = y;
-        generateTableRow(doc, creditNoteTableTop + 15, "Name", "Description", "Price", "Amount", "Tax", "Subtotal", true);
-        for (let i = 1; i <= documentProducts.length; i++) {
-          const item = documentProducts[i - 1];
-          const position = creditNoteTableTop + i * 40;
-          generateTableRow(
-            doc,
-            position,
-            item.name,
-            item.description,
-            formatCurrency(item.value.toFixed(2), document.currency),
-            item.amount,
-            formatCurrency(Number(item.subTotalTax), creditNoteDoc.currency),
-            formatCurrency(Number(item.subTotal), creditNoteDoc.currency)
-          );
-        }
-        return creditNoteTableTop + (documentProducts.length + 1) * 40;
-      };
-
-      const bankDetails = ({ doc, x, y, establishment }: { doc: any; x: number; y: number; establishment: any }) => {
-        let strings = [];
-        if (establishment.bankAccount1) {
-          strings.push(establishment.bankAccount1);
-        }
-        if (establishment.bankAccount2 !== null) {
-          strings.push(establishment.bankAccount2);
-        }
-        if (establishment.bankAccount3 !== null) {
-          strings.push(establishment.bankAccount3);
-        }
-        strings.map((string, index) => {
-          doc.text(string, x, y + index * 15);
-        });
-      };
-
-      const customerDetails = ({ doc, x, y, creditNoteDoc }: { doc: any; x: number; y: number; creditNoteDoc: any }) => {
-        let strings = [];
-        const docAddress = creditNoteDoc.delAddress;
-
-        if (customer.customerCompany) {
-          strings.push(customer.customerCompany);
-        }
-
-        if (customer.customerTaxNumber) {
-          strings.push(customer.customerTaxNumber);
-        }
-
-        if (customer.phone) {
-          strings.push(customer.phone);
-        }
-
-        strings.push(docAddress.street + " " + docAddress.door);
-        if (docAddress.floor) {
-          strings.push("floor: " + docAddress.floor);
-        }
-        strings.push(docAddress.zip + " " + docAddress.city + " " + docAddress.country);
-
-        strings.map((string, index) => {
-          doc.text(string, x, y + index * 15);
-        });
-        return y + strings.length * 15;
-      };
-
-      const taxTable = ({ doc, x, y, documentProducts }: { doc: any; x: number; y: number; documentProducts: any[] }) => {
-        let taxRates: number[] = [];
-
-        documentProducts.forEach((docProd, i) => {
-          if (!taxRates.includes(docProd.tax)) {
-            taxRates.push(docProd.tax);
-          }
-        });
-
-        taxRates = taxRates.sort((a, b) => a - b);
-
-        doc.fontSize(10).text("Total Tax:", x, y + 50);
-        doc.text(
-          formatCurrency(
-            documentProducts.reduce((acc, dp) => acc + Number(dp.subTotalTax), 0),
-            creditNoteDoc.currency
-          ),
-          x + 80,
-          y + 50
-        );
-
-        taxRates.map((taxRate, index) => {
-          doc.text("Total Tax " + taxRate + "%:", x, y + 50 + (index + 1) * 15).text(
-            formatCurrency(
-              documentProducts.filter((dp) => dp.tax === taxRate).reduce((acc, dp) => acc + Number(dp.subTotalTax), 0),
-              creditNoteDoc.currency
-            ),
-            x + 80,
-            y + 50 + (index + 1) * 15
-          );
-        });
-
-        return y + taxRates.length * 15 + 50;
-      };
-
-      doc.fontSize(20).text("CREDIT NOTE", 455, pageTop);
-
-      doc.fontSize(10).text("Credit Note:", 380, 80);
-      doc.text(creditNoteDoc.number, 450, 80);
-      doc.text("Date:", 380, 95);
-      doc.text(dateFormatBe(creditNoteDoc.date), 450, 95);
-
-      let y = 140;
-
-      doc.text(establishment.name, 50, y);
-      doc.text(establishment.taxID, 50, y + 15);
-      bankDetails({
-        doc: doc,
-        x: 50,
-        y: y + 30,
-        establishment: establishment,
+      await pdfHead({
+        doc,
+        document: creditNoteDoc,
+        logoBuffer,
+        pageLeft,
+        pageTop,
       });
 
-      doc.text(establishmentAddress.street + " " + establishmentAddress.door, 200, y);
-      doc.text(establishmentAddress.zip + " " + establishmentAddress.city, 200, y + 15);
-      doc.text(establishment.phone, 200, y + 30);
-      doc.text(establishment.phone2, 200, y + 45);
+      const detailsRowY = doc.y;
 
-      doc.text("Reference: " + creditNoteDoc.references, 380, y);
-      doc.text(customer.firstName + " " + customer.lastName, 380, y + 15);
-      y = customerDetails({
-        doc: doc,
-        x: 380,
-        y: y + 30,
-        creditNoteDoc,
-      });
-
-      y += 60;
-
-      y = generateCreditNoteTable(doc, documentProducts, y);
-
-      if (y < 500) {
-        y = 500;
+      let endOfDetailsRow = doc.y;
+      const endOfPaymentDetails = pdfPaymentDetails({ doc, document: creditNoteDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
+      if (endOfPaymentDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfPaymentDetails;
       }
+      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, document: creditNoteDoc, x: 200, y: detailsRowY, width: 165 });
+      if (endOfInvoicingDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfInvoicingDetails;
+      }
+      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, document: creditNoteDoc, x: 380, y: detailsRowY, width: 165 });
+      if (endOfDeliveryDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfDeliveryDetails;
+      }
+
+      generateProductTable(doc, documentProducts, endOfDetailsRow, creditNoteDoc);
+
+      let totalsXNames = 350;
+      let totalXValues = 480;
+      let totalsY = pageSizesDimensions[pageSize].height - 40;
+      doc.fontSize(13);
+
+      doc.lineWidth(1);
+
+      doc.text(tr("total-value-excl-tax"), totalsXNames, totalsY - 45);
+      doc.text(tr("total-tax"), totalsXNames, totalsY - 30);
+      doc.lineWidth(1);
+      doc
+        .lineCap("butt")
+        .moveTo(350, totalsY - 10)
+        .lineTo(575, totalsY - 10)
+        .stroke("black");
+      doc.text(tr("total"), totalsXNames, totalsY);
+      //
+
+      doc.text(formatCurrency(Number(creditNoteDoc.total) - Number(creditNoteDoc.totalTax), creditNoteDoc.currency), totalXValues, totalsY - 45, {
+        align: "right",
+      });
+      doc.text(formatCurrency(Number(creditNoteDoc.totalTax), creditNoteDoc.currency), totalXValues, totalsY - 30, {
+        align: "right",
+      });
+      //
+      doc.text(formatCurrency(Number(creditNoteDoc.total), creditNoteDoc.currency), totalXValues, totalsY, {
+        align: "right",
+      });
 
       taxTable({
         doc: doc,
-        x: 30,
-        y: y,
-        documentProducts: documentProducts,
+        x: totalsXNames - 150,
+        endY: pageSizesDimensions[pageSize].height - 40,
+        document: document,
       });
-
-      let totalsX = 410;
-      doc.text("Total Excl. Tax:", totalsX, y + 50);
-      doc.text(
-        formatCurrency(
-          documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotal), 0) -
-            documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotalTax), 0),
-          creditNoteDoc.currency
-        ),
-        totalsX + 70,
-        y + 50
-      );
-      doc.text("Total:", totalsX, y + 65);
-      doc.text(
-        formatCurrency(
-          documentProducts.reduce((acc: number, dp: any) => acc + Number(dp.subTotal), 0),
-          creditNoteDoc.currency
-        ),
-        totalsX + 70,
-        y + 65
-      );
 
       doc.end();
       doc.on("end", () => {

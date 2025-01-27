@@ -1370,7 +1370,13 @@ var t = (key, lang) => {
 };
 
 // utils/pdf/common/invoicingdetails.ts
-var pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }) => {
+var pdfInvoicingDetails = ({
+  doc,
+  document: invoiceDoc,
+  x,
+  y,
+  width
+}) => {
   const tr = (key) => {
     try {
       return t(key, invoiceDoc.customer.preferredLanguage);
@@ -1430,7 +1436,13 @@ var formatCurrency = (value, currency) => {
 };
 
 // utils/pdf/common/deliverydetails.ts
-var pdfDeliveryDetails = ({ doc, invoiceDoc, x, y, width }) => {
+var pdfDeliveryDetails = ({
+  doc,
+  document: invoiceDoc,
+  x,
+  y,
+  width
+}) => {
   const tr = (key) => {
     try {
       return t(key, invoiceDoc.customer.preferredLanguage);
@@ -1514,10 +1526,10 @@ var generateTableRow = (doc, y, name, description, price, amount, reduction, tax
   }
   return newY + 5;
 };
-var generateProductTable = (doc, documentProducts, y, invoiceDoc) => {
+var generateProductTable = (doc, documentProducts, y, document) => {
   const tr = (key) => {
     try {
-      return t(key, invoiceDoc.customer.preferredLanguage);
+      return t(key, document.customer.preferredLanguage);
     } catch (e) {
       return key;
     }
@@ -1546,18 +1558,18 @@ var generateProductTable = (doc, documentProducts, y, invoiceDoc) => {
       position,
       item.name,
       item.description,
-      formatCurrency(Number(item.price), invoiceDoc.currency),
+      formatCurrency(Number(item.price), document.currency),
       Number(item.amount).toFixed(2),
       showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
-      formatCurrency(Number(item.totalTax), invoiceDoc.currency),
-      formatCurrency(Number(item.totalWithTaxAfterReduction), invoiceDoc.currency)
+      formatCurrency(Number(item.totalTax), document.currency),
+      formatCurrency(Number(item.totalWithTaxAfterReduction), document.currency)
     );
   }
   return doc.y;
 };
 
 // utils/pdf/common/paymentdetails.ts
-var pdfPaymentDetails = ({ doc, invoiceDoc, x, y, width }) => {
+var pdfPaymentDetails = ({ doc, document: invoiceDoc, x, y, width }) => {
   const tr = (key) => {
     try {
       return t(key, invoiceDoc.customer.preferredLanguage);
@@ -1649,6 +1661,7 @@ var taxTable = ({ doc, x, endY, document }) => {
     }
   });
   taxRates = taxRates.sort((a, b) => a - b);
+  doc.fontSize(10);
   taxRates.map((taxRate, index) => {
     doc.text(`${tr("total-tax")} ` + Number(taxRate).toFixed(0) + "%:", x, endY - index * 15).text(
       formatCurrency(
@@ -1669,14 +1682,14 @@ var taxTable = ({ doc, x, endY, document }) => {
 // utils/pdf/common/pdfhead.ts
 var pdfHead = async ({
   doc,
-  invoiceDoc,
+  document,
   logoBuffer,
   pageLeft,
   pageTop
 }) => {
   const tr = (key) => {
     try {
-      return t(key, invoiceDoc.customer.preferredLanguage);
+      return t(key, document.customer.preferredLanguage);
     } catch (e) {
       return key;
     }
@@ -1687,68 +1700,70 @@ var pdfHead = async ({
   if (logoBuffer) {
     doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
   } else {
-    const response = await fetch(invoiceDoc.establishment.logo.url);
+    const response = await fetch(document.establishment.logo.url);
     logoBuffer = Buffer.from(await response.arrayBuffer());
     doc.image(logoBuffer, pageLeft, pageTop, { fit: [imageBox.width, 50] });
   }
   let establishmentDetailsBox = flexBoxHead({ flex: 3, column: 6 });
   establishmentDetailsBox.x += 20;
   establishmentDetailsBox.width -= 20;
-  doc.fontSize(10).text(invoiceDoc.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
+  doc.fontSize(10).text(document.establishment.name, establishmentDetailsBox.x, establishmentDetailsBox.y, {
     width: establishmentDetailsBox.width,
     align: "left"
   });
-  if (invoiceDoc.establishment.phone) {
-    doc.text(invoiceDoc.establishment.phone, {
+  if (document.establishment.phone) {
+    doc.text(document.establishment.phone, {
       width: establishmentDetailsBox.width
     });
   }
-  if (invoiceDoc.establishment.phone2) {
-    doc.text(invoiceDoc.establishment.phone2, {
+  if (document.establishment.phone2) {
+    doc.text(document.establishment.phone2, {
       width: establishmentDetailsBox.width
     });
   }
-  if (invoiceDoc.establishment.taxID) {
-    doc.text(invoiceDoc.establishment.taxID, {
+  if (document.establishment.taxID) {
+    doc.text(document.establishment.taxID, {
       width: establishmentDetailsBox.width
     });
   }
   let invoiceDetailsBox = flexBoxHead({ flex: 3, column: 8 });
-  const validDate = new Date(invoiceDoc.date);
+  const validDate = new Date(document.date);
   validDate.setDate(validDate.getDate() + 15);
   invoiceDetailsBox.x += 50;
   invoiceDetailsBox.width -= 20;
-  doc.fontSize(20).text(tr("invoice").toUpperCase(), invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
+  doc.fontSize(20).text(tr(document.type).toUpperCase(), invoiceDetailsBox.x + 5, invoiceDetailsBox.y, {
     width: invoiceDetailsBox.width - 5,
     align: "right"
-  }).fontSize(10).text(`${tr("invoice")}: ` + invoiceDoc.prefix + invoiceDoc.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
+  }).fontSize(10).text(`${tr(document.type)}: ` + document.prefix + document.number, invoiceDetailsBox.x, invoiceDetailsBox.y + 20, {
     width: invoiceDetailsBox.width,
     align: "left"
-  }).text(`${tr("date")}: ` + new Date(invoiceDoc.date).toLocaleDateString("fr-be"), {
-    width: invoiceDetailsBox.width,
-    align: "left"
-  });
-  doc.text(`${tr("valid-until")}: ` + validDate.toLocaleDateString("fr-be"), {
+  }).text(`${tr("date")}: ` + new Date(document.date).toLocaleDateString("fr-be"), {
     width: invoiceDetailsBox.width,
     align: "left"
   });
-  if (invoiceDoc.deliveryDate) {
-    doc.text(`${tr("date-dispatch")}: ` + new Date(invoiceDoc.deliveryDate).toLocaleDateString("fr-be"), {
+  if (document.type == "invoice") {
+    doc.text(`${tr("valid-until")}: ` + validDate.toLocaleDateString("fr-be"), {
       width: invoiceDetailsBox.width,
       align: "left"
     });
-  }
-  if (invoiceDoc.origin) {
-    doc.text(`${tr("origin")}: ` + invoiceDoc.origin, {
-      width: invoiceDetailsBox.width,
-      align: "left"
-    });
-  }
-  if (invoiceDoc.externalId) {
-    doc.text(`${tr("external-id")}: ` + invoiceDoc.externalId, {
-      width: invoiceDetailsBox.width,
-      align: "left"
-    });
+    if (document.deliveryDate) {
+      doc.text(`${tr("date-dispatch")}: ` + new Date(document.deliveryDate).toLocaleDateString("fr-be"), {
+        width: invoiceDetailsBox.width,
+        align: "left"
+      });
+    }
+    if (document.origin) {
+      doc.text(`${tr("origin")}: ` + document.origin, {
+        width: invoiceDetailsBox.width,
+        align: "left"
+      });
+    }
+    if (document.externalId) {
+      doc.text(`${tr("external-id")}: ` + document.externalId, {
+        width: invoiceDetailsBox.width,
+        align: "left"
+      });
+    }
   }
 };
 
@@ -1780,22 +1795,22 @@ async function generateInvoiceOut({
       doc.on("data", buffers.push.bind(buffers));
       await pdfHead({
         doc,
-        invoiceDoc,
+        document: invoiceDoc,
         logoBuffer,
         pageLeft,
         pageTop
       });
       const detailsRowY = doc.y;
       let endOfDetailsRow = doc.y;
-      const endOfPaymentDetails = pdfPaymentDetails({ doc, invoiceDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
+      const endOfPaymentDetails = pdfPaymentDetails({ doc, document: invoiceDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
       if (endOfPaymentDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfPaymentDetails;
       }
-      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, invoiceDoc, x: 200, y: detailsRowY, width: 165 });
+      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, document: invoiceDoc, x: 200, y: detailsRowY, width: 165 });
       if (endOfInvoicingDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfInvoicingDetails;
       }
-      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, invoiceDoc, x: 380, y: detailsRowY, width: 165 });
+      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, document: invoiceDoc, x: 380, y: detailsRowY, width: 165 });
       if (endOfDeliveryDetails > endOfDetailsRow) {
         endOfDetailsRow = endOfDeliveryDetails;
       }
@@ -2400,7 +2415,7 @@ var saveDocument = async ({ bolDoc, company, context }) => {
     payments: {
       create: [
         {
-          value: bolDoc.orderItems.reduce((acc, dp) => acc + dp.unitPrice, 0).toFixed(4),
+          value: bolDoc.orderItems.reduce((acc, dp) => acc + dp.unitPrice * dp.quantity, 0).toFixed(4),
           type: "online",
           isVerified: true,
           timestamp: bolDoc.orderPlacedDateTime,
@@ -3175,6 +3190,94 @@ var mailPart2 = `</td>
 </html>
 `;
 
+// utils/pdf/document/creditnotepdf.ts
+var import_buffer2 = require("buffer");
+async function generateCreditNoteOut({
+  document,
+  logoBuffer
+}) {
+  const tr = (key) => {
+    try {
+      return t(key, document.customer.preferredLanguage);
+    } catch (e) {
+      return key;
+    }
+  };
+  const creditNoteDoc = document;
+  const documentProducts = creditNoteDoc.products;
+  return new Promise(async (resolve, reject) => {
+    const pageLeft = 20;
+    const pageTop = 40;
+    const pageSize = "A4";
+    try {
+      const PDFDocument = require("pdfkit");
+      const doc = new PDFDocument({ size: pageSize, margin: 20 });
+      const buffers = [];
+      doc.font("./utils/fonts/Roboto-Regular.ttf");
+      doc.on("data", buffers.push.bind(buffers));
+      await pdfHead({
+        doc,
+        document: creditNoteDoc,
+        logoBuffer,
+        pageLeft,
+        pageTop
+      });
+      const detailsRowY = doc.y;
+      let endOfDetailsRow = doc.y;
+      const endOfPaymentDetails = pdfPaymentDetails({ doc, document: creditNoteDoc, x: pageLeft + 5, y: detailsRowY, width: 160 });
+      if (endOfPaymentDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfPaymentDetails;
+      }
+      const endOfInvoicingDetails = pdfInvoicingDetails({ doc, document: creditNoteDoc, x: 200, y: detailsRowY, width: 165 });
+      if (endOfInvoicingDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfInvoicingDetails;
+      }
+      const endOfDeliveryDetails = pdfDeliveryDetails({ doc, document: creditNoteDoc, x: 380, y: detailsRowY, width: 165 });
+      if (endOfDeliveryDetails > endOfDetailsRow) {
+        endOfDetailsRow = endOfDeliveryDetails;
+      }
+      generateProductTable(doc, documentProducts, endOfDetailsRow, creditNoteDoc);
+      let totalsXNames = 350;
+      let totalXValues = 480;
+      let totalsY = pageSizesDimensions[pageSize].height - 40;
+      doc.fontSize(13);
+      doc.lineWidth(1);
+      doc.text(tr("total-value-excl-tax"), totalsXNames, totalsY - 45);
+      doc.text(tr("total-tax"), totalsXNames, totalsY - 30);
+      doc.lineWidth(1);
+      doc.lineCap("butt").moveTo(350, totalsY - 10).lineTo(575, totalsY - 10).stroke("black");
+      doc.text(tr("total"), totalsXNames, totalsY);
+      doc.text(formatCurrency(Number(creditNoteDoc.total) - Number(creditNoteDoc.totalTax), creditNoteDoc.currency), totalXValues, totalsY - 45, {
+        align: "right"
+      });
+      doc.text(formatCurrency(Number(creditNoteDoc.totalTax), creditNoteDoc.currency), totalXValues, totalsY - 30, {
+        align: "right"
+      });
+      doc.text(formatCurrency(Number(creditNoteDoc.total), creditNoteDoc.currency), totalXValues, totalsY, {
+        align: "right"
+      });
+      taxTable({
+        doc,
+        x: totalsXNames - 150,
+        endY: pageSizesDimensions[pageSize].height - 40,
+        document
+      });
+      doc.end();
+      doc.on("end", () => {
+        const pdfData = import_buffer2.Buffer.concat(buffers);
+        resolve({
+          filename: `creditnote_${document.number}.pdf`,
+          content: pdfData,
+          contentType: "application/pdf"
+        });
+      });
+    } catch (error) {
+      console.error("error on pdf generation (creditnote): ", error);
+      reject(`Error generating creditnote: ${error}`);
+    }
+  });
+}
+
 // schema.ts
 var lists = {
   Accountancy: (0, import_core.list)({
@@ -3497,26 +3600,34 @@ var lists = {
         }
       },
       afterOperation: async ({ operation, resolvedData, inputData, item, context }) => {
-        if (resolvedData?.type != "purchase") {
+        if (resolvedData?.type != "purchase" && resolvedData?.type != "credit_note_incoming") {
           if (operation === "create" || operation === "update") {
             try {
               const postedDocument = await context.sudo().query.Document.findOne({
                 where: { id: item.id },
                 query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
               });
-              let bcc;
-              if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
-                bcc = postedDocument.customer.email2;
+              if (postedDocument.type == "invoice" || postedDocument.type == "credit_note") {
+                let bcc;
+                if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
+                  bcc = postedDocument.customer.email2;
+                }
+                let attachment;
+                if (postedDocument.type == "invoice") {
+                  attachment = await generateInvoiceOut({ document: postedDocument });
+                } else if (postedDocument.type == "credit_note") {
+                  attachment = await generateCreditNoteOut({ document: postedDocument });
+                }
+                sendMail({
+                  establishment: postedDocument.establishment,
+                  recipient: postedDocument.customer.email.split("+")[0] + "@" + postedDocument.customer.email.split("@")[1],
+                  bcc,
+                  subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
+                  company: postedDocument.establishment.company,
+                  attachments: [attachment],
+                  html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
+                });
               }
-              sendMail({
-                establishment: postedDocument.establishment,
-                recipient: postedDocument.customer.email.split("+")[0] + "@" + postedDocument.customer.email.split("@")[1],
-                bcc,
-                subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
-                company: postedDocument.establishment.company,
-                attachments: [await generateInvoiceOut({ document: postedDocument })],
-                html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
-              });
             } catch (error) {
               console.error(error);
             }
@@ -5209,16 +5320,25 @@ var keystone_default = withAuth(
                 id
               }
             });
-            const pdf = await generateInvoiceOut({ document: postedDocument });
+            let pdf;
+            if (postedDocument.type === "invoice") {
+              pdf = await generateInvoiceOut({ document: postedDocument });
+            } else if (postedDocument.type === "credit_note") {
+              pdf = await generateCreditNoteOut({ document: postedDocument });
+            }
+            if (!pdf) {
+              throw new Error("No PDF generated");
+            }
             (0, import_fs.mkdirSync)("./test", { recursive: true });
             (0, import_fs.writeFileSync)(`./test/${pdf.filename}`, new Uint8Array(pdf.content));
-            console.info("Test invoice PDF generated");
+            console.info("Test PDF generated");
           } catch (error) {
             console.error("Error generating test pdf", error);
           }
         };
         generateTestPDF({ id: "cm5glkpe00039gx56xni3eab3" });
         generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
+        generateTestPDF({ id: "cm5o7jq5h00171076radma5m7" });
       }
     },
     lists,

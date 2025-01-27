@@ -1,6 +1,18 @@
 import { t } from "../../localization/localization";
 
-export const pdfInvoicingDetails = ({ doc, invoiceDoc, x, y, width }: { doc: PDFKit.PDFDocument; invoiceDoc: any; x: number; y: number; width: number }) => {
+export const pdfInvoicingDetails = ({
+  doc,
+  document: invoiceDoc,
+  x,
+  y,
+  width,
+}: {
+  doc: PDFKit.PDFDocument;
+  document: any;
+  x: number;
+  y: number;
+  width: number;
+}) => {
   const tr = (key: string): string => {
     try {
       return t(key, invoiceDoc.customer!.preferredLanguage);

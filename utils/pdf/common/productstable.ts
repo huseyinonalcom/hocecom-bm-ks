@@ -64,10 +64,10 @@ const generateTableRow = (
   return newY + 5;
 };
 
-export const generateProductTable = (doc: any, documentProducts: any[], y: number, invoiceDoc: any) => {
+export const generateProductTable = (doc: any, documentProducts: any[], y: number, document: any) => {
   const tr = (key: string): string => {
     try {
-      return t(key, invoiceDoc.customer!.preferredLanguage);
+      return t(key, document.customer!.preferredLanguage);
     } catch (e) {
       return key;
     }
@@ -96,11 +96,11 @@ export const generateProductTable = (doc: any, documentProducts: any[], y: numbe
       position,
       item.name,
       item.description,
-      formatCurrency(Number(item.price), invoiceDoc.currency),
+      formatCurrency(Number(item.price), document.currency),
       Number(item.amount).toFixed(2),
       showReduction ? Number(item.reduction).toFixed(2) + "%" : "",
-      formatCurrency(Number(item.totalTax), invoiceDoc.currency),
-      formatCurrency(Number(item.totalWithTaxAfterReduction), invoiceDoc.currency)
+      formatCurrency(Number(item.totalTax), document.currency),
+      formatCurrency(Number(item.totalWithTaxAfterReduction), document.currency)
     );
   }
   return doc.y;

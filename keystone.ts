@@ -7,6 +7,7 @@ import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
+import { generateCreditNoteOut } from "./utils/pdf/document/creditnotepdf";
 
 export default withAuth(
   config({
@@ -127,17 +128,25 @@ export default withAuth(
                 id,
               },
             });
-
-            const pdf = await generateInvoiceOut({ document: postedDocument });
+            let pdf;
+            if (postedDocument.type === "invoice") {
+              pdf = await generateInvoiceOut({ document: postedDocument });
+            } else if (postedDocument.type === "credit_note") {
+              pdf = await generateCreditNoteOut({ document: postedDocument });
+            }
+            if (!pdf) {
+              throw new Error("No PDF generated");
+            }
             mkdirSync("./test", { recursive: true });
             writeFileSync(`./test/${pdf.filename}`, new Uint8Array(pdf.content));
-            console.info("Test invoice PDF generated");
+            console.info("Test PDF generated");
           } catch (error) {
             console.error("Error generating test pdf", error);
           }
         };
         generateTestPDF({ id: "cm5glkpe00039gx56xni3eab3" });
         generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
+        generateTestPDF({ id: "cm5o7jq5h00171076radma5m7" });
       },
     },
     lists,

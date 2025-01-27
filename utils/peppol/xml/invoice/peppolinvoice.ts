@@ -29,17 +29,17 @@ export const invoiceToXml = (
 
   // Calculate totals with explicit number conversion
   taxRates = taxRates.map((tax) => {
-    const totalBeforeTax = documentProducts.reduce((acc: number, product: { tax: any; subTotal: any }) => {
+    const totalBeforeTax = documentProducts.reduce((acc: number, product: { tax: any; totalWithTaxAfterReduction: any }) => {
       if (Number(product.tax) === tax) {
-        const subTotal = Number(product.subTotal);
+        const subTotal = Number(product.totalWithTaxAfterReduction);
         return acc + subTotal / (1 + tax / 100);
       }
       return acc;
     }, 0);
 
-    const totalTax = documentProducts.reduce((acc: number, product: { tax: any; subTotal: any }) => {
+    const totalTax = documentProducts.reduce((acc: number, product: { tax: any; totalWithTaxAfterReduction: any }) => {
       if (Number(product.tax) === tax) {
-        const subTotal = Number(product.subTotal);
+        const subTotal = Number(product.totalWithTaxAfterReduction);
         const beforeTax = subTotal / (1 + tax / 100);
         return acc + (subTotal - beforeTax);
       }
@@ -56,7 +56,9 @@ export const invoiceToXml = (
   // Calculate final totals with explicit number conversion
   const totalTax = Number(taxRates.reduce((acc, taxRate) => acc + taxRate.totalTax, 0).toFixed(2));
 
-  const total = Number(documentProducts.reduce((acc: number, product: { subTotal: any }) => acc + Number(product.subTotal), 0).toFixed(2));
+  const total = Number(
+    documentProducts.reduce((acc: number, product: { totalWithTaxAfterReduction: any }) => acc + Number(product.totalWithTaxAfterReduction), 0).toFixed(2)
+  );
 
   const totalBeforeTax = Number((total - totalTax).toFixed(2));
 
@@ -69,9 +71,9 @@ export const invoiceToXml = (
         totalBeforeTax,
         totalTax,
         taxRates,
-        documentProducts: documentProducts.map((p: { subTotal: any; tax: any }) => ({
+        documentProducts: documentProducts.map((p: { totalWithTaxAfterReduction: any; tax: any }) => ({
           ...p,
-          subTotal: Number(p.subTotal),
+          subTotal: Number(p.totalWithTaxAfterReduction),
           tax: Number(p.tax),
         })),
       },
@@ -131,7 +133,7 @@ export const invoiceToXml = (
         </cac:Country>
       </cac:PostalAddress>
       <cac:PartyTaxScheme>
-        <cbc:CompanyID>${establishment.taxId.replaceAll(".", "").replaceAll(" ", "")}</cbc:CompanyID>
+        <cbc:CompanyID>${establishment.taxID.replaceAll(".", "").replaceAll(" ", "")}</cbc:CompanyID>
         <cac:TaxScheme>
           <cbc:ID>VAT</cbc:ID>
         </cac:TaxScheme>
@@ -203,8 +205,8 @@ export const invoiceToXml = (
     <cbc:TaxInclusiveAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:TaxInclusiveAmount>
     <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
-  ${documentProducts.map((docProd: { subTotal: any; tax: any; name: string; amount: any }, i: number) => {
-    let taxAmount = Number(docProd.subTotal) - Number(docProd.subTotal) / (1 + Number(docProd.tax) / 100);
+  ${documentProducts.map((docProd: { totalWithTaxAfterReduction: any; tax: any; name: string; amount: any }, i: number) => {
+    let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
     return `<cac:InvoiceLine>
     <cbc:ID>${i + 1}</cbc:ID>
     <cbc:Note>${docProd.name
@@ -214,11 +216,11 @@ export const invoiceToXml = (
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&apos;")}</cbc:Note>
     <cbc:InvoicedQuantity>${Number(docProd.amount)}</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.subTotal) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
+    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
     <cac:TaxTotal>
       <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>
       <cac:TaxSubtotal>
-        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.subTotal) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
+        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
         <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>   
         <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>   
         <cac:TaxCategory>
