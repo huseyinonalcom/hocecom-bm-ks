@@ -4736,6 +4736,7 @@ var lists = {
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       address: (0, import_fields.relationship)({ ref: "Address", many: false }),
       taxId: (0, import_fields.text)(),
+      taxCenter: (0, import_fields.text)(),
       contactMail: (0, import_fields.text)(),
       payments: (0, import_fields.relationship)({ ref: "Payment.supplier", many: true }),
       orderMail: (0, import_fields.text)(),

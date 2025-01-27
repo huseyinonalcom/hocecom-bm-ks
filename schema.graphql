@@ -2113,6 +2113,7 @@ type Supplier {
   company: Company
   address: Address
   taxId: String
+  taxCenter: String
   contactMail: String
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
@@ -2138,6 +2139,7 @@ input SupplierWhereInput {
   company: CompanyWhereInput
   address: AddressWhereInput
   taxId: StringFilter
+  taxCenter: StringFilter
   contactMail: StringFilter
   payments: PaymentManyRelationFilter
   orderMail: StringFilter
@@ -2156,6 +2158,7 @@ input SupplierOrderByInput {
   id: OrderDirection
   name: OrderDirection
   taxId: OrderDirection
+  taxCenter: OrderDirection
   contactMail: OrderDirection
   orderMail: OrderDirection
   balance: OrderDirection
@@ -2170,6 +2173,7 @@ input SupplierUpdateInput {
   company: CompanyRelateToOneForUpdateInput
   address: AddressRelateToOneForUpdateInput
   taxId: String
+  taxCenter: String
   contactMail: String
   payments: PaymentRelateToManyForUpdateInput
   orderMail: String
@@ -2198,6 +2202,7 @@ input SupplierCreateInput {
   company: CompanyRelateToOneForCreateInput
   address: AddressRelateToOneForCreateInput
   taxId: String
+  taxCenter: String
   contactMail: String
   payments: PaymentRelateToManyForCreateInput
   orderMail: String

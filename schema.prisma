@@ -444,6 +444,7 @@ model Supplier {
   address     Address?   @relation("Supplier_address", fields: [addressId], references: [id])
   addressId   String?    @map("address")
   taxId       String     @default("")
+  taxCenter   String     @default("")
   contactMail String     @default("")
   payments    Payment[]  @relation("Payment_supplier")
   orderMail   String     @default("")
