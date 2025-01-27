@@ -257,7 +257,7 @@ const saveDocument = async ({ bolDoc, company, context }: { bolDoc: any; company
     payments: {
       create: [
         {
-          value: bolDoc.orderItems.reduce((acc: number, dp: { unitPrice: number }) => acc + dp.unitPrice, 0).toFixed(4),
+          value: bolDoc.orderItems.reduce((acc: number, dp: { unitPrice: number; quantity: number }) => acc + dp.unitPrice * dp.quantity, 0).toFixed(4),
           type: "online",
           isVerified: true,
           timestamp: bolDoc.orderPlacedDateTime,
