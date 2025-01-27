@@ -1698,6 +1698,7 @@ export const lists: Lists = {
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       address: relationship({ ref: "Address", many: false }),
       taxId: text(),
+      taxCenter: text(),
       contactMail: text(),
       payments: relationship({ ref: "Payment.supplier", many: true }),
       orderMail: text(),
