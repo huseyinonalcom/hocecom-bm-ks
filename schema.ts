@@ -1329,6 +1329,13 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
+      currency: text({
+        defaultValue: "EUR",
+        validation: { isRequired: true },
+        access: {
+          update: isCompanyAdmin,
+        },
+      }),
       notes: relationship({ ref: "Note", many: true }),
       customer: relationship({ ref: "User.customerPayments", many: false }),
       supplier: relationship({ ref: "Supplier.payments", many: false }),
