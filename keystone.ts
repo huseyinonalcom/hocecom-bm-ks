@@ -110,14 +110,14 @@ export default withAuth(
           }
         });
 
-        /*    cron.schedule("10 12 * * 2", async () => {
+        cron.schedule("10 12 * * 2", async () => {
           try {
             bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
             bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
           } catch (error) {
             console.error("Error starting bulk document sender", error);
           }
-        }); */
+        });
 
         const generateTestPDF = async ({ id }: { id: string }) => {
           try {
