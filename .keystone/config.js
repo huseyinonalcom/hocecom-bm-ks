@@ -3727,6 +3727,19 @@ var lists = {
         field: import_core.graphql.field({
           type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
+            let extrasValue = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasValue += extra.value;
+                if (!item.taxIncluded) {
+                  extrasValue += extra.value * (extra.tax / 100);
+                }
+              });
+            } catch (error) {
+              extrasValue = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -3741,6 +3754,7 @@ var lists = {
                   taxIncluded: item.taxIncluded
                 });
               });
+              total += extrasValue;
               return new import_types.Decimal(total);
             } catch (e) {
               return new import_types.Decimal(0);
@@ -3752,6 +3766,19 @@ var lists = {
         field: import_core.graphql.field({
           type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
+            let extrasValue = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasValue += extra.value;
+                if (!item.taxIncluded) {
+                  extrasValue += extra.value * (extra.tax / 100);
+                }
+              });
+            } catch (error) {
+              extrasValue = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -3767,6 +3794,7 @@ var lists = {
                   taxIncluded: item.taxIncluded
                 });
               });
+              total += extrasValue;
               return new import_types.Decimal(total);
             } catch (e) {
               return new import_types.Decimal(0);
@@ -3798,6 +3826,19 @@ var lists = {
         field: import_core.graphql.field({
           type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
+            let extrasValue = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasValue += extra.value;
+                if (!item.taxIncluded) {
+                  extrasValue += extra.value * (extra.tax / 100);
+                }
+              });
+            } catch (error) {
+              extrasValue = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -3821,7 +3862,7 @@ var lists = {
               payments.forEach((payment) => {
                 totalPaid += Number(payment.value);
               });
-              let total = totalValue - totalPaid;
+              let total = totalValue - totalPaid + extrasValue;
               if (total < 0.02 && total > -0.02) {
                 total = 0;
               }
@@ -3832,10 +3873,25 @@ var lists = {
           }
         })
       }),
+      extras: (0, import_fields.json)({
+        defaultValue: {
+          values: []
+        }
+      }),
       totalTax: (0, import_fields.virtual)({
         field: import_core.graphql.field({
           type: import_core.graphql.Decimal,
           async resolve(item, args, context) {
+            let extrasTax = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasTax = extra.value * (extra.tax / 100);
+              });
+            } catch (error) {
+              extrasTax = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -3858,6 +3914,7 @@ var lists = {
                   taxIncluded: item.taxIncluded
                 });
               });
+              totalValue += extrasTax;
               return new import_types.Decimal(totalValue);
             } catch (e) {
               return new import_types.Decimal(0);
@@ -4167,6 +4224,20 @@ var lists = {
           invoice: "",
           credit_note: "",
           debit_note: ""
+        }
+      }),
+      pdfconfig: (0, import_fields.json)({
+        defaultValue: {
+          returnPackage: false
+        }
+      }),
+      documentExtras: (0, import_fields.json)({
+        defaultValue: {
+          returnPackage: {
+            active: false,
+            documentTypes: [],
+            values: []
+          }
         }
       }),
       featureFlags: (0, import_fields.json)({

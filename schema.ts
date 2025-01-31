@@ -486,6 +486,19 @@ export const lists: Lists = {
         field: graphql.field({
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
+            let extrasValue = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasValue += extra.value;
+                if (!item.taxIncluded) {
+                  extrasValue += extra.value * (extra.tax / 100);
+                }
+              });
+            } catch (error) {
+              extrasValue = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -500,6 +513,7 @@ export const lists: Lists = {
                   taxIncluded: item.taxIncluded,
                 });
               });
+              total += extrasValue;
               return new Decimal(total);
             } catch (e) {
               return new Decimal(0);
@@ -511,6 +525,19 @@ export const lists: Lists = {
         field: graphql.field({
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
+            let extrasValue = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasValue += extra.value;
+                if (!item.taxIncluded) {
+                  extrasValue += extra.value * (extra.tax / 100);
+                }
+              });
+            } catch (error) {
+              extrasValue = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -526,6 +553,7 @@ export const lists: Lists = {
                   taxIncluded: item.taxIncluded,
                 });
               });
+              total += extrasValue;
               return new Decimal(total);
             } catch (e) {
               return new Decimal(0);
@@ -557,6 +585,19 @@ export const lists: Lists = {
         field: graphql.field({
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
+            let extrasValue = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasValue += extra.value;
+                if (!item.taxIncluded) {
+                  extrasValue += extra.value * (extra.tax / 100);
+                }
+              });
+            } catch (error) {
+              extrasValue = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -580,7 +621,7 @@ export const lists: Lists = {
               payments.forEach((payment) => {
                 totalPaid += Number(payment.value);
               });
-              let total = totalValue - totalPaid;
+              let total = totalValue - totalPaid + extrasValue;
               if (total < 0.02 && total > -0.02) {
                 total = 0;
               }
@@ -591,10 +632,25 @@ export const lists: Lists = {
           },
         }),
       }),
+      extras: json({
+        defaultValue: {
+          values: [],
+        },
+      }),
       totalTax: virtual({
         field: graphql.field({
           type: graphql.Decimal,
           async resolve(item, args, context): Promise<Decimal> {
+            let extrasTax = 0;
+            try {
+              let extras = item.extras.values;
+              extras.forEach((extra) => {
+                extrasTax = extra.value * (extra.tax / 100);
+              });
+            } catch (error) {
+              extrasTax = 0;
+              console.error(error);
+            }
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
@@ -617,6 +673,7 @@ export const lists: Lists = {
                   taxIncluded: item.taxIncluded,
                 });
               });
+              totalValue += extrasTax;
               return new Decimal(totalValue);
             } catch (e) {
               return new Decimal(0);
@@ -624,7 +681,6 @@ export const lists: Lists = {
           },
         }),
       }),
-
       comments: text(),
       references: text(),
       managerNotes: text(),

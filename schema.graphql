@@ -546,6 +546,7 @@ type Document {
   total: Decimal
   totalPaid: Decimal
   totalToPay: Decimal
+  extras: JSON
   totalTax: Decimal
   comments: String
   references: String
@@ -668,6 +669,7 @@ input DocumentUpdateInput {
   prefix: String
   phase: Int
   number: String
+  extras: JSON
   comments: String
   references: String
   managerNotes: String
@@ -749,6 +751,7 @@ input DocumentCreateInput {
   prefix: String
   phase: Int
   number: String
+  extras: JSON
   comments: String
   references: String
   managerNotes: String
@@ -953,6 +956,8 @@ type Establishment {
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
   defaultPrefixes: JSON
+  pdfconfig: JSON
+  documentExtras: JSON
   featureFlags: JSON
   extraFields: JSON
 }
@@ -1024,6 +1029,8 @@ input EstablishmentUpdateInput {
   company: CompanyRelateToOneForUpdateInput
   payments: PaymentRelateToManyForUpdateInput
   defaultPrefixes: JSON
+  pdfconfig: JSON
+  documentExtras: JSON
   featureFlags: JSON
   extraFields: JSON
 }
@@ -1064,6 +1071,8 @@ input EstablishmentCreateInput {
   company: CompanyRelateToOneForCreateInput
   payments: PaymentRelateToManyForCreateInput
   defaultPrefixes: JSON
+  pdfconfig: JSON
+  documentExtras: JSON
   featureFlags: JSON
   extraFields: JSON
 }

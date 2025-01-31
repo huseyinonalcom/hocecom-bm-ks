@@ -146,6 +146,7 @@ model Document {
   prefix          String            @default("")
   phase           Int?
   number          String            @default("")
+  extras          Json?             @default("{\"values\":[]}")
   comments        String            @default("")
   references      String            @default("")
   managerNotes    String            @default("")
@@ -210,6 +211,8 @@ model Establishment {
   companyId       String?    @map("company")
   payments        Payment[]  @relation("Payment_establishment")
   defaultPrefixes Json?      @default("{\"quote\":\"\",\"sale\":\"\",\"dispatch\":\"\",\"invoice\":\"\",\"credit_note\":\"\",\"debit_note\":\"\"}")
+  pdfconfig       Json?      @default("{\"returnPackage\":false}")
+  documentExtras  Json?      @default("{\"returnPackage\":{\"active\":false,\"documentTypes\":[],\"values\":[]}}")
   featureFlags    Json?      @default("{\"documents\":true,\"stock\":true,\"drive\":true}")
   extraFields     Json?
 
