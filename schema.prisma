@@ -343,6 +343,7 @@ model Payment {
   reference       String         @default("")
   type            String         @default("cash")
   timestamp       DateTime?      @default(now())
+  currency        String         @default("EUR")
   notes           Note[]         @relation("Payment_notes")
   customer        User?          @relation("Payment_customer", fields: [customerId], references: [id])
   customerId      String?        @map("customer")

@@ -1659,6 +1659,7 @@ type Payment {
   reference: String
   type: String
   timestamp: DateTime
+  currency: String
   notes(where: NoteWhereInput! = {}, orderBy: [NoteOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NoteWhereUniqueInput): [Note!]
   notesCount(where: NoteWhereInput! = {}): Int
   customer: User
@@ -1688,6 +1689,7 @@ input PaymentWhereInput {
   reference: StringFilter
   type: StringFilter
   timestamp: DateTimeNullableFilter
+  currency: StringFilter
   notes: NoteManyRelationFilter
   customer: UserWhereInput
   supplier: SupplierWhereInput
@@ -1709,6 +1711,7 @@ input PaymentOrderByInput {
   reference: OrderDirection
   type: OrderDirection
   timestamp: OrderDirection
+  currency: OrderDirection
 }
 
 input PaymentUpdateInput {
@@ -1724,6 +1727,7 @@ input PaymentUpdateInput {
   reference: String
   type: String
   timestamp: DateTime
+  currency: String
   notes: NoteRelateToManyForUpdateInput
   customer: UserRelateToOneForUpdateInput
   supplier: SupplierRelateToOneForUpdateInput
@@ -1762,6 +1766,7 @@ input PaymentCreateInput {
   reference: String
   type: String
   timestamp: DateTime
+  currency: String
   notes: NoteRelateToManyForCreateInput
   customer: UserRelateToOneForCreateInput
   supplier: SupplierRelateToOneForCreateInput

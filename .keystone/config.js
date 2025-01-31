@@ -1,7 +1,9 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -15,6 +17,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // keystone.ts
@@ -1943,6 +1953,89 @@ async function generateInvoiceOut({
     }
   });
 }
+
+// utils/bulkdocumentsenderstart.ts
+var import_worker_threads = require("worker_threads");
+var import_path = __toESM(require("path"));
+async function fetchCompany(companyID, context) {
+  let company;
+  await context.sudo().query.Company.findOne({
+    query: "id name einvoiceEmailIncoming einvoiceEmailOutgoing logo { url } emailHost emailPort emailUser emailPassword",
+    where: { id: companyID }
+  }).then((res) => {
+    company = res;
+  });
+  return company;
+}
+function getMondayAndSundayTwoWeeksAgo() {
+  const today = /* @__PURE__ */ new Date();
+  const dayOfWeek = today.getDay();
+  const mondayThisWeek = new Date(today);
+  mondayThisWeek.setDate(today.getDate() - (dayOfWeek + 6) % 7);
+  const mondayTwoWeeksAgo = new Date(mondayThisWeek);
+  mondayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() - 7);
+  const sundayTwoWeeksAgo = new Date(mondayTwoWeeksAgo);
+  sundayTwoWeeksAgo.setDate(mondayTwoWeeksAgo.getDate() + 6);
+  return { monday: mondayTwoWeeksAgo, sunday: sundayTwoWeeksAgo };
+}
+async function fetchDocuments(companyID, docTypes, month, year, context) {
+  const { monday, sunday } = getMondayAndSundayTwoWeeksAgo();
+  monday.setHours(0, 0, 0, 10);
+  sunday.setHours(23, 59, 59, 500);
+  const fetchedDocuments = await context.sudo().query.Document.findMany({
+    orderBy: [{ date: "asc" }],
+    query: "id date type total number origin externalId prefix currency comments totalPaid totalTax references totalToPay value externalId origin taxIncluded deliveryDate files { id name url } creator { id email role firstName lastName name } customer { id email role customerCompany preferredLanguage customerTaxNumber firstName lastName name customerAddresses { id street door zip city floor province country } } delAddress { id street door zip city floor province country } docAddress { id street door zip city floor province country } payments { id value isDeleted isVerified reference type timestamp creator { id email role firstName lastName name } } supplier { id name taxId address { id street door zip city floor province country } } fromDocument { id type number creator { id email role firstName lastName name } } toDocument { id type number creator { id email role firstName lastName name } } products { id amount name tax price pricedBy description reduction totalWithTaxAfterReduction totalTax totalReduction product { id name tax price pricedBy } } establishment { id name phone phone2 taxID bankAccount1 bankAccount2 defaultCurrency bankAccount3 address { id street door zip city floor province country } logo { id url } }",
+    where: {
+      company: {
+        id: {
+          equals: companyID
+        }
+      },
+      isDeleted: {
+        equals: false
+      },
+      type: {
+        in: docTypes
+      },
+      date: {
+        gte: monday,
+        lte: sunday
+      }
+    }
+  });
+  return Array.from(fetchedDocuments);
+}
+async function startBulkDocumentSenderWorker({ companyID, docTypes, month, year, context }) {
+  const documents = await fetchDocuments(companyID, docTypes, month, year, context);
+  if (documents.length === 0) {
+    console.info("No documents found for companyID: ", companyID, "docTypes: ", docTypes, "month: ", month, "year: ", year);
+    return;
+  }
+  const company = await fetchCompany(companyID, context);
+  const workerData = { documents, company };
+  new import_worker_threads.Worker(import_path.default.resolve("./utils/bulkdocumentsenderworker.ts"), {
+    execArgv: ["-r", "ts-node/register"],
+    workerData
+  });
+}
+var bulkSendDocuments = async ({ docTypes, context }) => {
+  try {
+    let companiesWithMonthlyReportsActive = await context.sudo().query.Company.findMany({
+      where: {
+        monthlyReports: {
+          equals: true
+        }
+      }
+    });
+    let dateToSend = /* @__PURE__ */ new Date();
+    dateToSend.setDate(-1);
+    for (let company of companiesWithMonthlyReportsActive) {
+      startBulkDocumentSenderWorker({ companyID: company.id, docTypes, context, month: dateToSend.getMonth() + 1, year: dateToSend.getFullYear() });
+    }
+  } catch (error) {
+    console.error("Error occurred while starting bulkdocumentsender with params: ", docTypes, "error: ", error);
+  }
+};
 
 // utils/random.ts
 function generateRandomString(length) {
@@ -4460,6 +4553,13 @@ var lists = {
         defaultValue: { kind: "now" },
         isOrderable: true
       }),
+      currency: (0, import_fields.text)({
+        defaultValue: "EUR",
+        validation: { isRequired: true },
+        access: {
+          update: isCompanyAdmin
+        }
+      }),
       notes: (0, import_fields.relationship)({ ref: "Note", many: true }),
       customer: (0, import_fields.relationship)({ ref: "User.customerPayments", many: false }),
       supplier: (0, import_fields.relationship)({ ref: "Supplier.payments", many: false }),
@@ -5214,6 +5314,14 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
+        cron.schedule("10 12 * * 2", async () => {
+          try {
+            bulkSendDocuments({ docTypes: ["invoice", "credit_note"], context });
+            bulkSendDocuments({ docTypes: ["purchase", "credit_note_incoming"], context });
+          } catch (error) {
+            console.error("Error starting bulk document sender", error);
+          }
+        });
         const generateTestPDF = async ({ id }) => {
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
@@ -5241,6 +5349,7 @@ var keystone_default = withAuth(
         generateTestPDF({ id: "cm5glkpe00039gx56xni3eab3" });
         generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
         generateTestPDF({ id: "cm5o7jq5h00171076radma5m7" });
+        generateTestPDF({ id: "cm6jvd8jr0012fzyf7do7p2rb" });
       }
     },
     lists,
