@@ -945,6 +945,11 @@ export const lists: Lists = {
           debit_note: "",
         },
       }),
+      pdfconfig: json({
+        defaultValue: {
+          returnPackage: false,
+        },
+      }),
       featureFlags: json({
         defaultValue: {
           documents: true,
