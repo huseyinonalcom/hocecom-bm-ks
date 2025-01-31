@@ -624,6 +624,7 @@ export const lists: Lists = {
           },
         }),
       }),
+
       comments: text(),
       references: text(),
       managerNotes: text(),
@@ -948,6 +949,15 @@ export const lists: Lists = {
       pdfconfig: json({
         defaultValue: {
           returnPackage: false,
+        },
+      }),
+      documentExtras: json({
+        defaultValue: {
+          returnPackage: {
+            active: false,
+            documentTypes: [],
+            values: [],
+          },
         },
       }),
       featureFlags: json({
