@@ -1,4 +1,5 @@
 import { generateCreditNoteOut } from "./utils/pdf/document/creditnotepdf";
+import { sendDocumentEmail } from "./utils/notifications/documentemail";
 import { generateInvoiceOut } from "./utils/pdf/document/invoicepdf";
 import { bulkSendDocuments } from "./utils/bulkdocumentsenderstart";
 import { syncBolOrders } from "./utils/bol-offer-sync";
@@ -8,7 +9,6 @@ import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
-import { sendDocumentEmail } from "./utils/notifications/documentemail";
 
 export default withAuth(
   config({
