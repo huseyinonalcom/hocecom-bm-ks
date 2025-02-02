@@ -124,11 +124,11 @@ export default withAuth(
                     if (notification.instructions.task == "sendDocumentEmail") {
                       sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
                     }
+                    context.sudo().query.Notification.updateOne({
+                      where: { id: notification.id },
+                      data: { handled: true },
+                    });
                   }
-                  context.sudo().query.Notification.updateOne({
-                    where: { id: notification.id },
-                    data: { handled: true },
-                  });
                 }
               } catch (error) {
                 console.error("Error running cron job", error);
