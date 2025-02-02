@@ -115,18 +115,24 @@ export default withAuth(
           try {
             const unhandledNotifications = await context.sudo().query.Notification.findMany({
               where: { handled: false },
-              query: "id ",
+              query: "id instructions handled",
             });
             unhandledNotifications.forEach(async (notification) => {
-              if (notification.date.getTime() < new Date().getTime()) {
-                if (notification.instructions.task == "sendDocumentEmail") {
-                  await sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
-                  await context.sudo().query.Notification.updateOne({
-                    where: { id: notification.id },
-                    data: { handled: true },
-                  });
+              try {
+                if (notification.handled == false) {
+                  if (notification.date.getTime() < new Date().getTime()) {
+                    if (notification.instructions.task == "sendDocumentEmail") {
+                      await sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
+                    }
+                  }
                 }
+              } catch (error) {
+                console.error("Error running cron job", error);
               }
+              await context.sudo().query.Notification.updateOne({
+                where: { id: notification.id },
+                data: { handled: true },
+              });
             });
           } catch (error) {
             console.error("Error running cron job", error);
