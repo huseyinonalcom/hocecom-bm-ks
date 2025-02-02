@@ -3260,11 +3260,11 @@ var lists = {
       },
       afterOperation: async ({ operation, resolvedData, inputData, item, context }) => {
         if (resolvedData?.type != "purchase" && resolvedData?.type != "credit_note_incoming") {
-          if (operation === "create" || operation === "update") {
+          if (operation === "create") {
             try {
               const documentId = item.id;
               let notificationDate = /* @__PURE__ */ new Date();
-              notificationDate.setTime(notificationDate.getTime() + 1e3 * 5 * 60);
+              notificationDate.setTime(notificationDate.getTime() + 1e3 * 35 * 60);
               context.sudo().query.Notification.createOne({
                 data: {
                   date: notificationDate,
@@ -5272,7 +5272,7 @@ var mailPart2 = `</td>
 var sendDocumentEmail = async ({ documentId, context }) => {
   const postedDocument = await context.sudo().query.Document.findOne({
     where: { id: documentId },
-    query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
+    query: "prefix number date externalId currency origin totalTax totalPaid extras totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
   });
   if (postedDocument.type == "invoice" || postedDocument.type == "credit_note") {
     let bcc;
@@ -5393,18 +5393,24 @@ var keystone_default = withAuth(
           try {
             const unhandledNotifications = await context.sudo().query.Notification.findMany({
               where: { handled: false },
-              query: "id "
+              query: "id instructions handled"
             });
             unhandledNotifications.forEach(async (notification) => {
-              if (notification.date.getTime() < (/* @__PURE__ */ new Date()).getTime()) {
-                if (notification.instructions.task == "sendDocumentEmail") {
-                  await sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
-                  await context.sudo().query.Notification.updateOne({
-                    where: { id: notification.id },
-                    data: { handled: true }
-                  });
+              try {
+                if (notification.handled == false) {
+                  if (notification.date.getTime() < (/* @__PURE__ */ new Date()).getTime()) {
+                    if (notification.instructions.task == "sendDocumentEmail") {
+                      await sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
+                    }
+                  }
                 }
+              } catch (error) {
+                console.error("Error running cron job", error);
               }
+              await context.sudo().query.Notification.updateOne({
+                where: { id: notification.id },
+                data: { handled: true }
+              });
             });
           } catch (error) {
             console.error("Error running cron job", error);

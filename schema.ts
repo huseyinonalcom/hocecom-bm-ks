@@ -356,11 +356,11 @@ export const lists: Lists = {
       },
       afterOperation: async ({ operation, resolvedData, inputData, item, context }) => {
         if (resolvedData?.type != "purchase" && resolvedData?.type != "credit_note_incoming") {
-          if (operation === "create" || operation === "update") {
+          if (operation === "create") {
             try {
               const documentId = item.id;
               let notificationDate = new Date();
-              notificationDate.setTime(notificationDate.getTime() + 1000 * 5 * 60);
+              notificationDate.setTime(notificationDate.getTime() + 1000 * 35 * 60);
               context.sudo().query.Notification.createOne({
                 data: {
                   date: notificationDate,
