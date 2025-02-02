@@ -111,7 +111,7 @@ export default withAuth(
           }
         });
 
-        cron.schedule("*/1 * * * *", async () => {
+        cron.schedule("*/2 * * * *", async () => {
           try {
             const unhandledNotifications = await context.sudo().query.Notification.findMany({
               where: { handled: { equals: false } },
