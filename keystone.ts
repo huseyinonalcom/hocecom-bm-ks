@@ -118,12 +118,14 @@ export default withAuth(
               query: "id ",
             });
             unhandledNotifications.forEach(async (notification) => {
-              if (notification.instructions.task == "sendDocumentEmail") {
-                await sendDocumentEmail({ documentId: notification.documentId, context });
-                await context.sudo().query.Notification.updateOne({
-                  where: { id: notification.id },
-                  data: { handled: true },
-                });
+              if (notification.date.getTime() < new Date().getTime()) {
+                if (notification.instructions.task == "sendDocumentEmail") {
+                  await sendDocumentEmail({ documentId: notification.documentId, context });
+                  await context.sudo().query.Notification.updateOne({
+                    where: { id: notification.id },
+                    data: { handled: true },
+                  });
+                }
               }
             });
           } catch (error) {
