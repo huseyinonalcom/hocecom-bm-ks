@@ -360,7 +360,7 @@ export const lists: Lists = {
             try {
               const documentId = item.id;
               let notificationDate = new Date();
-              notificationDate.setTime(notificationDate.getTime() + 1000 * 2 * 60);
+              notificationDate.setTime(notificationDate.getTime() + 1000 * 35 * 60);
               context.sudo().query.Notification.createOne({
                 data: {
                   date: notificationDate,

@@ -5389,25 +5389,25 @@ var keystone_default = withAuth(
             console.error("Error running cron job", error);
           }
         });
-        cron.schedule("*/7 * * * *", async () => {
+        cron.schedule("*/1 * * * *", async () => {
           try {
             const unhandledNotifications = await context.sudo().query.Notification.findMany({
-              where: { handled: false },
-              query: "id instructions handled"
+              where: { handled: { equals: false } },
+              query: "id instructions handled date"
             });
             unhandledNotifications.forEach(async (notification) => {
               try {
                 if (notification.handled == false) {
-                  if (notification.date.getTime() < (/* @__PURE__ */ new Date()).getTime()) {
+                  if (new Date(notification.date).getTime() < (/* @__PURE__ */ new Date()).getTime()) {
                     if (notification.instructions.task == "sendDocumentEmail") {
-                      await sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
+                      sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
                     }
                   }
                 }
               } catch (error) {
                 console.error("Error running cron job", error);
               }
-              await context.sudo().query.Notification.updateOne({
+              context.sudo().query.Notification.updateOne({
                 where: { id: notification.id },
                 data: { handled: true }
               });
