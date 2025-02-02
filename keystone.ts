@@ -121,13 +121,13 @@ export default withAuth(
               try {
                 if (notification.handled == false) {
                   if (new Date(notification.date).getTime() < new Date().getTime()) {
-                    if (notification.instructions.task == "sendDocumentEmail") {
-                      sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
-                    }
                     context.sudo().query.Notification.updateOne({
                       where: { id: notification.id },
                       data: { handled: true },
                     });
+                    if (notification.instructions.task == "sendDocumentEmail") {
+                      sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
+                    }
                   }
                 }
               } catch (error) {
