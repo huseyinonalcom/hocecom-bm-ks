@@ -1486,25 +1486,9 @@ input NoteCreateInput {
 type Notification {
   id: ID!
   date: DateTime
-  message: String
-  link: String
+  instructions: JSON
   handled: Boolean
-  notifyRoles: [NotificationNotifyRoleType!]
   company: Company
-}
-
-enum NotificationNotifyRoleType {
-  superadmin
-  global_admin
-  owner
-  company_admin
-  general_manager
-  manager
-  accountant
-  employee
-  intern
-  worker
-  customer
 }
 
 input NotificationWhereUniqueInput {
@@ -1517,8 +1501,6 @@ input NotificationWhereInput {
   NOT: [NotificationWhereInput!]
   id: IDFilter
   date: DateTimeNullableFilter
-  message: StringFilter
-  link: StringFilter
   handled: BooleanFilter
   company: CompanyWhereInput
 }
@@ -1526,17 +1508,13 @@ input NotificationWhereInput {
 input NotificationOrderByInput {
   id: OrderDirection
   date: OrderDirection
-  message: OrderDirection
-  link: OrderDirection
   handled: OrderDirection
 }
 
 input NotificationUpdateInput {
   date: DateTime
-  message: String
-  link: String
+  instructions: JSON
   handled: Boolean
-  notifyRoles: [NotificationNotifyRoleType!]
   company: CompanyRelateToOneForUpdateInput
 }
 
@@ -1547,10 +1525,8 @@ input NotificationUpdateArgs {
 
 input NotificationCreateInput {
   date: DateTime
-  message: String
-  link: String
+  instructions: JSON
   handled: Boolean
-  notifyRoles: [NotificationNotifyRoleType!]
   company: CompanyRelateToOneForCreateInput
 }
 

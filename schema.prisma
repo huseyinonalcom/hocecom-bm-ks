@@ -295,14 +295,12 @@ model Note {
 }
 
 model Notification {
-  id          String    @id @default(cuid())
-  date        DateTime? @default(now())
-  message     String    @default("")
-  link        String    @default("")
-  handled     Boolean   @default(false)
-  notifyRoles Json      @default("[]")
-  company     Company?  @relation("Notification_company", fields: [companyId], references: [id])
-  companyId   String?   @map("company")
+  id           String    @id @default(cuid())
+  date         DateTime? @default(now())
+  instructions Json?
+  handled      Boolean   @default(false)
+  company      Company?  @relation("Notification_company", fields: [companyId], references: [id])
+  companyId    String?   @map("company")
 
   @@index([companyId])
 }

@@ -8,6 +8,7 @@ import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
+import { sendDocumentEmail } from "./utils/notifications/documentemail";
 
 export default withAuth(
   config({
@@ -105,6 +106,26 @@ export default withAuth(
         cron.schedule("*/5 * * * *", async () => {
           try {
             syncBolOrders({ context });
+          } catch (error) {
+            console.error("Error running cron job", error);
+          }
+        });
+
+        cron.schedule("*/7 * * * *", async () => {
+          try {
+            const unhandledNotifications = await context.sudo().query.Notification.findMany({
+              where: { handled: false },
+              query: "id ",
+            });
+            unhandledNotifications.forEach(async (notification) => {
+              if (notification.instructions.task == "sendDocumentEmail") {
+                await sendDocumentEmail({ documentId: notification.documentId, context });
+                await context.sudo().query.Notification.updateOne({
+                  where: { id: notification.id },
+                  data: { handled: true },
+                });
+              }
+            });
           } catch (error) {
             console.error("Error running cron job", error);
           }

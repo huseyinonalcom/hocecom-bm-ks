@@ -31,6 +31,7 @@ import {
 import { sendMail } from "./utils/sendmail";
 import { generateInvoiceOut } from "./utils/pdf/document/invoicepdf";
 import { generateCreditNoteOut } from "./utils/pdf/document/creditnotepdf";
+import { sendDocumentEmail } from "./utils/notifications/documentemail";
 
 export const lists: Lists = {
   Accountancy: list({
@@ -357,36 +358,21 @@ export const lists: Lists = {
         if (resolvedData?.type != "purchase" && resolvedData?.type != "credit_note_incoming") {
           if (operation === "create" || operation === "update") {
             try {
-              const postedDocument = await context.sudo().query.Document.findOne({
-                where: { id: item.id },
-                query:
-                  "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
+              const documentId = item.id;
+              let notificationDate = new Date();
+              notificationDate.setTime(notificationDate.getTime() + 1000 * 5 * 60);
+              context.sudo().query.Notification.createOne({
+                data: {
+                  date: notificationDate,
+                  handled: false,
+                  instructions: {
+                    task: "sendDocumentEmail",
+                    args: {
+                      documentId,
+                    },
+                  },
+                },
               });
-              if (postedDocument.type == "invoice" || postedDocument.type == "credit_note") {
-                let bcc;
-                if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
-                  bcc = postedDocument.customer.email2;
-                }
-                let attachment;
-                if (postedDocument.type == "invoice") {
-                  attachment = await generateInvoiceOut({ document: postedDocument });
-                } else if (postedDocument.type == "credit_note") {
-                  attachment = await generateCreditNoteOut({ document: postedDocument });
-                }
-                sendMail({
-                  establishment: postedDocument.establishment,
-                  recipient: postedDocument.customer.email.split("+")[0] + "@" + postedDocument.customer.email.split("@")[1],
-                  bcc,
-                  subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
-                  company: postedDocument.establishment.company,
-                  attachments: [attachment],
-                  html: `<p>Beste ${
-                    postedDocument.customer!.firstName + " " + postedDocument.customer!.lastName
-                  },</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${
-                    postedDocument.establishment.name
-                  }</p>`,
-                });
-              }
             } catch (error) {
               console.error(error);
             }
@@ -1248,25 +1234,8 @@ export const lists: Lists = {
         defaultValue: { kind: "now" },
         isOrderable: true,
       }),
-      message: text({ validation: { isRequired: true } }),
-      link: text(),
+      instructions: json(),
       handled: checkbox({ defaultValue: false }),
-      notifyRoles: multiselect({
-        type: "enum",
-        options: [
-          "superadmin",
-          "global_admin",
-          "owner",
-          "company_admin",
-          "general_manager",
-          "manager",
-          "accountant",
-          "employee",
-          "intern",
-          "worker",
-          "customer",
-        ],
-      }),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
     },
   }),
