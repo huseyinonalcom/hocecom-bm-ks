@@ -5399,6 +5399,10 @@ var keystone_default = withAuth(
               try {
                 if (notification.handled == false) {
                   if (new Date(notification.date).getTime() < (/* @__PURE__ */ new Date()).getTime()) {
+                    context.sudo().query.Notification.updateOne({
+                      where: { id: notification.id },
+                      data: { handled: true }
+                    });
                     if (notification.instructions.task == "sendDocumentEmail") {
                       sendDocumentEmail({ documentId: notification.instructions.args.documentId, context });
                     }
@@ -5407,10 +5411,6 @@ var keystone_default = withAuth(
               } catch (error) {
                 console.error("Error running cron job", error);
               }
-              context.sudo().query.Notification.updateOne({
-                where: { id: notification.id },
-                data: { handled: true }
-              });
             });
           } catch (error) {
             console.error("Error running cron job", error);
