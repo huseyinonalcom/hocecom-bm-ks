@@ -3310,14 +3310,12 @@ var filterOnIdAccountancyOrAccountancyCompanyRelation = ({ session: session2 }) 
 
 // schema.ts
 var setCompany = (operation, context, resolvedData) => {
-  console.log("bbb", resolvedData?.company);
   let newResolvedDataCompany = resolvedData.company;
   try {
     if (operation === "create" || operation == "update") {
       if (isAdminAccountantManager({ session: context.session }) && resolvedData.company) {
         newResolvedDataCompany = resolvedData.company;
       } else {
-        console.log("ccc", resolvedData?.company);
         resolvedData.company = {
           connect: {
             id: context.session.data.company.id
@@ -4929,7 +4927,6 @@ var lists = {
           resolvedData.company = setCompany(operation, context, resolvedData);
         }
         try {
-          console.log("aaa", resolvedData?.company);
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
               console.error("No company during user mutation");
