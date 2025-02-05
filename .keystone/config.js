@@ -3332,6 +3332,7 @@ var setCompany = (operation, context, resolvedData) => {
     }
   } catch (error) {
     console.error("Company hook error");
+    console.error(error);
     newResolvedDataCompany = resolvedData.company;
   }
   return newResolvedDataCompany;

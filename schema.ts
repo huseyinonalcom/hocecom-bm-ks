@@ -59,6 +59,7 @@ const setCompany = (operation: "create" | "update" | "delete", context: any, res
     }
   } catch (error) {
     console.error("Company hook error");
+    console.error(error);
     newResolvedDataCompany = resolvedData.company;
   }
   return newResolvedDataCompany;
