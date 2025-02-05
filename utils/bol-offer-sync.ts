@@ -73,6 +73,7 @@ async function authenticateBolCom(clientId: string, clientSecret: string) {
 export const syncBolOrders = async ({ context }: { context: KeystoneContext }) => {
   const companiesToSync = await findCompaniesToSync({ context });
   for (let currCompany of companiesToSync) {
+    console.log("Syncing bol for ", currCompany.name);
     let orders = await getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret);
     if (orders && orders.length > 0) {
       for (let order of orders) {

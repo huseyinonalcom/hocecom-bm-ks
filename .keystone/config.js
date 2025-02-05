@@ -2703,6 +2703,7 @@ async function authenticateBolCom(clientId, clientSecret) {
 var syncBolOrders = async ({ context }) => {
   const companiesToSync = await findCompaniesToSync({ context });
   for (let currCompany of companiesToSync) {
+    console.log("Syncing bol for ", currCompany.name);
     let orders = await getBolComOrders(currCompany.bolClientID, currCompany.bolClientSecret);
     if (orders && orders.length > 0) {
       for (let order of orders) {
@@ -3309,11 +3310,20 @@ var filterOnIdAccountancyOrAccountancyCompanyRelation = ({ session: session2 }) 
 
 // schema.ts
 var setCompany = (operation, context, resolvedData) => {
+  console.log("bbb", resolvedData?.company);
+  let newResolvedDataCompany = resolvedData.company;
   try {
-    if (operation === "create") {
+    if (operation === "create" || operation == "update") {
       if (isAdminAccountantManager({ session: context.session }) && resolvedData.company) {
+        newResolvedDataCompany = resolvedData.company;
       } else {
+        console.log("ccc", resolvedData?.company);
         resolvedData.company = {
+          connect: {
+            id: context.session.data.company.id
+          }
+        };
+        newResolvedDataCompany = {
           connect: {
             id: context.session.data.company.id
           }
@@ -3322,7 +3332,9 @@ var setCompany = (operation, context, resolvedData) => {
     }
   } catch (error) {
     console.error("Company hook error");
+    newResolvedDataCompany = resolvedData.company;
   }
+  return newResolvedDataCompany;
 };
 var lists = {
   Accountancy: (0, import_core.list)({
@@ -3403,7 +3415,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, resolvedData, context }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -3438,7 +3452,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -3567,7 +3583,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
         try {
           if (operation === "delete") {
             const products = await context.query.DocumentProduct.findMany({
@@ -3962,7 +3980,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
         try {
           if (operation === "delete") {
             const movements = await context.query.StockMovement.findMany({
@@ -4185,7 +4205,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4261,7 +4283,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4293,7 +4317,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4402,7 +4428,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4458,7 +4486,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4503,7 +4533,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4582,7 +4614,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4621,7 +4655,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
       afterOperation: async ({ operation, item, context }) => {
         try {
@@ -4718,7 +4754,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
       afterOperation: async ({ operation, context, item }) => {
       }
@@ -4785,7 +4823,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4821,7 +4861,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -4882,16 +4924,22 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create" || operation === "update") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
         try {
+          console.log("aaa", resolvedData?.company);
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
+              console.error("No company during user mutation");
               if (!resolvedData.accountancy) {
+                console.error("No accountancy during user mutation");
                 throw new Error("Company or Accountancy is required");
               }
             }
             let mail = inputData.email;
             let mailPart12 = mail.split("@").at(0);
+            mailPart12 = mailPart12?.split("+").at(0);
             let mailPart22 = mail.split("@").at(-1);
             let idPart;
             if (resolvedData.company) {
@@ -5005,7 +5053,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       }
     },
     fields: {
@@ -5045,7 +5095,9 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
         try {
           if (operation === "update") {
             if (inputData.startedAt) {
@@ -5148,7 +5200,7 @@ var keystone_default = withAuth(
     server: {
       port: 3399,
       cors: {
-        origin: ["https://dfatest.huseyinonal.com", "http://localhost:3399", "https://acc.digitalforge.be"],
+        origin: ["https://dfatest.huseyinonal.com", "http://localhost:3399", "https://acc.digitalforge.be", "https://dfa.huseyinonal.com"],
         credentials: true
       },
       extendExpressApp: (app, context) => {
