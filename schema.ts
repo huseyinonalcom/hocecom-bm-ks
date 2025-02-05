@@ -1022,7 +1022,7 @@ export const lists: Lists = {
       operation: {
         create: isEmployee,
         query: isEmployee,
-        update: isSuperAdmin,
+        update: isEmployee,
         delete: isManager,
       },
     },
