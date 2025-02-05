@@ -37,11 +37,13 @@ interface documentExtra {
 }
 
 const setCompany = (operation: "create" | "update" | "delete", context: any, resolvedData: any) => {
+  let newResolvedDataCompany;
   try {
     if (operation === "create") {
       if (isAdminAccountantManager({ session: context.session }) && resolvedData.company) {
+        newResolvedDataCompany = resolvedData.company;
       } else {
-        resolvedData.company = {
+        newResolvedDataCompany = {
           connect: {
             id: context.session.data.company.id,
           },
@@ -50,6 +52,7 @@ const setCompany = (operation: "create" | "update" | "delete", context: any, res
     }
   } catch (error) {
     console.error("Company hook error");
+    return resolvedData.company;
   }
 };
 
@@ -132,7 +135,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, resolvedData, context }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -167,7 +172,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -296,7 +303,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
 
         try {
           if (operation === "delete") {
@@ -692,7 +701,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
         try {
           if (operation === "delete") {
             const movements = await context.query.StockMovement.findMany({
@@ -932,7 +943,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1008,7 +1021,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1040,7 +1055,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1149,7 +1166,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1205,7 +1224,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1250,7 +1271,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1329,7 +1352,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1368,7 +1393,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
       afterOperation: async ({ operation, item, context }) => {
         try {
@@ -1467,7 +1494,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
       afterOperation: async ({ operation, context, item }) => {
         // if (operation === "create") {
@@ -1625,7 +1654,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1661,7 +1692,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1722,7 +1755,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
         try {
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
@@ -1847,7 +1882,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
       },
     },
     fields: {
@@ -1887,7 +1924,9 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        setCompany(operation, context, resolvedData);
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
         try {
           if (operation === "update") {
             if (inputData.startedAt) {
