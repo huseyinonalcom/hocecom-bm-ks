@@ -40,7 +40,7 @@ const setCompany = (operation: "create" | "update" | "delete", context: any, res
   console.log("bbb", resolvedData?.company);
   let newResolvedDataCompany = resolvedData.company;
   try {
-    if (operation === "create" || operation == "delete") {
+    if (operation === "create" || operation == "update") {
       if (isAdminAccountantManager({ session: context.session }) && resolvedData.company) {
         newResolvedDataCompany = resolvedData.company;
       } else {
