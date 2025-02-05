@@ -7,7 +7,7 @@
     "email": "contact@huseyinonal.com"
   },
   "scripts": {
-    "dev": "keystone dev",
+    "dev": "cross-env NODE_ENV=development keystone dev",
     "start": "cross-env NODE_ENV=production keystone start",
     "build": "cross-env NODE_ENV=production keystone build",
     "postinstall": "cross-env NODE_ENV=production keystone build --no-ui --frozen"
