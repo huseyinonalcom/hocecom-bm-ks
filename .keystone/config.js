@@ -3308,6 +3308,22 @@ var filterOnIdAccountancyOrAccountancyCompanyRelation = ({ session: session2 }) 
 };
 
 // schema.ts
+var setCompany = (operation, context, resolvedData) => {
+  try {
+    if (operation === "create") {
+      if (isAdminAccountantManager({ session: context.session }) && resolvedData.company) {
+      } else {
+        resolvedData.company = {
+          connect: {
+            id: context.session.data.company.id
+          }
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Company hook error");
+  }
+};
 var lists = {
   Accountancy: (0, import_core.list)({
     access: {
@@ -3386,21 +3402,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
-        try {
-          if (operation === "create") {
-            if (isGlobalAdmin({ session: context.session }) && resolvedData.company) {
-            } else {
-              resolvedData.company = {
-                connect: {
-                  id: context.session.data.company.id
-                }
-              };
-            }
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, resolvedData, context }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -3434,18 +3437,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -3479,7 +3472,20 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+      beforeOperation: async ({ operation, item, context, resolvedData }) => {
+        try {
+          if (operation === "create") {
+            if (isGlobalAdmin({ session: context.session }) && resolvedData.accountancy) {
+            } else if (isAdminAccountantManager({ session: context.session }) && context.session.accountancy) {
+              resolvedData.accountancy = {
+                connect: {
+                  id: context.session.accountancy.id
+                }
+              };
+            }
+          }
+        } catch (error) {
+        }
         try {
           if (operation === "create" || operation === "update") {
             const pin = resolvedData.pincode;
@@ -3561,17 +3567,7 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, resolvedData, context }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+        setCompany(operation, context, resolvedData);
         try {
           if (operation === "delete") {
             const products = await context.query.DocumentProduct.findMany({
@@ -3748,7 +3744,7 @@ var lists = {
           async resolve(item, args, context) {
             let extrasValue = 0;
             try {
-              let extras = item.extras.values;
+              let extras = item.extras?.values ?? [];
               extras.forEach((extra) => {
                 extrasValue += extra.value;
                 if (!item.taxIncluded) {
@@ -3787,7 +3783,7 @@ var lists = {
           async resolve(item, args, context) {
             let extrasValue = 0;
             try {
-              let extras = item.extras.values;
+              let extras = item.extras?.values ?? [];
               extras.forEach((extra) => {
                 extrasValue += extra.value;
                 if (!item.taxIncluded) {
@@ -3847,7 +3843,7 @@ var lists = {
           async resolve(item, args, context) {
             let extrasValue = 0;
             try {
-              let extras = item.extras.values;
+              let extras = item.extras?.values ?? [];
               extras.forEach((extra) => {
                 extrasValue += extra.value;
                 if (!item.taxIncluded) {
@@ -3903,7 +3899,7 @@ var lists = {
           async resolve(item, args, context) {
             let extrasTax = 0;
             try {
-              let extras = item.extras.values;
+              let extras = item.extras?.values ?? [];
               extras.forEach((extra) => {
                 extrasTax = extra.value * (extra.tax / 100);
               });
@@ -3965,18 +3961,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, item, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
         try {
           if (operation === "delete") {
             const movements = await context.query.StockMovement.findMany({
@@ -4198,18 +4184,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4284,18 +4260,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4326,18 +4292,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4445,18 +4401,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4511,18 +4457,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4566,18 +4502,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4655,18 +4581,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4704,20 +4620,10 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       },
-      afterOperation: async ({ operation, item, inputData, context, resolvedData }) => {
+      afterOperation: async ({ operation, item, context }) => {
         try {
           if (operation === "create" || operation === "update") {
             const relatedShelfStocks = await context.query.ShelfStock.findMany({
@@ -4811,18 +4717,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       },
       afterOperation: async ({ operation, context, item }) => {
       }
@@ -4888,18 +4784,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -4934,18 +4820,8 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -5006,21 +4882,7 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
-        if (isAdminAccountantManager({ session: context.session })) {
-          console.info("operation on user by admin accountant manager");
-        } else {
-          try {
-            if (operation === "create" || operation == "update") {
-              resolvedData.company = {
-                connect: {
-                  id: context.session.data.company.id
-                }
-              };
-            }
-          } catch (error) {
-            console.error("Company hook error");
-          }
-        }
+        setCompany(operation, context, resolvedData);
         try {
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
@@ -5143,17 +5005,7 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+        setCompany(operation, context, resolvedData);
       }
     },
     fields: {
@@ -5193,17 +5045,7 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, item, inputData, context, resolvedData }) => {
-        try {
-          if (operation === "create") {
-            resolvedData.company = {
-              connect: {
-                id: context.session.data.company.id
-              }
-            };
-          }
-        } catch (error) {
-          console.error("Company hook error");
-        }
+        setCompany(operation, context, resolvedData);
         try {
           if (operation === "update") {
             if (inputData.startedAt) {

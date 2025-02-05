@@ -8,9 +8,9 @@
   },
   "scripts": {
     "dev": "keystone dev",
-    "start": "keystone start",
-    "build": "keystone build",
-    "postinstall": "keystone build --no-ui --frozen"
+    "start": "cross-env NODE_ENV=production keystone start",
+    "build": "cross-env NODE_ENV=production keystone build",
+    "postinstall": "cross-env NODE_ENV=production keystone build --no-ui --frozen"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
@@ -19,6 +19,7 @@
     "@keystone-6/fields-document": "^9.1.1",
     "@types/pdfkit": "^0.13.8",
     "archiver": "^7.0.1",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "fs-extra": "^11.2.0",
     "multer": "^1.4.5-lts.1",
@@ -31,5 +32,8 @@
     "@types/archiver": "^6.0.3",
     "@types/fs-extra": "^11.0.4",
     "ts-node": "^10.9.2"
+  },
+  "resolutions": {
+    "next": "^14.0.0"
   }
 }
