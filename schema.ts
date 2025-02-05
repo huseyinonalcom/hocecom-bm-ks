@@ -37,14 +37,12 @@ interface documentExtra {
 }
 
 const setCompany = (operation: "create" | "update" | "delete", context: any, resolvedData: any) => {
-  console.log("bbb", resolvedData?.company);
   let newResolvedDataCompany = resolvedData.company;
   try {
     if (operation === "create" || operation == "update") {
       if (isAdminAccountantManager({ session: context.session }) && resolvedData.company) {
         newResolvedDataCompany = resolvedData.company;
       } else {
-        console.log("ccc", resolvedData?.company);
         resolvedData.company = {
           connect: {
             id: context.session.data.company.id,
@@ -1768,7 +1766,6 @@ export const lists: Lists = {
           resolvedData.company = setCompany(operation, context, resolvedData);
         }
         try {
-          console.log("aaa", resolvedData?.company);
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
               console.error("No company during user mutation");
