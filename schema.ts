@@ -37,7 +37,7 @@ interface documentExtra {
 }
 
 const setCompany = (operation: "create" | "update" | "delete", context: any, resolvedData: any) => {
-  let newResolvedDataCompany;
+  let newResolvedDataCompany = resolvedData.company;
   try {
     if (operation === "create") {
       if (isAdminAccountantManager({ session: context.session }) && resolvedData.company) {
@@ -52,8 +52,9 @@ const setCompany = (operation: "create" | "update" | "delete", context: any, res
     }
   } catch (error) {
     console.error("Company hook error");
-    return resolvedData.company;
+    newResolvedDataCompany = resolvedData.company;
   }
+  return newResolvedDataCompany;
 };
 
 export const lists: Lists = {
