@@ -4,36 +4,36 @@ import { graphql, list } from "@keystone-6/core";
 import { Decimal } from "@keystone-6/core/types";
 import type { Lists } from ".keystone/types";
 import {
-  calculateTotalWithoutTaxAfterReduction,
   calculateTotalWithoutTaxBeforeReduction,
-  calculateTotalWithTaxAfterReduction,
+  calculateTotalWithoutTaxAfterReduction,
   calculateTotalWithTaxBeforeReduction,
+  calculateTotalWithTaxAfterReduction,
 } from "./utils/calculations/documentproducts";
 import {
   isAdminAccountantManager,
-  isWorker,
   isCompanyAdmin,
   isGlobalAdmin,
+  isSuperAdmin,
+  isAccountant,
   isEmployee,
   isManager,
-  isUser,
-  isSuperAdmin,
+  isWorker,
   isIntern,
-  isAccountant,
+  isUser,
 } from "./utils/accesscontrol/rbac";
 import {
-  filterOnIdAccountancyOrAccountancyCompanyRelation,
-  filterOnCompanyRelation,
-  filterOnIdCompanyOrCompanyAccountancyRelation,
-  filterOnIdAccountancy,
   filterOnCompanyRelationOrCompanyAccountancyRelation,
+  filterOnIdAccountancyOrAccountancyCompanyRelation,
+  filterOnIdCompanyOrCompanyAccountancyRelation,
+  filterOnCompanyRelation,
+  filterOnIdAccountancy,
 } from "./utils/accesscontrol/tenantac";
 
 interface documentExtra {
+  type: string;
+  price: number;
   value: number;
   tax: number;
-  price: number;
-  type: string;
 }
 
 const setCompany = (operation: "create" | "update" | "delete", context: any, resolvedData: any) => {
@@ -490,7 +490,7 @@ export const lists: Lists = {
           async resolve(item, args, context): Promise<Decimal> {
             let extrasValue = 0;
             try {
-              let extras: documentExtra[] = item.extras?.values ?? [];
+              let extras: documentExtra[] = (item.extras as unknown as { values: documentExtra[] })?.values ?? [];
               extras.forEach((extra) => {
                 extrasValue += extra.value;
                 if (!item.taxIncluded) {
@@ -529,7 +529,7 @@ export const lists: Lists = {
           async resolve(item, args, context): Promise<Decimal> {
             let extrasValue = 0;
             try {
-              let extras: documentExtra[] = item.extras?.values ?? [];
+              let extras: documentExtra[] = (item.extras as unknown as { values: documentExtra[] })?.values ?? [];
               extras.forEach((extra) => {
                 extrasValue += extra.value;
                 if (!item.taxIncluded) {
@@ -589,7 +589,7 @@ export const lists: Lists = {
           async resolve(item, args, context): Promise<Decimal> {
             let extrasValue = 0;
             try {
-              let extras: documentExtra[] = item.extras?.values ?? [];
+              let extras: documentExtra[] = (item.extras as unknown as { values: documentExtra[] })?.values ?? [];
               extras.forEach((extra) => {
                 extrasValue += extra.value;
                 if (!item.taxIncluded) {
@@ -645,7 +645,7 @@ export const lists: Lists = {
           async resolve(item, args, context): Promise<Decimal> {
             let extrasTax = 0;
             try {
-              let extras: documentExtra[] = item.extras?.values ?? [];
+              let extras: documentExtra[] = (item.extras as unknown as { values: documentExtra[] })?.values ?? [];
               extras.forEach((extra) => {
                 extrasTax = extra.value * (extra.tax / 100);
               });
