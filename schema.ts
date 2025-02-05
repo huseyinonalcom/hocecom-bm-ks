@@ -1760,7 +1760,6 @@ export const lists: Lists = {
           resolvedData.company = setCompany(operation, context, resolvedData);
         }
         try {
-          console.log(resolvedData?.company);
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
               console.error("No company during user mutation");
