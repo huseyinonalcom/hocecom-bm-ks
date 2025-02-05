@@ -1733,6 +1733,7 @@ export const lists: Lists = {
             let mail = inputData.email!;
 
             let mailPart1 = mail.split("@").at(0);
+            mailPart1 = mailPart1?.split("+").at(0);
             let mailPart2 = mail.split("@").at(-1);
             let idPart;
             if (resolvedData.company) {
