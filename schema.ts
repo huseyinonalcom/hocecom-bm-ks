@@ -1756,13 +1756,15 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
-        if (operation === "create") {
+        if (operation === "create" || operation === "update") {
           resolvedData.company = setCompany(operation, context, resolvedData);
         }
         try {
           if (operation === "create" || operation === "update") {
             if (!resolvedData.company) {
+              console.error("No company during user mutation");
               if (!resolvedData.accountancy) {
+                console.error("No accountancy during user mutation");
                 throw new Error("Company or Accountancy is required");
               }
             }
