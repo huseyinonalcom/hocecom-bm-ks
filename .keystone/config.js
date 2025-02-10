@@ -3140,16 +3140,6 @@ var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, redu
   const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax });
   return Number((total - reductionAmount).toFixed(2));
 };
-var calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax }) => {
-  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
-    price,
-    amount,
-    taxIncluded,
-    reduction,
-    tax
-  });
-  return Number((totalAfterReduction * (tax / 100)).toFixed(2));
-};
 var calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }) => {
   if (taxIncluded) {
     return Number(price * amount);
@@ -3959,7 +3949,14 @@ var lists = {
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
-                totalValue += calculateTaxAmount({
+                totalValue += calculateTotalWithTaxAfterReduction({
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
+                  taxIncluded: item.taxIncluded
+                });
+                totalValue -= calculateTotalWithoutTaxAfterReduction({
                   price: Number(docProd.price),
                   amount: Number(docProd.amount),
                   tax: Number(docProd.tax),

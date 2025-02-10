@@ -8,7 +8,6 @@ import {
   calculateTotalWithoutTaxAfterReduction,
   calculateTotalWithTaxBeforeReduction,
   calculateTotalWithTaxAfterReduction,
-  calculateTaxAmount,
 } from "./utils/calculations/documentproducts";
 import {
   isAdminAccountantManager,
@@ -679,14 +678,20 @@ export const lists: Lists = {
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
-                totalValue += calculateTaxAmount({
+                totalValue += calculateTotalWithTaxAfterReduction({
                   price: Number(docProd.price),
                   amount: Number(docProd.amount),
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
                 });
-
+                totalValue -= calculateTotalWithoutTaxAfterReduction({
+                  price: Number(docProd.price),
+                  amount: Number(docProd.amount),
+                  tax: Number(docProd.tax),
+                  reduction: Number(docProd.reduction ?? "0"),
+                  taxIncluded: item.taxIncluded,
+                });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
                 }
