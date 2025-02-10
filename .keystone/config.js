@@ -3785,7 +3785,13 @@ var lists = {
                   tax: Number(docProd.tax),
                   taxIncluded: item.taxIncluded
                 });
+                if (isNaN(total)) {
+                  total = 0;
+                }
               });
+              if (isNaN(extrasValue)) {
+                extrasValue = 0;
+              }
               total += extrasValue;
               return new import_types.Decimal(total);
             } catch (e) {
@@ -3825,7 +3831,13 @@ var lists = {
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded
                 });
+                if (isNaN(total)) {
+                  total = 0;
+                }
               });
+              if (isNaN(extrasValue)) {
+                extrasValue = 0;
+              }
               total += extrasValue;
               return new import_types.Decimal(total);
             } catch (e) {
@@ -3885,6 +3897,9 @@ var lists = {
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded
                 });
+                if (isNaN(totalValue)) {
+                  totalValue = 0;
+                }
               });
               const payments = await context.query.Payment.findMany({
                 where: { document: { some: { id: { equals: item.id } } }, isDeleted: { equals: false } },
@@ -3894,6 +3909,9 @@ var lists = {
               payments.forEach((payment) => {
                 totalPaid += Number(payment.value);
               });
+              if (isNaN(extrasValue)) {
+                extrasValue = 0;
+              }
               let total = totalValue - totalPaid + extrasValue;
               if (total < 0.02 && total > -0.02) {
                 total = 0;
@@ -3945,7 +3963,13 @@ var lists = {
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded
                 });
+                if (isNaN(totalValue)) {
+                  totalValue = 0;
+                }
               });
+              if (isNaN(extrasTax)) {
+                extrasTax = 0;
+              }
               totalValue += extrasTax;
               return new import_types.Decimal(totalValue);
             } catch (e) {
