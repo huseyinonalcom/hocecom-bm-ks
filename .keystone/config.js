@@ -3138,7 +3138,7 @@ var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax }) 
 var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax }) => {
   const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
   const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax });
-  return Number(total - reductionAmount);
+  return Number((total - reductionAmount).toFixed(2));
 };
 var calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }) => {
   if (taxIncluded) {
