@@ -47,7 +47,7 @@ export const calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax 
     reduction,
     tax,
   });
-  return Number(totalAfterReduction * (tax / 100));
+  return Number((totalAfterReduction * (tax / 100)).toFixed(2));
 };
 
 export const calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }: Omit<TaxParams, "reduction">): number => {
