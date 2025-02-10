@@ -3124,42 +3124,46 @@ var calculateBaseTotal = ({
   // optional for when we need to calculate base from tax-included price
 }) => {
   if (taxIncluded) {
-    return Number(price * amount / (1 + tax / 100));
+    return Number((price * amount / (1 + tax / 100)).toFixed(2));
   }
-  return Number(price * amount);
+  return Number((price * amount).toFixed(2));
 };
 var calculateTotalWithoutTaxBeforeReduction = ({ price, amount, taxIncluded, tax = 0 }) => {
-  return calculateBaseTotal({ price, amount, taxIncluded, tax });
+  return Number(calculateBaseTotal({ price, amount, taxIncluded, tax }).toFixed(2));
 };
 var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax }) => {
-  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
-  return Number(total * (reduction / 100));
+  const total = Number(calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax }).toFixed(2));
+  return Number((total * (reduction / 100)).toFixed(2));
 };
 var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax }) => {
-  const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
-  const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax });
+  const total = Number(calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax }).toFixed(2));
+  const reductionAmount = Number(calculateReductionAmount({ price, amount, taxIncluded, reduction, tax }).toFixed(2));
   return Number((total - reductionAmount).toFixed(2));
 };
 var calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax }) => {
-  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
-    price,
-    amount,
-    taxIncluded,
-    reduction,
-    tax
-  });
+  const totalAfterReduction = Number(
+    calculateTotalWithoutTaxAfterReduction({
+      price,
+      amount,
+      taxIncluded,
+      reduction,
+      tax
+    }).toFixed(2)
+  );
   return Number((totalAfterReduction * (tax / 100)).toFixed(2));
 };
 var calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }) => {
   if (taxIncluded) {
-    return Number(price * amount);
+    return Number((price * amount).toFixed(2));
   }
-  const totalBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
-    price,
-    amount,
-    taxIncluded
-  });
-  return Number(totalBeforeReduction * (1 + tax / 100));
+  const totalBeforeReduction = Number(
+    calculateTotalWithoutTaxBeforeReduction({
+      price,
+      amount,
+      taxIncluded
+    }).toFixed(2)
+  );
+  return Number((totalBeforeReduction * (1 + tax / 100)).toFixed(2));
 };
 var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax }) => {
   const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
@@ -3959,16 +3963,20 @@ var lists = {
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
-                totalValue += calculateTaxAmount({
-                  price: Number(docProd.price),
-                  amount: Number(docProd.amount),
-                  tax: Number(docProd.tax),
-                  reduction: Number(docProd.reduction ?? "0"),
-                  taxIncluded: item.taxIncluded
-                });
-                if (isNaN(totalValue)) {
-                  totalValue = 0;
+                let docProdTotalTax = Number(
+                  calculateTaxAmount({
+                    price: Number(docProd.price),
+                    amount: Number(docProd.amount),
+                    tax: Number(docProd.tax),
+                    reduction: Number(docProd.reduction ?? "0"),
+                    taxIncluded: item.taxIncluded
+                  }).toFixed(2)
+                );
+                if (isNaN(docProdTotalTax)) {
+                  docProdTotalTax = 0;
                 }
+                console.log(docProd, docProdTotalTax);
+                totalValue += docProdTotalTax;
               });
               if (isNaN(extrasTax)) {
                 extrasTax = 0;

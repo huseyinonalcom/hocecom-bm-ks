@@ -679,17 +679,20 @@ export const lists: Lists = {
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
-                totalValue += calculateTaxAmount({
-                  price: Number(docProd.price),
-                  amount: Number(docProd.amount),
-                  tax: Number(docProd.tax),
-                  reduction: Number(docProd.reduction ?? "0"),
-                  taxIncluded: item.taxIncluded,
-                });
-
-                if (isNaN(totalValue)) {
-                  totalValue = 0;
+                let docProdTotalTax = Number(
+                  calculateTaxAmount({
+                    price: Number(docProd.price),
+                    amount: Number(docProd.amount),
+                    tax: Number(docProd.tax),
+                    reduction: Number(docProd.reduction ?? "0"),
+                    taxIncluded: item.taxIncluded,
+                  }).toFixed(2)
+                );
+                if (isNaN(docProdTotalTax)) {
+                  docProdTotalTax = 0;
                 }
+                console.log(docProd, docProdTotalTax);
+                totalValue += docProdTotalTax;
               });
               if (isNaN(extrasTax)) {
                 extrasTax = 0;
