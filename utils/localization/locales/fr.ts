@@ -314,4 +314,5 @@ export const frjson = {
   "choose-establishment": "Choisissez un établissement",
   "invalid-email": "E-mail invalide",
   "purchase-no-file": "Veuillez télécharger le document PDF de cet achat.",
+  "return-package": "Retour Emballage",
 };

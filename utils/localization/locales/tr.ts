@@ -314,4 +314,5 @@ export const trjson = {
   "choose-establishment": "Kurum Seç",
   "invalid-email": "Geçersiz E-posta",
   "purchase-no-file": "Satın Alma faturasını PDF biçiminde yükleyin.",
+  "return-package": "Ambalaj İadesi",
 };

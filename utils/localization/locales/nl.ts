@@ -314,4 +314,5 @@ export const nljson = {
   "choose-establishment": "Kies een Vestiging",
   "invalid-email": "Ongeldig E-mail",
   "purchase-no-file": "Voeg het aankoop toe aan deze document in PDF formaat.",
+  "return-package": "Retour Emballage",
 };

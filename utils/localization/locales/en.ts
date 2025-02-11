@@ -314,4 +314,5 @@ export const enjson = {
   "choose-establishment": "Choose Establishment",
   "invalid-email": "Invalid Email",
   "purchase-no-file": "Please upload the this purchase in PDF format.",
+  "return-package": "Return Package",
 };

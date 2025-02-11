@@ -6,7 +6,7 @@ export const sendDocumentEmail = async ({ documentId, context }: { documentId: s
   const postedDocument = await context.sudo().query.Document.findOne({
     where: { id: documentId },
     query:
-      "prefix number date externalId currency origin totalTax totalPaid extras totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
+      "prefix number extras date externalId currency origin totalTax totalPaid extras totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone documentExtras phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
   });
   if (postedDocument.type == "invoice" || postedDocument.type == "credit_note") {
     let bcc;

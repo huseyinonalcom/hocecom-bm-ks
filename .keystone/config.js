@@ -407,7 +407,8 @@ var enjson = {
   cheque: "Cheque",
   "choose-establishment": "Choose Establishment",
   "invalid-email": "Invalid Email",
-  "purchase-no-file": "Please upload the this purchase in PDF format."
+  "purchase-no-file": "Please upload the this purchase in PDF format.",
+  "return-package": "Return Package"
 };
 
 // utils/localization/locales/fr.ts
@@ -726,7 +727,8 @@ var frjson = {
   cheque: "Ch\xE8que",
   "choose-establishment": "Choisissez un \xE9tablissement",
   "invalid-email": "E-mail invalide",
-  "purchase-no-file": "Veuillez t\xE9l\xE9charger le document PDF de cet achat."
+  "purchase-no-file": "Veuillez t\xE9l\xE9charger le document PDF de cet achat.",
+  "return-package": "Retour Emballage"
 };
 
 // utils/localization/locales/nl.ts
@@ -1045,7 +1047,8 @@ var nljson = {
   cheque: "Cheque",
   "choose-establishment": "Kies een Vestiging",
   "invalid-email": "Ongeldig E-mail",
-  "purchase-no-file": "Voeg het aankoop toe aan deze document in PDF formaat."
+  "purchase-no-file": "Voeg het aankoop toe aan deze document in PDF formaat.",
+  "return-package": "Retour Emballage"
 };
 
 // utils/localization/locales/tr.ts
@@ -1364,7 +1367,8 @@ var trjson = {
   cheque: "\xC7ek",
   "choose-establishment": "Kurum Se\xE7",
   "invalid-email": "Ge\xE7ersiz E-posta",
-  "purchase-no-file": "Sat\u0131n Alma faturas\u0131n\u0131 PDF bi\xE7iminde y\xFCkleyin."
+  "purchase-no-file": "Sat\u0131n Alma faturas\u0131n\u0131 PDF bi\xE7iminde y\xFCkleyin.",
+  "return-package": "Ambalaj \u0130adesi"
 };
 
 // utils/localization/localization.ts
@@ -1857,6 +1861,48 @@ var paymentsTable = ({ doc, x, yEnd, payments, invoiceDoc }) => {
 
 // utils/pdf/document/invoicepdf.ts
 var import_buffer2 = require("buffer");
+
+// utils/pdf/common/packagereturntotals.ts
+var returnPackage = ({ doc, x, endY, document }) => {
+  const extraConfigReturnPackage = document.establishment?.documentExtras?.returnPackage ?? {};
+  const documentExtras = document.extras?.values ?? [];
+  const extrasParsed = [];
+  try {
+    documentExtras.forEach((extra) => {
+      if (extra.type === "returnPackage") {
+        try {
+          extrasParsed.push({
+            amount: Number(extra.amount) || 0,
+            price: Number(extra.price) || 0,
+            value: Number(extra.value) || 0
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
+  if (extraConfigReturnPackage.active === true && extraConfigReturnPackage.documentTypes.includes(document.type) && extrasParsed.length > 0 && extrasParsed.some((extra) => extra.value > 0)) {
+    doc.fontSize(13).text(t("return-package", document.customer.preferredLanguage), x, endY);
+    let tableY = endY + 15;
+    extrasParsed.forEach((extra, index) => {
+      const rowY = tableY + index * 15;
+      doc.fontSize(10).text(extra.amount.toFixed(0), x, rowY, { align: "right", width: 30 }).text("x", x + 46, rowY).text(formatCurrency(extra.price, document.currency ?? "EUR"), x + 58, rowY, { align: "right", width: 51 }).text("=", x + 112, rowY).text(formatCurrency(extra.value, document.currency ?? "EUR"), x + 114, rowY, { align: "right", width: 62 });
+    });
+    const total = extrasParsed.reduce((sum, extra) => sum + extra.value, 0);
+    doc.fontSize(14).text(
+      `${t("total", document.customer.preferredLanguage)} =  ${formatCurrency(total, document.currency ?? "EUR")}`,
+      x,
+      tableY + extrasParsed.length * 15 + 5
+    );
+    return tableY + extrasParsed.length * 15 + 20;
+  }
+  return endY;
+};
+
+// utils/pdf/document/invoicepdf.ts
 async function generateInvoiceOut({
   document,
   logoBuffer
@@ -1903,19 +1949,19 @@ async function generateInvoiceOut({
         endOfDetailsRow = endOfDeliveryDetails;
       }
       generateProductTable(doc, documentProducts, endOfDetailsRow, invoiceDoc);
-      let totalsXNames = 350;
+      let totalsXKeys = 350;
       let totalXValues = 480;
       let totalsY = pageSizesDimensions[pageSize].height - 40;
       doc.fontSize(13);
       doc.lineWidth(1);
       doc.lineCap("butt").moveTo(350, totalsY - 85).lineTo(575, totalsY - 85).stroke("black");
-      doc.text(tr("already-paid"), totalsXNames, totalsY - 75);
-      doc.text(tr("total-value-excl-tax"), totalsXNames, totalsY - 60);
-      doc.text(tr("total-tax"), totalsXNames, totalsY - 45);
-      doc.text(tr("total"), totalsXNames, totalsY - 30);
+      doc.text(tr("already-paid"), totalsXKeys, totalsY - 75);
+      doc.text(tr("total-value-excl-tax"), totalsXKeys, totalsY - 60);
+      doc.text(tr("total-tax"), totalsXKeys, totalsY - 45);
+      doc.text(tr("total"), totalsXKeys, totalsY - 30);
       doc.lineWidth(1);
       doc.lineCap("butt").moveTo(350, totalsY - 10).lineTo(575, totalsY - 10).stroke("black");
-      doc.text(tr("to-pay"), totalsXNames, totalsY);
+      doc.text(tr("to-pay"), totalsXKeys, totalsY);
       doc.text(formatCurrency(Number(invoiceDoc.totalPaid), invoiceDoc.currency), totalXValues, totalsY - 75, {
         align: "right"
       });
@@ -1931,10 +1977,11 @@ async function generateInvoiceOut({
       doc.text(formatCurrency(Number(invoiceDoc.totalToPay), invoiceDoc.currency), totalXValues, totalsY, {
         align: "right"
       });
-      paymentsTable({ doc, x: totalsXNames, yEnd: totalsY - 92, payments, invoiceDoc });
+      paymentsTable({ doc, x: totalsXKeys, yEnd: totalsY - 92, payments, invoiceDoc });
+      returnPackage({ doc, x: pageLeft, endY: totalsY - 92, document });
       taxTable({
         doc,
-        x: totalsXNames - 150,
+        x: totalsXKeys - 150,
         endY: pageSizesDimensions[pageSize].height - 40,
         document
       });
@@ -2299,7 +2346,7 @@ var mailPart2 = `</td>
 var sendDocumentEmail = async ({ documentId, context }) => {
   const postedDocument = await context.sudo().query.Document.findOne({
     where: { id: documentId },
-    query: "prefix number date externalId currency origin totalTax totalPaid extras totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
+    query: "prefix number extras date externalId currency origin totalTax totalPaid extras totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone documentExtras phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
   });
   if (postedDocument.type == "invoice" || postedDocument.type == "credit_note") {
     let bcc;
@@ -5341,7 +5388,7 @@ var keystone_default = withAuth(
         const generateTestPDF = async ({ id }) => {
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
-              query: "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
+              query: "prefix number extras date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name documentExtras bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
               where: {
                 id
               }
@@ -5366,6 +5413,7 @@ var keystone_default = withAuth(
         generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
         generateTestPDF({ id: "cm5o7jq5h00171076radma5m7" });
         generateTestPDF({ id: "cm6jvd8jr0012fzyf7do7p2rb" });
+        generateTestPDF({ id: "cm6z0evlf000046uokgw38ksl" });
       }
     },
     lists,

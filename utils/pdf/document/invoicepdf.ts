@@ -9,6 +9,7 @@ import { t } from "../../localization/localization";
 import { taxTable } from "../common/taxtotals";
 import { pdfHead } from "../common/pdfhead";
 import { Buffer } from "buffer";
+import { returnPackage } from "../common/packagereturntotals";
 
 export async function generateInvoiceOut({
   document,
@@ -67,7 +68,7 @@ export async function generateInvoiceOut({
 
       generateProductTable(doc, documentProducts, endOfDetailsRow, invoiceDoc);
 
-      let totalsXNames = 350;
+      let totalsXKeys = 350;
       let totalXValues = 480;
       let totalsY = pageSizesDimensions[pageSize].height - 40;
       doc.fontSize(13);
@@ -79,17 +80,17 @@ export async function generateInvoiceOut({
         .lineTo(575, totalsY - 85)
         .stroke("black");
 
-      doc.text(tr("already-paid"), totalsXNames, totalsY - 75);
-      doc.text(tr("total-value-excl-tax"), totalsXNames, totalsY - 60);
-      doc.text(tr("total-tax"), totalsXNames, totalsY - 45);
-      doc.text(tr("total"), totalsXNames, totalsY - 30);
+      doc.text(tr("already-paid"), totalsXKeys, totalsY - 75);
+      doc.text(tr("total-value-excl-tax"), totalsXKeys, totalsY - 60);
+      doc.text(tr("total-tax"), totalsXKeys, totalsY - 45);
+      doc.text(tr("total"), totalsXKeys, totalsY - 30);
       doc.lineWidth(1);
       doc
         .lineCap("butt")
         .moveTo(350, totalsY - 10)
         .lineTo(575, totalsY - 10)
         .stroke("black");
-      doc.text(tr("to-pay"), totalsXNames, totalsY);
+      doc.text(tr("to-pay"), totalsXKeys, totalsY);
       //
       doc.text(formatCurrency(Number(invoiceDoc.totalPaid), invoiceDoc.currency), totalXValues, totalsY - 75, {
         align: "right",
@@ -108,11 +109,13 @@ export async function generateInvoiceOut({
         align: "right",
       });
 
-      paymentsTable({ doc: doc, x: totalsXNames, yEnd: totalsY - 92, payments: payments, invoiceDoc });
+      paymentsTable({ doc: doc, x: totalsXKeys, yEnd: totalsY - 92, payments: payments, invoiceDoc });
+
+      returnPackage({ doc: doc, x: pageLeft, endY: totalsY - 92, document: document });
 
       taxTable({
         doc: doc,
-        x: totalsXNames - 150,
+        x: totalsXKeys - 150,
         endY: pageSizesDimensions[pageSize].height - 40,
         document: document,
       });

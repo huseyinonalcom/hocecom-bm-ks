@@ -152,7 +152,7 @@ export default withAuth(
           try {
             const postedDocument = await context.sudo().query.Document.findOne({
               query:
-                "prefix number date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
+                "prefix number extras date externalId currency origin totalTax totalPaid totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name documentExtras bankAccount1 bankAccount2 bankAccount3 taxID phone phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }",
               where: {
                 id,
               },
@@ -177,6 +177,7 @@ export default withAuth(
         generateTestPDF({ id: "cm655efqx005tbkceii8q4srg" });
         generateTestPDF({ id: "cm5o7jq5h00171076radma5m7" });
         generateTestPDF({ id: "cm6jvd8jr0012fzyf7do7p2rb" });
+        generateTestPDF({ id: "cm6z0evlf000046uokgw38ksl" });
       },
     },
     lists,
