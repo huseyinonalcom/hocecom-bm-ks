@@ -20,7 +20,7 @@ export default withAuth(
     server: {
       port: 3400,
       cors: {
-        origin: ["https://dfatest.huseyinonal.com", "http://localhost:3399", "https://acc.digitalforge.be", "https://dfa.huseyinonal.com"],
+        origin: ["https://dfatest.huseyinonal.com", "http://localhost:3399", "https://acc.digitalforge.be", "https://dfa.huseyinonal.com", "https://web.digitalforge.be"],
         credentials: true,
       },
       extendExpressApp: (app, context) => {
