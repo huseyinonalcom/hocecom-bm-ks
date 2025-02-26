@@ -1825,6 +1825,7 @@ export const lists: Lists = {
       customerPayments: relationship({ ref: "Payment.customer", many: true }),
       email2: text(),
       isBlocked: checkbox({ defaultValue: false }),
+      isArchived: checkbox({ defaultValue: false }),
       phone: text(),
       role: select({
         type: "string",
