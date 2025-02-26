@@ -15,7 +15,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
     "@keystone-6/auth": "^8.1.0",
-    "@keystone-6/core": "^6.3.1",
+    "@keystone-6/core": "^6.4.0",
     "@keystone-6/fields-document": "^9.1.1",
     "@types/pdfkit": "^0.13.8",
     "archiver": "^7.0.1",
