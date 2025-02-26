@@ -488,6 +488,7 @@ model User {
   customerPayments  Payment[]       @relation("Payment_customer")
   email2            String          @default("")
   isBlocked         Boolean         @default(false)
+  isArchived        Boolean         @default(false)
   phone             String          @default("")
   role              String          @default("customer")
   permissions       Json            @default("[]")

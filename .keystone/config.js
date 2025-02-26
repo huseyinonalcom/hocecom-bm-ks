@@ -5032,6 +5032,7 @@ var lists = {
       customerPayments: (0, import_fields.relationship)({ ref: "Payment.customer", many: true }),
       email2: (0, import_fields.text)(),
       isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
+      isArchived: (0, import_fields.checkbox)({ defaultValue: false }),
       phone: (0, import_fields.text)(),
       role: (0, import_fields.select)({
         type: "string",

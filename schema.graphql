@@ -2302,6 +2302,7 @@ type User {
   customerPaymentsCount(where: PaymentWhereInput! = {}): Int
   email2: String
   isBlocked: Boolean
+  isArchived: Boolean
   phone: String
   role: String
   permissions: [UserPermissionType!]
@@ -2361,6 +2362,7 @@ input UserWhereInput {
   customerPayments: PaymentManyRelationFilter
   email2: StringFilter
   isBlocked: BooleanFilter
+  isArchived: BooleanFilter
   phone: StringFilter
   role: StringFilter
   ssid: StringFilter
@@ -2397,6 +2399,7 @@ input UserOrderByInput {
   email: OrderDirection
   email2: OrderDirection
   isBlocked: OrderDirection
+  isArchived: OrderDirection
   phone: OrderDirection
   role: OrderDirection
   ssid: OrderDirection
@@ -2415,6 +2418,7 @@ input UserUpdateInput {
   customerPayments: PaymentRelateToManyForUpdateInput
   email2: String
   isBlocked: Boolean
+  isArchived: Boolean
   phone: String
   role: String
   permissions: [UserPermissionType!]
@@ -2460,6 +2464,7 @@ input UserCreateInput {
   customerPayments: PaymentRelateToManyForCreateInput
   email2: String
   isBlocked: Boolean
+  isArchived: Boolean
   phone: String
   role: String
   permissions: [UserPermissionType!]
