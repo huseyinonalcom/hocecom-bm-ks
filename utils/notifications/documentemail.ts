@@ -1,6 +1,6 @@
 import { generateCreditNoteOut } from "../pdf/document/creditnotepdf";
 import { generateInvoiceOut } from "../pdf/document/invoicepdf";
-import { sendMail } from "../sendmail";
+import { sendMail } from "../mail/sendmail";
 
 export const sendDocumentEmail = async ({ documentId, context }: { documentId: string; context: any }) => {
   const postedDocument = await context.sudo().query.Document.findOne({

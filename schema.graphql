@@ -2341,6 +2341,9 @@ type User {
   ownedCompany: Company
   company: Company
   extraFields: JSON
+  passwordResetToken: PasswordState
+  passwordResetIssuedAt: DateTime
+  passwordResetRedeemedAt: DateTime
 }
 
 enum UserPermissionType {
@@ -2390,12 +2393,19 @@ input UserWhereInput {
   accountancy: AccountancyWhereInput
   ownedCompany: CompanyWhereInput
   company: CompanyWhereInput
+  passwordResetToken: PasswordFilter
+  passwordResetIssuedAt: DateTimeNullableFilter
+  passwordResetRedeemedAt: DateTimeNullableFilter
 }
 
 input AddressManyRelationFilter {
   every: AddressWhereInput
   some: AddressWhereInput
   none: AddressWhereInput
+}
+
+input PasswordFilter {
+  isSet: Boolean!
 }
 
 input UserOrderByInput {
@@ -2415,6 +2425,8 @@ input UserOrderByInput {
   lastName: OrderDirection
   customerTaxNumber: OrderDirection
   customerTaxCenter: OrderDirection
+  passwordResetIssuedAt: OrderDirection
+  passwordResetRedeemedAt: OrderDirection
 }
 
 input UserUpdateInput {
@@ -2449,6 +2461,9 @@ input UserUpdateInput {
   ownedCompany: CompanyRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
+  passwordResetToken: String
+  passwordResetIssuedAt: DateTime
+  passwordResetRedeemedAt: DateTime
 }
 
 input AddressRelateToManyForUpdateInput {
@@ -2495,6 +2510,9 @@ input UserCreateInput {
   ownedCompany: CompanyRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON
+  passwordResetToken: String
+  passwordResetIssuedAt: DateTime
+  passwordResetRedeemedAt: DateTime
 }
 
 input AddressRelateToManyForCreateInput {
@@ -2828,6 +2846,8 @@ type Mutation {
   endSession: Boolean!
   authenticateUserWithPassword(email: String!, password: String!): UserAuthenticationWithPasswordResult
   createInitialUser(data: CreateInitialUserInput!): UserAuthenticationWithPasswordSuccess!
+  sendUserPasswordResetLink(email: String!): Boolean!
+  redeemUserPasswordResetToken(email: String!, token: String!, password: String!): RedeemUserPasswordResetTokenResult
 }
 
 union UserAuthenticationWithPasswordResult = UserAuthenticationWithPasswordSuccess | UserAuthenticationWithPasswordFailure
@@ -2846,6 +2866,17 @@ input CreateInitialUserInput {
   email: String
   role: String
   password: String
+}
+
+type RedeemUserPasswordResetTokenResult {
+  code: PasswordResetRedemptionErrorCode!
+  message: String!
+}
+
+enum PasswordResetRedemptionErrorCode {
+  FAILURE
+  TOKEN_EXPIRED
+  TOKEN_REDEEMED
 }
 
 type Query {
@@ -2917,9 +2948,15 @@ type Query {
   workOrderOperationsCount(where: WorkOrderOperationWhereInput! = {}): Int
   keystone: KeystoneMeta!
   authenticatedItem: AuthenticatedItem
+  validateUserPasswordResetToken(email: String!, token: String!): ValidateUserPasswordResetTokenResult
 }
 
 union AuthenticatedItem = User
+
+type ValidateUserPasswordResetTokenResult {
+  code: PasswordResetRedemptionErrorCode!
+  message: String!
+}
 
 type KeystoneMeta {
   adminMeta: KeystoneAdminMeta!

@@ -3,7 +3,7 @@ import { generateCreditNoteOut } from "./pdf/document/creditnotepdf";
 import { purchaseToXml } from "./peppol/xml/purchase/peppolpurchase";
 import { generateInvoiceOut } from "./pdf/document/invoicepdf";
 import { invoiceToXml } from "./peppol/xml/invoice/peppolinvoice";
-import { sendMail } from "../utils/sendmail";
+import { sendMail } from "./mail/sendmail";
 import { workerData } from "worker_threads";
 import archiver from "archiver";
 import fs from "fs-extra";

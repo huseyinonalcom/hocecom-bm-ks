@@ -25,3 +25,9 @@ export const transformEmail = ({ email, companyId }: { email: string; companyId:
   let domainPart = parts[1];
   return localPart + "+" + companyId + "@" + domainPart;
 };
+
+export const reverseTransformEmail = (email: string) => {
+  let [localPart, domainPart] = email.split("@");
+  let originalLocalPart = localPart.split("+")[0];
+  return originalLocalPart + "@" + domainPart;
+};

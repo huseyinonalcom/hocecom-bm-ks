@@ -1,6 +1,11 @@
-import { randomBytes } from "crypto";
-import { createAuth } from "@keystone-6/auth";
 import { statelessSessions } from "@keystone-6/core/session";
+import { sendMail } from "./utils/mail/sendmail";
+import { createAuth } from "@keystone-6/auth";
+import { randomBytes } from "crypto";
+import { sendSystemEmail } from "./utils/mail/sendsystememail";
+import { t } from "./utils/localization/localization";
+import { passwordResetTemplate } from "./utils/mail/templates/password-reset/universal";
+import { reverseTransformEmail, transformEmail } from "./utils/utils";
 
 let sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret && process.env.NODE_ENV !== "production") {
@@ -14,6 +19,26 @@ const { withAuth } = createAuth({
   secretField: "password",
   initFirstItem: {
     fields: ["name", "role", "email", "password"],
+  },
+  passwordResetLink: {
+    sendToken: async ({ itemId, identity, token, context }) => {
+      const recipient = await context.sudo().query.User.findOne({
+        where: { id: itemId as string },
+        query: "id preferredLanguage",
+      });
+      const email = reverseTransformEmail(identity);
+      const preferredLanguage = recipient.preferredLanguage ?? "en";
+      sendSystemEmail({
+        recipient: email,
+        subject: t("password-reset-request", preferredLanguage),
+        html: passwordResetTemplate({
+          resetToken: token,
+          preferredLanguage: preferredLanguage,
+          email: identity,
+        }),
+      });
+    },
+    tokensValidForMins: 60,
   },
 });
 
