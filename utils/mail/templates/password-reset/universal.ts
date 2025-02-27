@@ -9,7 +9,7 @@ export function passwordResetTemplate({
   preferredLanguage: "en" | "nl" | "fr" | "tr";
   email: string;
 }) {
-  const resetLink = `${process.env.WEB_URL}/reset-password?token=${resetToken}&email=${email}`;
+  const resetLink = encodeURI(`${process.env.WEB_URL}/reset-password?token=${resetToken}&email=${email}`);
   return ` 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
