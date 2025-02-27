@@ -23,6 +23,7 @@ export default withAuth(
         origin: [
           "https://dfatest.huseyinonal.com",
           "http://localhost:3399",
+          "http://localhost:3454",
           "https://acc.digitalforge.be",
           "https://dfa.huseyinonal.com",
           "https://web.digitalforge.be",
