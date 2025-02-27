@@ -1122,6 +1122,7 @@ export const lists: Lists = {
       currentStock: decimal({ defaultValue: "0" }),
       length: decimal({}),
       width: decimal({}),
+      color: text({}),
       height: decimal({}),
       weight: decimal({}),
       area: decimal({}),

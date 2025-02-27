@@ -4423,6 +4423,7 @@ var lists = {
       currentStock: (0, import_fields.decimal)({ defaultValue: "0" }),
       length: (0, import_fields.decimal)({}),
       width: (0, import_fields.decimal)({}),
+      color: (0, import_fields.text)({}),
       height: (0, import_fields.decimal)({}),
       weight: (0, import_fields.decimal)({}),
       area: (0, import_fields.decimal)({}),

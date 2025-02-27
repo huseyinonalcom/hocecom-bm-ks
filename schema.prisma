@@ -255,6 +255,7 @@ model Material {
   currentStock         Decimal?            @default("0") @postgresql.Decimal(18, 4)
   length               Decimal?            @postgresql.Decimal(18, 4)
   width                Decimal?            @postgresql.Decimal(18, 4)
+  color                String              @default("")
   height               Decimal?            @postgresql.Decimal(18, 4)
   weight               Decimal?            @postgresql.Decimal(18, 4)
   area                 Decimal?            @postgresql.Decimal(18, 4)

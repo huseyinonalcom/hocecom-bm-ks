@@ -1152,6 +1152,7 @@ type Material {
   currentStock: Decimal
   length: Decimal
   width: Decimal
+  color: String
   height: Decimal
   weight: Decimal
   area: Decimal
@@ -1199,6 +1200,7 @@ input MaterialWhereInput {
   currentStock: DecimalNullableFilter
   length: DecimalNullableFilter
   width: DecimalNullableFilter
+  color: StringFilter
   height: DecimalNullableFilter
   weight: DecimalNullableFilter
   area: DecimalNullableFilter
@@ -1270,6 +1272,7 @@ input MaterialOrderByInput {
   currentStock: OrderDirection
   length: OrderDirection
   width: OrderDirection
+  color: OrderDirection
   height: OrderDirection
   weight: OrderDirection
   area: OrderDirection
@@ -1293,6 +1296,7 @@ input MaterialUpdateInput {
   currentStock: Decimal
   length: Decimal
   width: Decimal
+  color: String
   height: Decimal
   weight: Decimal
   area: Decimal
@@ -1380,6 +1384,7 @@ input MaterialCreateInput {
   currentStock: Decimal
   length: Decimal
   width: Decimal
+  color: String
   height: Decimal
   weight: Decimal
   area: Decimal
