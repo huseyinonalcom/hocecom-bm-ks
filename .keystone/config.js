@@ -4648,6 +4648,36 @@ var lists = {
       })
     }
   }),
+  Product: (0, import_core.list)({
+    access: {
+      filter: {
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation
+      },
+      operation: {
+        create: isManager,
+        query: isUser,
+        update: isManager,
+        delete: isManager
+      }
+    },
+    hooks: {
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
+      }
+    },
+    fields: {
+      variants: (0, import_fields.relationship)({
+        ref: "Material.product",
+        many: true
+      }),
+      company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      extraFields: (0, import_fields.json)()
+    }
+  }),
   Material: (0, import_core.list)({
     access: {
       filter: {
@@ -4670,6 +4700,10 @@ var lists = {
       }
     },
     fields: {
+      product: (0, import_fields.relationship)({
+        ref: "Product.variants",
+        many: false
+      }),
       name: (0, import_fields.text)({ validation: { isRequired: true } }),
       nameLocalized: (0, import_fields.json)({
         defaultValue: {
@@ -5312,6 +5346,7 @@ var lists = {
       isBlocked: (0, import_fields.checkbox)({ defaultValue: false }),
       isArchived: (0, import_fields.checkbox)({ defaultValue: false }),
       phone: (0, import_fields.text)(),
+      noEmail: (0, import_fields.checkbox)({ defaultValue: false }),
       role: (0, import_fields.select)({
         type: "string",
         options: [

@@ -100,6 +100,7 @@ model Company {
   from_Document_company           Document[]           @relation("Document_company")
   from_DocumentProduct_company    DocumentProduct[]    @relation("DocumentProduct_company")
   from_File_company               File[]               @relation("File_company")
+  from_Product_company            Product[]            @relation("Product_company")
   from_Material_company           Material[]           @relation("Material_company")
   from_Note_company               Note[]               @relation("Note_company")
   from_Notification_company       Notification[]       @relation("Notification_company")
@@ -243,8 +244,20 @@ model File {
   @@index([accountancyId])
 }
 
+model Product {
+  id          String     @id @default(cuid())
+  variants    Material[] @relation("Material_product")
+  company     Company?   @relation("Product_company", fields: [companyId], references: [id])
+  companyId   String?    @map("company")
+  extraFields Json?
+
+  @@index([companyId])
+}
+
 model Material {
   id                   String              @id @default(cuid())
+  product              Product?            @relation("Material_product", fields: [productId], references: [id])
+  productId            String?             @map("product")
   name                 String              @default("")
   nameLocalized        Json?               @default("{\"en\":\"\",\"nl\":\"\",\"fr\":\"\",\"de\":\"\"}")
   components           AssemblyComponent[] @relation("AssemblyComponent_assembly")
@@ -278,6 +291,7 @@ model Material {
   tags                 Tag[]               @relation("Material_tags")
   extraFields          Json?
 
+  @@index([productId])
   @@index([companyId])
 }
 
@@ -491,6 +505,7 @@ model User {
   isBlocked               Boolean         @default(false)
   isArchived              Boolean         @default(false)
   phone                   String          @default("")
+  noEmail                 Boolean         @default(false)
   role                    String          @default("customer")
   permissions             Json            @default("[]")
   ssid                    String          @default("")
