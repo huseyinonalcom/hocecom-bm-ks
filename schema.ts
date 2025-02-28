@@ -1070,6 +1070,36 @@ export const lists: Lists = {
       }),
     },
   }),
+  Product: list({
+    access: {
+      filter: {
+        query: filterOnCompanyRelationOrCompanyAccountancyRelation,
+        update: filterOnCompanyRelation,
+        delete: filterOnCompanyRelation,
+      },
+      operation: {
+        create: isManager,
+        query: isUser,
+        update: isManager,
+        delete: isManager,
+      },
+    },
+    hooks: {
+      beforeOperation: async ({ operation, context, resolvedData }) => {
+        if (operation === "create") {
+          resolvedData.company = setCompany(operation, context, resolvedData);
+        }
+      },
+    },
+    fields: {
+      variants: relationship({
+        ref: "Material.product",
+        many: true,
+      }),
+      company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      extraFields: json(),
+    },
+  }),
   Material: list({
     access: {
       filter: {
@@ -1092,6 +1122,10 @@ export const lists: Lists = {
       },
     },
     fields: {
+      product: relationship({
+        ref: "Product.variants",
+        many: false,
+      }),
       name: text({ validation: { isRequired: true } }),
       nameLocalized: json({
         defaultValue: {
@@ -1828,6 +1862,7 @@ export const lists: Lists = {
       isBlocked: checkbox({ defaultValue: false }),
       isArchived: checkbox({ defaultValue: false }),
       phone: text(),
+      noEmail: checkbox({ defaultValue: false }),
       role: select({
         type: "string",
         options: [
