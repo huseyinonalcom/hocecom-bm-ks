@@ -770,7 +770,7 @@ export const lists: Lists = {
       },
     },
     fields: {
-      amount: decimal({ validation: { isRequired: true, min: "1" } }),
+      amount: decimal({ validation: { isRequired: true, min: "0" } }),
       stockMovement: relationship({
         ref: "StockMovement.documentProduct",
         many: false,
