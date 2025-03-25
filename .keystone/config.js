@@ -4350,7 +4350,7 @@ var lists = {
       }
     },
     fields: {
-      amount: (0, import_fields.decimal)({ validation: { isRequired: true, min: "1" } }),
+      amount: (0, import_fields.decimal)({ validation: { isRequired: true, min: "0" } }),
       stockMovement: (0, import_fields.relationship)({
         ref: "StockMovement.documentProduct",
         many: false
