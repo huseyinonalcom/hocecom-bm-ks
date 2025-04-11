@@ -172,6 +172,7 @@ model DocumentProduct {
   amount          Decimal        @postgresql.Decimal(18, 4)
   stockMovement   StockMovement? @relation("DocumentProduct_stockMovement", fields: [stockMovementId], references: [id])
   stockMovementId String?        @unique @map("stockMovement")
+  order           Int?
   product         Material?      @relation("DocumentProduct_product", fields: [productId], references: [id])
   productId       String?        @map("product")
   name            String         @default("")

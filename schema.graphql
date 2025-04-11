@@ -800,6 +800,7 @@ type DocumentProduct {
   id: ID!
   amount: Decimal
   stockMovement: StockMovement
+  order: Int
   product: Material
   name: String
   description: String
@@ -829,6 +830,7 @@ input DocumentProductWhereInput {
   id: IDFilter
   amount: DecimalFilter
   stockMovement: StockMovementWhereInput
+  order: IntNullableFilter
   product: MaterialWhereInput
   name: StringFilter
   description: StringFilter
@@ -880,6 +882,7 @@ input DecimalNullableFilter {
 input DocumentProductOrderByInput {
   id: OrderDirection
   amount: OrderDirection
+  order: OrderDirection
   name: OrderDirection
   description: OrderDirection
   tax: OrderDirection
@@ -891,6 +894,7 @@ input DocumentProductOrderByInput {
 input DocumentProductUpdateInput {
   amount: Decimal
   stockMovement: StockMovementRelateToOneForUpdateInput
+  order: Int
   product: MaterialRelateToOneForUpdateInput
   name: String
   description: String
@@ -917,6 +921,7 @@ input DocumentProductUpdateArgs {
 input DocumentProductCreateInput {
   amount: Decimal
   stockMovement: StockMovementRelateToOneForCreateInput
+  order: Int
   product: MaterialRelateToOneForCreateInput
   name: String
   description: String
@@ -3040,25 +3045,24 @@ type KeystoneAdminMeta {
 
 type KeystoneAdminUIListMeta {
   key: String!
+  itemQueryName: String!
+  listQueryName: String!
+  hideCreate: Boolean!
+  hideDelete: Boolean!
   path: String!
   label: String!
   singular: String!
   plural: String!
   description: String
+  initialColumns: [String!]!
   pageSize: Int!
   labelField: String!
   fields: [KeystoneAdminUIFieldMeta!]!
   groups: [KeystoneAdminUIFieldGroupMeta!]!
   graphql: KeystoneAdminUIGraphQL!
-  initialColumns: [String!]!
-  initialSearchFields: [String!]!
   initialSort: KeystoneAdminUISort
-  isSingleton: Boolean!
-  hideCreate: Boolean!
-  hideDelete: Boolean!
   isHidden: Boolean!
-  itemQueryName: String!
-  listQueryName: String!
+  isSingleton: Boolean!
 }
 
 type KeystoneAdminUIFieldMeta {

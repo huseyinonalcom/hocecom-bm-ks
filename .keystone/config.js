@@ -4355,6 +4355,7 @@ var lists = {
         ref: "StockMovement.documentProduct",
         many: false
       }),
+      order: (0, import_fields.integer)(),
       product: (0, import_fields.relationship)({
         ref: "Material.documentProducts",
         many: false
