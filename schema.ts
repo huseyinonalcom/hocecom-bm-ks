@@ -775,6 +775,7 @@ export const lists: Lists = {
         ref: "StockMovement.documentProduct",
         many: false,
       }),
+      order: integer(),
       product: relationship({
         ref: "Material.documentProducts",
         many: false,
