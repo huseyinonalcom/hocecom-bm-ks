@@ -1,7 +1,9 @@
+import { accountingSupplierParty } from "../components/accountingSupplierParty";
+import { accountingCustomerParty } from "../components/accountingCustomerParty";
 import { dateFormatOnlyDate } from "../../../formatters/dateformatters";
 import { addDaysToDate } from "../../../addtodate";
 
-export const purchaseToXml = (
+export const invoiceToXml = (
   document: any,
   pdf: {
     filename: string;
@@ -13,7 +15,8 @@ export const purchaseToXml = (
     const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
 
     const establishment = document.establishment;
-    const supplier = document.supplier;
+    const customer = document.customer;
+    const docAddress = document.docAddress;
 
     // Convert string values to numbers consistently
     const documentProducts = document.products;
@@ -21,7 +24,7 @@ export const purchaseToXml = (
     let taxRates: any[] = [];
 
     // First collect unique tax rates
-    documentProducts.forEach((product: { tax: any }) => {
+    documentProducts.forEach((product: any) => {
       if (!taxRates.includes(Number(product.tax))) {
         taxRates.push(Number(product.tax));
       }
@@ -64,28 +67,21 @@ export const purchaseToXml = (
 
     // Add validation
     if (isNaN(total) || isNaN(totalBeforeTax) || isNaN(totalTax)) {
-      console.error(
-        "Calculation error purchase:",
-        JSON.stringify({
-          documentNumber: document.number,
-          values: {
-            total,
-            totalBeforeTax,
-            totalTax,
-            taxRates,
-            documentProducts: documentProducts.map((p: { totalWithTaxAfterReduction: any; tax: any }) =>
-              JSON.stringify({
-                ...p,
-                subTotal: Number(p.totalWithTaxAfterReduction),
-                tax: Number(p.tax),
-              })
-            ),
-          },
-        })
-      );
+      console.error("Calculation error:", {
+        documentNumber: document.number,
+        values: {
+          total,
+          totalBeforeTax,
+          totalTax,
+          taxRates,
+          documentProducts: documentProducts.map((p: { totalWithTaxAfterReduction: any; tax: any }) => ({
+            ...p,
+            subTotal: Number(p.totalWithTaxAfterReduction),
+            tax: Number(p.tax),
+          })),
+        },
+      });
     }
-
-    const taxIdCleaned = establishment.taxID.slice(2).replaceAll(".", "").trim();
 
     const content = `<?xml version="1.0" encoding="utf-8"?>
 <Invoice xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"
@@ -100,7 +96,7 @@ export const purchaseToXml = (
   xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
   xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
   <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
-  <cbc:CustomizationID>1.0</cbc:CustomizationID>
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#conformant#urn:UBL.BE:1.0.0.20180214</cbc:CustomizationID>
   <cbc:ProfileID>E-FFF.BE BILLIT.BE</cbc:ProfileID>
   <cbc:ID>${document.number}</cbc:ID>
   <cbc:CopyIndicator>false</cbc:CopyIndicator>
@@ -115,82 +111,37 @@ export const purchaseToXml = (
       <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="${pdf.filename}">
       ${pdf.content.toString("base64")}
       </cbc:EmbeddedDocumentBinaryObject>
-  </cac:Attachment>
+    </cac:Attachment>
   </cac:AdditionalDocumentReference>
-  <cac:AccountingSupplierParty>
-   <cac:Party>
-      <cbc:EndpointID schemeID="${supplier.address.country}:CBE">${supplier.taxId.slice(2).replaceAll(".", "").replaceAll(" ", "")}</cbc:EndpointID>
-      <cac:PartyName>
-        <cbc:Name>${supplier.name}</cbc:Name>
-      </cac:PartyName>
-      <cac:PostalAddress>
-        <cbc:StreetName>${supplier.address.street}</cbc:StreetName>
-        <cbc:BuildingNumber>${supplier.address.door}</cbc:BuildingNumber>
-        <cbc:CityName>${supplier.address.city}</cbc:CityName>
-        <cbc:PostalZone>${supplier.address.zip}</cbc:PostalZone>
-        <cac:Country>
-          <cbc:IdentificationCode>${supplier.address.country}</cbc:IdentificationCode>
-          <cbc:Name>${supplier.address.country}</cbc:Name>
-        </cac:Country>
-      </cac:PostalAddress>
-      <cac:PartyTaxScheme>
-        <cbc:CompanyID>${supplier.taxId.replaceAll(".", "").replaceAll(" ", "")}</cbc:CompanyID>
-        <cac:TaxScheme>
-          <cbc:ID>VAT</cbc:ID>
-        </cac:TaxScheme>
-      </cac:PartyTaxScheme>
-      <cac:PartyLegalEntity>
-        <cbc:RegistrationName>${supplier.name}</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="${supplier.address.country}:CBE">${supplier.taxId.slice(2).replaceAll(".", "").replaceAll(" ", "")}</cbc:CompanyID>
-      </cac:PartyLegalEntity>
-      <cac:Contact>
-        <cbc:Name>${supplier.name}</cbc:Name>
-        <cbc:ElectronicMail />
-      </cac:Contact>
-    </cac:Party>
-  </cac:AccountingSupplierParty>
-  <cac:AccountingCustomerParty>  
-    <cac:Party>
-      <cbc:EndpointID schemeID="BE:CBE">${taxIdCleaned}</cbc:EndpointID>
-      <cac:PartyIdentification>
-        <cbc:ID schemeAgencyID="BE" schemeAgencyName="KBO" schemeURI="http://www.e-fff.be/KBO">
-          ${taxIdCleaned}</cbc:ID>
-      </cac:PartyIdentification>
-      <cac:PartyName>
-        <cbc:Name>BELANTRA</cbc:Name>
-      </cac:PartyName>
-      <cac:PostalAddress>
-        <cbc:StreetName>Bist</cbc:StreetName>
-        <cbc:BuildingNumber>19</cbc:BuildingNumber>
-        <cbc:CityName>Aartselaar</cbc:CityName>
-        <cbc:PostalZone>2630</cbc:PostalZone>
-        <cac:Country>
-          <cbc:IdentificationCode>BE</cbc:IdentificationCode>
-          <cbc:Name>België</cbc:Name>
-        </cac:Country>
-      </cac:PostalAddress>
-      <cac:PartyTaxScheme>
-        <cbc:CompanyID>${establishment.taxID.replaceAll(".", "").replaceAll(" ", "")}</cbc:CompanyID>
-        <cac:TaxScheme>
-          <cbc:ID>VAT</cbc:ID>
-        </cac:TaxScheme>
-      </cac:PartyTaxScheme>
-      <cac:PartyLegalEntity>
-        <cbc:RegistrationName>BELANTRA</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="BE:CBE">${taxIdCleaned}</cbc:CompanyID>
-      </cac:PartyLegalEntity>
-      <cac:Contact>
-        <cbc:Name>Ayfema</cbc:Name>
-        <cbc:ElectronicMail>info@ayfema.com</cbc:ElectronicMail>
-      </cac:Contact>
-    </cac:Party>
-   
-  </cac:AccountingCustomerParty>
+  ${accountingSupplierParty({
+    supplierParty: {
+      name: establishment.name,
+      taxID: establishment.taxID,
+      email: establishment.company.owner.email,
+      address: establishment.address,
+    },
+  })}
+  ${accountingCustomerParty({
+    customerParty: {
+      name: customer.firstName + " " + customer.lastName,
+      taxID: customer.customerTaxNumber,
+      email: customer.email,
+      address: docAddress,
+    },
+  })}
   <cac:PaymentMeans>
     <cbc:PaymentMeansCode listID="UN/ECE 4461" listName="Payment Means"
       listURI="http://docs.oasis-open.org/ubl/os-UBL-2.0-update/cl/gc/default/PaymentMeansCode-2.0.gc">
       1</cbc:PaymentMeansCode>
     <cbc:PaymentDueDate>${dateFormatOnlyDate(addDaysToDate(document.date, 15).toString())}</cbc:PaymentDueDate>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID schemeName="IBAN">BE07068937722366</cbc:ID>
+      <cac:FinancialInstitutionBranch>
+        <cac:FinancialInstitution>
+          <cbc:ID schemeName="BIC">GKCCBEBB</cbc:ID>
+        </cac:FinancialInstitution>
+      </cac:FinancialInstitutionBranch>
+    </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
   ${taxRates.map((taxRate) => {
     return `<cac:TaxTotal>
@@ -214,7 +165,7 @@ export const purchaseToXml = (
     <cbc:TaxInclusiveAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:TaxInclusiveAmount>
     <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
-  ${documentProducts.map((docProd: { totalWithTaxAfterReduction: any; tax: any; name: any; amount: any }, i: number) => {
+  ${documentProducts.map((docProd: { totalWithTaxAfterReduction: any; tax: any; name: string; amount: any }, i: number) => {
     let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
     return `<cac:InvoiceLine>
     <cbc:ID>${i + 1}</cbc:ID>
@@ -257,12 +208,13 @@ export const purchaseToXml = (
   </cac:InvoiceLine>`;
   })}
 </Invoice>`;
+
     return {
       content,
       filename,
     };
   } catch (error) {
-    console.error("Error generating xml for purchase document: ", error);
+    console.error("Error generating xml for invoice document: ", error);
     return {
       content: "",
       filename: "",

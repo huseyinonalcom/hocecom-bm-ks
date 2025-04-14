@@ -1,4 +1,4 @@
-import { dateFormatBe, dateFormatOnlyDate } from "../utils/formatters/dateformatters";
+import { dateFormatBe, dateFormatOnlyDate } from "./formatters/dateformatters";
 import { generateCreditNoteOut } from "./pdf/document/creditnotepdf";
 import { purchaseToXml } from "./peppol/xml/purchase/peppolpurchase";
 import { generateInvoiceOut } from "./pdf/document/invoicepdf";

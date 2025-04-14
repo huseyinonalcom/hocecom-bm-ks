@@ -34,7 +34,7 @@ __export(keystone_exports, {
 });
 module.exports = __toCommonJS(keystone_exports);
 
-// utils/pdf/common/positioning.ts
+// lib/pdf/common/positioning.ts
 var pageSizesDimensions = {
   A4: {
     width: 595,
@@ -71,7 +71,7 @@ var flexBox = ({
   };
 };
 
-// utils/formatters/formatcurrency.ts
+// lib/formatters/formatcurrency.ts
 var formatCurrency = (value, currency) => {
   let lang;
   switch (currency) {
@@ -91,7 +91,7 @@ var formatCurrency = (value, currency) => {
   }).format(value);
 };
 
-// utils/localization/locales/en.ts
+// lib/localization/locales/en.ts
 var enjson = {
   "invoice-details": "Invoice Details",
   "purchase-details": "Purchase Details",
@@ -415,7 +415,7 @@ var enjson = {
   "password-reset-alternate": "In case the button did not work, click here or use the following link to reset your password"
 };
 
-// utils/localization/locales/fr.ts
+// lib/localization/locales/fr.ts
 var frjson = {
   "invoice-details": "Details de Facture",
   "purchase-details": "D\xE9tails de Achat",
@@ -739,7 +739,7 @@ var frjson = {
   "password-reset-alternate": "Si le bouton ne fonctionne pas, cliquez ici ou utilisez le lien suivant pour r\xE9initialiser votre mot de passe"
 };
 
-// utils/localization/locales/nl.ts
+// lib/localization/locales/nl.ts
 var nljson = {
   "invoice-details": "Factuur Details",
   "purchase-details": "Aankoop Details",
@@ -1063,7 +1063,7 @@ var nljson = {
   "password-reset-alternate": "In het geval de knop niet werkt, klik hier of gebruik de volgende link om uw wachtwoord te resetten"
 };
 
-// utils/localization/locales/tr.ts
+// lib/localization/locales/tr.ts
 var trjson = {
   "invoice-details": "Fatura Detaylar\u0131",
   "purchase-details": "Sat\u0131nalma Detaylar\u0131",
@@ -1387,7 +1387,7 @@ var trjson = {
   "password-reset-alternate": "E\u011Fer d\xFC\u011Fme \xE7al\u0131\u015Fm\u0131yorsa, buraya t\u0131klay\u0131n veya \u015Fifrenizi s\u0131f\u0131rlamak i\xE7in bu ba\u011Flant\u0131y\u0131 kullan\u0131n"
 };
 
-// utils/localization/localization.ts
+// lib/localization/localization.ts
 var locales = {
   en: enjson,
   fr: frjson,
@@ -1409,7 +1409,7 @@ var t = (key, lang) => {
   return res;
 };
 
-// utils/pdf/common/invoicingdetails.ts
+// lib/pdf/common/invoicingdetails.ts
 var pdfInvoicingDetails = ({
   doc,
   document: invoiceDoc,
@@ -1455,7 +1455,7 @@ var pdfInvoicingDetails = ({
   return doc.y;
 };
 
-// utils/pdf/common/productstable.ts
+// lib/pdf/common/productstable.ts
 var generateTableRow = (doc, y, name, description, price, amount, reduction, tax, subtotal, isHeader = false) => {
   const pageSize = "A4";
   const columnCount = 18;
@@ -1543,7 +1543,7 @@ var generateProductTable = (doc, documentProducts, y, document) => {
   return doc.y;
 };
 
-// utils/pdf/common/deliverydetails.ts
+// lib/pdf/common/deliverydetails.ts
 var pdfDeliveryDetails = ({
   doc,
   document: invoiceDoc,
@@ -1588,7 +1588,7 @@ var pdfDeliveryDetails = ({
   return doc.y;
 };
 
-// utils/pdf/common/paymentdetails.ts
+// lib/pdf/common/paymentdetails.ts
 var pdfPaymentDetails = ({ doc, document: invoiceDoc, x, y, width }) => {
   const tr = (key) => {
     try {
@@ -1642,7 +1642,7 @@ var pdfPaymentDetails = ({ doc, document: invoiceDoc, x, y, width }) => {
   return doc.y;
 };
 
-// utils/pdf/common/taxtotals.ts
+// lib/pdf/common/taxtotals.ts
 var taxTable = ({ doc, x, endY, document }) => {
   const tr = (key) => t(key, document.customer.preferredLanguage);
   let taxRates = [];
@@ -1671,7 +1671,7 @@ var taxTable = ({ doc, x, endY, document }) => {
   return endY - taxRates.length * 15;
 };
 
-// utils/pdf/common/pdfhead.ts
+// lib/pdf/common/pdfhead.ts
 var pdfHead = async ({
   doc,
   document,
@@ -1759,7 +1759,7 @@ var pdfHead = async ({
   }
 };
 
-// utils/pdf/document/creditnotepdf.ts
+// lib/pdf/document/creditnotepdf.ts
 var import_buffer = require("buffer");
 async function generateCreditNoteOut({
   document,
@@ -1782,7 +1782,7 @@ async function generateCreditNoteOut({
       const PDFDocument = require("pdfkit");
       const doc = new PDFDocument({ size: pageSize, margin: 20 });
       const buffers = [];
-      doc.font("./utils/fonts/Roboto-Regular.ttf");
+      doc.font("./lib/fonts/Roboto-Regular.ttf");
       doc.on("data", buffers.push.bind(buffers));
       await pdfHead({
         doc,
@@ -1847,13 +1847,13 @@ async function generateCreditNoteOut({
   });
 }
 
-// utils/formatters/dateformatters.ts
+// lib/formatters/dateformatters.ts
 var dateFormatBe = (date) => {
   if (!date) return "";
   return new Date(date).toLocaleDateString("fr-FR");
 };
 
-// utils/pdf/common/paymenthistory.ts
+// lib/pdf/common/paymenthistory.ts
 var paymentsTable = ({ doc, x, yEnd, payments, invoiceDoc }) => {
   const tr = (key) => {
     try {
@@ -1875,10 +1875,10 @@ var paymentsTable = ({ doc, x, yEnd, payments, invoiceDoc }) => {
   doc.text(`${tr("payment-history")}:`, x, yEnd - 10 * payments.length - 15);
 };
 
-// utils/pdf/document/invoicepdf.ts
+// lib/pdf/document/invoicepdf.ts
 var import_buffer2 = require("buffer");
 
-// utils/pdf/common/packagereturntotals.ts
+// lib/pdf/common/packagereturntotals.ts
 var returnPackage = ({ doc, x, endY, document }) => {
   const extraConfigReturnPackage = document.establishment?.documentExtras?.returnPackage ?? {};
   const documentExtras = document.extras?.values ?? [];
@@ -1918,7 +1918,7 @@ var returnPackage = ({ doc, x, endY, document }) => {
   return endY;
 };
 
-// utils/pdf/document/invoicepdf.ts
+// lib/pdf/document/invoicepdf.ts
 async function generateInvoiceOut({
   document,
   logoBuffer
@@ -1941,7 +1941,7 @@ async function generateInvoiceOut({
       const PDFDocument = require("pdfkit");
       const doc = new PDFDocument({ size: pageSize, margin: 20 });
       const buffers = [];
-      doc.font("./utils/fonts/Roboto-Regular.ttf");
+      doc.font("./lib/fonts/Roboto-Regular.ttf");
       doc.on("data", buffers.push.bind(buffers));
       await pdfHead({
         doc,
@@ -2017,7 +2017,7 @@ async function generateInvoiceOut({
   });
 }
 
-// utils/mail/sendmail.ts
+// lib/mail/sendmail.ts
 var sendMail = async ({
   recipient,
   bcc,
@@ -2358,7 +2358,7 @@ var mailPart2 = `</td>
 </html>
 `;
 
-// utils/notifications/documentemail.ts
+// lib/notifications/documentemail.ts
 var sendDocumentEmail = async ({ documentId, context }) => {
   const postedDocument = await context.sudo().query.Document.findOne({
     where: { id: documentId },
@@ -2387,7 +2387,7 @@ var sendDocumentEmail = async ({ documentId, context }) => {
   }
 };
 
-// utils/bulkdocumentsenderstart.ts
+// lib/bulkdocumentsenderstart.ts
 var import_worker_threads = require("worker_threads");
 var import_path = __toESM(require("path"));
 async function fetchCompany(companyID, context) {
@@ -2470,7 +2470,7 @@ var bulkSendDocuments = async ({ docTypes, context }) => {
   }
 };
 
-// utils/random.ts
+// lib/random.ts
 function generateRandomString(length) {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
@@ -2481,7 +2481,7 @@ function generateRandomString(length) {
   return result;
 }
 
-// utils/utils.ts
+// lib/utils.ts
 var transformEmail = ({ email, companyId }) => {
   let parts = email.split("@");
   let localPart = parts[0].split("+")[0];
@@ -2494,7 +2494,7 @@ var reverseTransformEmail = (email) => {
   return originalLocalPart + "@" + domainPart;
 };
 
-// utils/eutaxes.ts
+// lib/eutaxes.ts
 var eutaxes = [
   {
     code: "AT",
@@ -2714,7 +2714,7 @@ var eutaxes = [
   }
 ];
 
-// utils/bol-offer-sync.ts
+// lib/bol-offer-sync.ts
 var bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";
 var bolApiUrl = "https://api.bol.com/retailer";
 var bolTokens = [];
@@ -3111,7 +3111,7 @@ var createCustomer = async ({ orderDetails, company, context }) => {
   }
 };
 
-// utils/fileupload.ts
+// lib/fileupload.ts
 var import_client_s3 = require("@aws-sdk/client-s3");
 var import_config = require("dotenv/config");
 var s3Client = new import_client_s3.S3Client({
@@ -3156,7 +3156,7 @@ var import_session = require("@keystone-6/core/session");
 var import_auth = require("@keystone-6/auth");
 var import_crypto = require("crypto");
 
-// utils/mail/sendsystememail.ts
+// lib/mail/sendsystememail.ts
 var sendSystemEmail = async ({
   recipient,
   subject,
@@ -3202,7 +3202,7 @@ var sendSystemEmail = async ({
   }
 };
 
-// utils/mail/templates/password-reset/universal.ts
+// lib/mail/templates/password-reset/universal.ts
 function passwordResetTemplate({
   resetToken,
   preferredLanguage,
@@ -3439,7 +3439,7 @@ var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
 var import_types = require("@keystone-6/core/types");
 
-// utils/calculations/documentproducts.ts
+// lib/calculations/documentproducts.ts
 var calculateBaseTotal = ({
   price,
   amount,
@@ -3486,7 +3486,7 @@ var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reducti
   return Number(totalAfterReduction * (1 + tax / 100));
 };
 
-// utils/accesscontrol/rbac.ts
+// lib/accesscontrol/rbac.ts
 var isSuperAdmin = ({ session: session2 }) => {
   if (!session2) return false;
   if (session2.data.role == "superadmin") return true;
@@ -3553,7 +3553,7 @@ var isUser = ({ session: session2 }) => {
   return false;
 };
 
-// utils/accesscontrol/tenantac.ts
+// lib/accesscontrol/tenantac.ts
 var filterOnCompanyRelation = ({ session: session2 }) => {
   if (!session2) return false;
   try {

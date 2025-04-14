@@ -1,9 +1,9 @@
-import { generateCreditNoteOut } from "./utils/pdf/document/creditnotepdf";
-import { sendDocumentEmail } from "./utils/notifications/documentemail";
-import { generateInvoiceOut } from "./utils/pdf/document/invoicepdf";
-import { bulkSendDocuments } from "./utils/bulkdocumentsenderstart";
-import { syncBolOrders } from "./utils/bol-offer-sync";
-import { fileUpload } from "./utils/fileupload";
+import { generateCreditNoteOut } from "./lib/pdf/document/creditnotepdf";
+import { sendDocumentEmail } from "./lib/notifications/documentemail";
+import { generateInvoiceOut } from "./lib/pdf/document/invoicepdf";
+import { bulkSendDocuments } from "./lib/bulkdocumentsenderstart";
+import { syncBolOrders } from "./lib/bol-offer-sync";
+import { fileUpload } from "./lib/fileupload";
 import { mkdirSync, writeFileSync } from "fs";
 import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";

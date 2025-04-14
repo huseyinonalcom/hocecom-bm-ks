@@ -8,7 +8,7 @@ import {
   calculateTotalWithoutTaxAfterReduction,
   calculateTotalWithTaxBeforeReduction,
   calculateTotalWithTaxAfterReduction,
-} from "./utils/calculations/documentproducts";
+} from "./lib/calculations/documentproducts";
 import {
   isAdminAccountantManager,
   isCompanyAdmin,
@@ -20,14 +20,14 @@ import {
   isWorker,
   isIntern,
   isUser,
-} from "./utils/accesscontrol/rbac";
+} from "./lib/accesscontrol/rbac";
 import {
   filterOnCompanyRelationOrCompanyAccountancyRelation,
   filterOnIdAccountancyOrAccountancyCompanyRelation,
   filterOnIdCompanyOrCompanyAccountancyRelation,
   filterOnCompanyRelation,
   filterOnIdAccountancy,
-} from "./utils/accesscontrol/tenantac";
+} from "./lib/accesscontrol/tenantac";
 
 interface documentExtra {
   type: string;

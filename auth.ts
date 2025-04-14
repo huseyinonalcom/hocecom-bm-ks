@@ -1,11 +1,11 @@
 import { statelessSessions } from "@keystone-6/core/session";
-import { sendMail } from "./utils/mail/sendmail";
+import { sendMail } from "./lib/mail/sendmail";
 import { createAuth } from "@keystone-6/auth";
 import { randomBytes } from "crypto";
-import { sendSystemEmail } from "./utils/mail/sendsystememail";
-import { t } from "./utils/localization/localization";
-import { passwordResetTemplate } from "./utils/mail/templates/password-reset/universal";
-import { reverseTransformEmail, transformEmail } from "./utils/utils";
+import { sendSystemEmail } from "./lib/mail/sendsystememail";
+import { t } from "./lib/localization/localization";
+import { passwordResetTemplate } from "./lib/mail/templates/password-reset/universal";
+import { reverseTransformEmail, transformEmail } from "./lib/utils";
 
 let sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret && process.env.NODE_ENV !== "production") {

@@ -1,5 +1,4 @@
-
-const participantIdentifierSchemes = {
+export const participantIdentifierSchemes = {
   version: "9",
   "entry-count": 96,
   values: [

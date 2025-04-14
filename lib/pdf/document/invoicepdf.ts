@@ -38,7 +38,7 @@ export async function generateInvoiceOut({
       const doc = new PDFDocument({ size: pageSize, margin: 20 });
       const buffers: Uint8Array[] = [];
 
-      doc.font("./utils/fonts/Roboto-Regular.ttf");
+      doc.font("./lib/fonts/Roboto-Regular.ttf");
 
       doc.on("data", buffers.push.bind(buffers));
 
