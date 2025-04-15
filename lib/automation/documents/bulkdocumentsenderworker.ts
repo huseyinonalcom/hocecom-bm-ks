@@ -1,9 +1,6 @@
-import { dateFormatBe, dateFormatOnlyDate } from "./formatters/dateformatters";
-import { generateCreditNoteOut } from "./pdf/document/creditnotepdf";
-import { purchaseToXml } from "./peppol/xml/purchase/peppolpurchase";
-import { generateInvoiceOut } from "./pdf/document/invoicepdf";
-import { invoiceToXml } from "./peppol/xml/invoice/peppolinvoice";
-import { sendMail } from "./mail/sendmail";
+import { dateFormatBe, dateFormatOnlyDate } from "../../formatters/dateformatters";
+import { writeAllXmlsToTempDir } from "../../peppol/xml/convert";
+import { sendMail } from "../../mail/sendmail";
 import { workerData } from "worker_threads";
 import archiver from "archiver";
 import fs from "fs-extra";
@@ -16,9 +13,13 @@ const company = workerData.company;
 const run = async () => {
   try {
     documents.sort((a: { date: any }, b: { date: any }) => a.date - b.date);
+
     const tempDir = path.join(os.tmpdir(), "pdf_temp" + company.id + dateFormatOnlyDate(documents.at(0).date));
+
     await fs.emptyDir(tempDir);
+
     await writeAllXmlsToTempDir(tempDir, documents);
+
     const zipPath = path.join(
       tempDir,
       "documents_" +
@@ -29,6 +30,7 @@ const run = async () => {
         dateFormatOnlyDate(documents.at(-1).date) +
         ".zip"
     );
+    
     await createZip(tempDir, zipPath);
     await sendEmailWithAttachment(zipPath);
     console.info(
@@ -44,71 +46,6 @@ const run = async () => {
     console.error("An error occurred:", error);
   }
 };
-
-async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): Promise<string[]> {
-  const response = await fetch(documents.at(0).establishment.logo.url);
-  let logoBuffer = await Buffer.from(await response.arrayBuffer());
-  await fs.ensureDir(tempDir);
-
-  const filePaths = await Promise.all(
-    documents.map(async (doc) => {
-      try {
-        let pdf;
-        let xml;
-
-        if (doc.type == "invoice") {
-          pdf = await generateInvoiceOut({
-            document: doc,
-            logoBuffer: logoBuffer,
-          });
-          xml = invoiceToXml(doc, pdf);
-        } else if (doc.type == "credit_note") {
-          pdf = await generateCreditNoteOut({
-            document: doc,
-            logoBuffer: logoBuffer,
-          });
-          xml = invoiceToXml(doc, pdf);
-        } else if (doc.type == "purchase") {
-          const response = await fetch(doc.files[0].url);
-          const buffer = await response.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf",
-          };
-          xml = purchaseToXml(doc, pdf);
-        } else if (doc.type == "credit_note_incoming") {
-          const response = await fetch(doc.files[0].url);
-          const buffer = await response.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf",
-          };
-          xml = purchaseToXml(doc, pdf);
-        }
-
-        if (!xml) {
-          throw new Error(`xml failed: ${doc.type}`);
-        }
-
-        if (!pdf) {
-          throw new Error(`Unknown document type: ${doc.type}`);
-        }
-
-        const filePath = path.join(tempDir, xml.filename);
-        await fs.writeFile(filePath, xml.content);
-
-        return filePath;
-      } catch (error) {
-        console.error("Error generating xml for document: ", doc.number, error);
-        return null;
-      }
-    })
-  );
-
-  return filePaths.filter((path) => path !== null);
-}
 
 async function createZip(tempDir: string, zipPath: string): Promise<void> {
   return new Promise((resolve, reject) => {

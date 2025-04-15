@@ -1,32 +1,50 @@
 import { countryNameToAbbreviation } from "../../../countries";
 import { sanitizeText } from "../utils/sanitization";
 import { Address } from "../../types/Address";
+import { reverseTransformEmail } from "../../../utils";
 
 export interface Party {
-  name: string;
+  address: Address;
   taxID?: string;
   email: string;
-  address: Address;
+  name: string;
 }
 
 // TODO: make it work with countries other than Belgium
 
 export const party = ({ party }: { party: Party }): string => {
   const taxIDCleaned = ({ taxID }: { taxID: string }) => {
-    return taxID.replace("BE", "").replaceAll(".", "").trim();
+    let cleaned = taxID;
+
+    // Remove everything before and including ":" if present
+    if (cleaned.includes(":")) {
+      cleaned = cleaned.split(":").pop() || "";
+    }
+
+    // Remove "BE", all dots, then trim
+    return cleaned.replace("BE", "").replaceAll(".", "").replaceAll(" ", "");
   };
 
-  return `
-    <cac:Party>
+  const taxIDWithCountry = ({ taxID }: { taxID: string }) => {
+    let cleaned = taxID;
+
+    // Remove everything before and including ":" if present
+    if (cleaned.includes(":")) {
+      cleaned = cleaned.split(":").pop() || "";
+    }
+
+    return cleaned.replaceAll(".", "").replaceAll(" ", "");
+  };
+
+  return `<cac:Party>
             ${
               party.taxID
-                ? `
-                <cbc:EndpointID schemeID="BE:CBE">${taxIDCleaned({ taxID: party.taxID })}</cbc:EndpointID>
+                ? `<cbc:EndpointID schemeID="BE:CBE">${taxIDCleaned({ taxID: party.taxID })}</cbc:EndpointID>
                 <cac:PartyIdentification>
                     <cbc:ID schemeAgencyID="BE" schemeAgencyName="KBO" schemeURI="http://www.e-fff.be/KBO">${taxIDCleaned({ taxID: party.taxID })}</cbc:ID>
                 </cac:PartyIdentification>
                 <cac:PartyTaxScheme>
-                    <cbc:CompanyID>${party.taxID.replaceAll(".", "").replaceAll(" ", "")}</cbc:CompanyID>
+                    <cbc:CompanyID>${taxIDWithCountry({ taxID: party.taxID })}</cbc:CompanyID>
                     <cac:TaxScheme>
                         <cbc:ID>VAT</cbc:ID>
                     </cac:TaxScheme>
@@ -34,8 +52,7 @@ export const party = ({ party }: { party: Party }): string => {
                 <cac:PartyLegalEntity>
                     <cbc:RegistrationName>${sanitizeText(party.name)}</cbc:RegistrationName>
                     <cbc:CompanyID schemeID="BE:CBE">${taxIDCleaned({ taxID: party.taxID })}</cbc:CompanyID>
-                </cac:PartyLegalEntity>               
-                `
+                </cac:PartyLegalEntity>`
                 : ``
             }
             <cac:PartyName>
@@ -53,8 +70,7 @@ export const party = ({ party }: { party: Party }): string => {
             </cac:PostalAddress>
             <cac:Contact>
                 <cbc:Name>${sanitizeText(party.name)}</cbc:Name>
-                <cbc:ElectronicMail>${sanitizeText(party.email)}</cbc:ElectronicMail>
+                <cbc:ElectronicMail>${sanitizeText(reverseTransformEmail(party.email))}</cbc:ElectronicMail>
             </cac:Contact>
-        </cac:Party>
-    `;
+        </cac:Party>`;
 };

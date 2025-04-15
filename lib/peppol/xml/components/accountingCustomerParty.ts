@@ -1,8 +1,7 @@
 import { Party, party } from "./party";
 
 export const accountingCustomerParty = ({ customerParty }: { customerParty: Party }): string => {
-  return `
-    <cac:AccountingCustomerParty>
+  return `<cac:AccountingCustomerParty>
         ${party({
           party: {
             name: customerParty.name,
@@ -11,6 +10,5 @@ export const accountingCustomerParty = ({ customerParty }: { customerParty: Part
             address: customerParty.address,
           },
         })}
-    </cac:AccountingCustomerParty>
-    `;
+    </cac:AccountingCustomerParty>`;
 };

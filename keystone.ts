@@ -1,7 +1,7 @@
+import { bulkSendDocuments } from "./lib/automation/documents/bulkdocumentsenderstart";
 import { generateCreditNoteOut } from "./lib/pdf/document/creditnotepdf";
 import { sendDocumentEmail } from "./lib/notifications/documentemail";
 import { generateInvoiceOut } from "./lib/pdf/document/invoicepdf";
-import { bulkSendDocuments } from "./lib/bulkdocumentsenderstart";
 import { syncBolOrders } from "./lib/bol-offer-sync";
 import { fileUpload } from "./lib/fileupload";
 import { mkdirSync, writeFileSync } from "fs";
@@ -9,6 +9,9 @@ import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { lists } from "./schema";
 import "dotenv/config";
+import { fetchDocumentByID, fetchDocuments } from "./lib/fetch/documents";
+import { writeAllXmlsToTempDir } from "./lib/peppol/xml/convert";
+import fs from "fs-extra";
 
 export default withAuth(
   config({
@@ -185,6 +188,37 @@ export default withAuth(
         generateTestPDF({ id: "cm5o7jq5h00171076radma5m7" });
         generateTestPDF({ id: "cm6jvd8jr0012fzyf7do7p2rb" });
         generateTestPDF({ id: "cm6z0evlf000046uokgw38ksl" });
+
+        const generateTestXML = async ({ id }: { id: string }) => {
+          try {
+            const doc = await fetchDocumentByID(id, context);
+            await writeAllXmlsToTempDir("./test", [doc]);
+          } catch (error) {
+            console.error("Error generating test xml", error);
+          }
+        };
+
+        generateTestXML({ id: "cm5f6jlkt0004jyetrc2nfvcx" });
+        generateTestXML({ id: "cm6jd1xop00bz1152hdifh8nb" });
+
+        const dumpXmls = async ({ types, companyID }: { types: string[]; companyID: string }) => {
+          try {
+            const docs = await fetchDocuments({
+              companyID: companyID,
+              docTypes: types,
+              all: true,
+              context,
+            });
+            console.info("Found", docs.length, "documents");
+            await fs.ensureDir(`./test/${companyID}`);
+            await writeAllXmlsToTempDir(`./test/${companyID}`, docs);
+          } catch (error) {
+            console.error("Error generating test xml", error);
+          }
+        };
+
+        dumpXmls({ types: ["purchase", "credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
+        dumpXmls({ types: ["purchase", "credit_note_incoming", "invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5" });
       },
     },
     lists,
