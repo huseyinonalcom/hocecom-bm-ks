@@ -3,7 +3,7 @@ import { sendSystemEmail } from "./sendsystememail";
 import { readdir, stat } from "node:fs/promises";
 
 // Maximum size for email attachments (in bytes) - 7MB
-const MAX_EMAIL_SIZE = 7 * 1024 * 1024;
+const MAX_EMAIL_SIZE = 8.9 * 1024 * 1024;
 
 export const sendAllFilesInDirectory = async ({ recipient, dirPath }: { recipient: string; dirPath: string }) => {
   try {

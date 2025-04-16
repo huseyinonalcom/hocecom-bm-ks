@@ -230,13 +230,28 @@ export default withAuth(
         generateTestXML({ id: "cm5f6jlkt0004jyetrc2nfvcx" });
         generateTestXML({ id: "cm6jd1xop00bz1152hdifh8nb" });
 
-        const dumpXmls = async ({ types, companyID, recipient }: { types: string[]; companyID: string; recipient: string }) => {
+        const dumpXmls = async ({
+          types,
+          companyID,
+          recipient,
+          period,
+        }: {
+          types: string[];
+          companyID: string;
+          recipient: string;
+          period?: {
+            from: Date;
+            to: Date;
+          };
+        }) => {
           try {
             const docs = await fetchDocuments({
               companyID: companyID,
               docTypes: types,
               all: true,
               context,
+              start: period?.from,
+              end: period?.to,
             });
             console.info("Found", docs.length, "documents");
             await rm(`./test/${companyID}`, { recursive: true, force: true });
@@ -253,15 +268,13 @@ export default withAuth(
         };
 
         const dump = async () => {
-          // dumpXmls({ types: ["purchase", "credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
-          await dumpXmls({ types: ["invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5", recipient: "ocr-077080-22-V@import.octopus.be" });
           await dumpXmls({
             types: ["purchase", "credit_note_incoming"],
             companyID: "cm63oyuhn002zbkcezisd9sm5",
             recipient: "ocr-077080-22-A@import.octopus.be",
           });
         };
-        // dump();
+        dump();
       },
     },
     lists,

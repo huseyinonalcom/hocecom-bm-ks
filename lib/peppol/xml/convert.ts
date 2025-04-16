@@ -17,6 +17,7 @@ export async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): 
   // generate/download the pdfs
   // pdfs for incoming documents have to be uploaded by tenant
   // outgoing documents are generated
+
   const filePaths = await Promise.all(
     documents.map(async (doc) => {
       try {
@@ -36,31 +37,31 @@ export async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): 
           });
           xml = invoiceToXml(doc, pdf);
         } else if (doc.type == "purchase") {
-          const response = await fetch(doc.files[0].url);
-          const buffer = await response.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf",
-          };
+          if (doc.files.length > 0) {
+            const response = await fetch(doc.files[0].url);
+            const buffer = await response.arrayBuffer();
+            pdf = {
+              filename: doc.files[0].name,
+              content: Buffer.from(buffer),
+              contentType: "application/pdf",
+            };
+          }
           xml = purchaseToXml(doc, pdf);
         } else if (doc.type == "credit_note_incoming") {
-          const response = await fetch(doc.files[0].url);
-          const buffer = await response.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf",
-          };
+          if (doc.files.length > 0) {
+            const response = await fetch(doc.files[0].url);
+            const buffer = await response.arrayBuffer();
+            pdf = {
+              filename: doc.files[0].name,
+              content: Buffer.from(buffer),
+              contentType: "application/pdf",
+            };
+          }
           xml = purchaseToXml(doc, pdf);
         }
 
         if (!xml) {
           throw new Error(`xml failed: ${doc.type}`);
-        }
-
-        if (!pdf) {
-          throw new Error(`Unknown document type: ${doc.type}`);
         }
 
         const filePath = path.join(tempDir, xml.filename);

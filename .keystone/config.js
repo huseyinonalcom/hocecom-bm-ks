@@ -52,8 +52,8 @@ var fetchDocumentQuery = "id date type total number origin externalId prefix cur
 async function fetchDocuments({
   companyID,
   docTypes,
-  month,
-  year,
+  start,
+  end,
   all,
   context
 }) {
@@ -82,13 +82,22 @@ async function fetchDocuments({
       }
     };
   }
+  if (start && end) {
+    where = {
+      ...where,
+      date: {
+        gte: start,
+        lte: end
+      }
+    };
+  }
   let fetchedDocuments = [];
   let round = 0;
   let keepGoing = true;
-  const fetchedDocumentsPer = 30;
+  const fetchedDocumentsPer = 20;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   while (keepGoing) {
-    await sleep(1e3);
+    await sleep(3e3);
     try {
       let documents = await context.sudo().query.Document.findMany({
         orderBy: [{ date: "asc" }],
@@ -100,6 +109,7 @@ async function fetchDocuments({
       fetchedDocuments = fetchedDocuments.concat(documents);
       keepGoing = documents.length > 0;
       round++;
+      console.log(`Fetched documents (round: ${round}): `, documents.length);
     } catch (error) {
       console.error("Error fetching documents: ", error);
       keepGoing = false;
@@ -2514,30 +2524,34 @@ var mailPart2 = `</td>
 
 // lib/notifications/documentemail.ts
 var sendDocumentEmail = async ({ documentId, context }) => {
-  const postedDocument = await context.sudo().query.Document.findOne({
-    where: { id: documentId },
-    query: "prefix number extras date externalId currency origin totalTax totalPaid extras totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone documentExtras phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
-  });
-  if (postedDocument.type == "invoice" || postedDocument.type == "credit_note") {
-    let bcc;
-    if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
-      bcc = postedDocument.customer.email2;
-    }
-    let attachment;
-    if (postedDocument.type == "invoice") {
-      attachment = await generateInvoiceOut({ document: postedDocument });
-    } else if (postedDocument.type == "credit_note") {
-      attachment = await generateCreditNoteOut({ document: postedDocument });
-    }
-    sendMail({
-      establishment: postedDocument.establishment,
-      recipient: postedDocument.customer.email.split("+")[0] + "@" + postedDocument.customer.email.split("@")[1],
-      bcc,
-      subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
-      company: postedDocument.establishment.company,
-      attachments: [attachment],
-      html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
+  try {
+    const postedDocument = await context.sudo().query.Document.findOne({
+      where: { id: documentId },
+      query: "prefix number extras date externalId currency origin totalTax totalPaid extras totalToPay total deliveryDate type payments { value timestamp type } products { name reduction description price amount totalTax totalWithTaxAfterReduction tax } delAddress { street door zip city floor province country } docAddress { street door zip city floor province country } customer { email email2 firstName lastName phone customerCompany preferredLanguage customerTaxNumber } establishment { name bankAccount1 bankAccount2 bankAccount3 taxID phone documentExtras phone2 company { emailHost emailPort emailUser emailPassword emailUser } address { street door zip city floor province country } logo { url } }"
     });
+    if (postedDocument.type == "invoice" || postedDocument.type == "credit_note") {
+      let bcc;
+      if (postedDocument.customer.email2 && postedDocument.customer.email2 != "") {
+        bcc = postedDocument.customer.email2;
+      }
+      let attachment;
+      if (postedDocument.type == "invoice") {
+        attachment = await generateInvoiceOut({ document: postedDocument });
+      } else if (postedDocument.type == "credit_note") {
+        attachment = await generateCreditNoteOut({ document: postedDocument });
+      }
+      sendMail({
+        establishment: postedDocument.establishment,
+        recipient: postedDocument.customer.email.split("+")[0] + "@" + postedDocument.customer.email.split("@")[1],
+        bcc,
+        subject: `Document ${postedDocument.prefix ?? ""}${postedDocument.number}`,
+        company: postedDocument.establishment.company,
+        attachments: [attachment],
+        html: `<p>Beste ${postedDocument.customer.firstName + " " + postedDocument.customer.lastName},</p><p>In bijlage vindt u het document voor ons recentste transactie.</p><p>Met vriendelijke groeten.</p><p>${postedDocument.establishment.name}</p>`
+      });
+    }
+  } catch (error) {
+    console.error(`Notification failure: ${error}`);
   }
 };
 
@@ -2856,7 +2870,7 @@ function addDaysToDate(dateStr, daysToAdd) {
 // lib/peppol/xml/purchase/peppolpurchase.ts
 var purchaseToXml = (document, pdf) => {
   try {
-    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
+    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}_${document.id}.xml`;
     const establishment = document.establishment;
     const supplier = document.supplier;
     const documentProducts = document.products;
@@ -2938,11 +2952,11 @@ var purchaseToXml = (document, pdf) => {
   <cac:AdditionalDocumentReference>
     <cbc:ID>${filename}</cbc:ID>
     <cbc:DocumentType>CommercialInvoice</cbc:DocumentType>
-    <cac:Attachment>
+    ${pdf ? `<cac:Attachment>
       <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="${pdf.filename}">
       ${pdf.content.toString("base64")}
       </cbc:EmbeddedDocumentBinaryObject>
-  </cac:Attachment>
+  </cac:Attachment>` : ``}
   </cac:AdditionalDocumentReference>
   ${accountingSupplierParty({
       supplierParty: {
@@ -3245,29 +3259,30 @@ async function writeAllXmlsToTempDir(tempDir, documents) {
           });
           xml = invoiceToXml(doc, pdf);
         } else if (doc.type == "purchase") {
-          const response2 = await fetch(doc.files[0].url);
-          const buffer = await response2.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf"
-          };
+          if (doc.files.length > 0) {
+            const response2 = await fetch(doc.files[0].url);
+            const buffer = await response2.arrayBuffer();
+            pdf = {
+              filename: doc.files[0].name,
+              content: Buffer.from(buffer),
+              contentType: "application/pdf"
+            };
+          }
           xml = purchaseToXml(doc, pdf);
         } else if (doc.type == "credit_note_incoming") {
-          const response2 = await fetch(doc.files[0].url);
-          const buffer = await response2.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf"
-          };
+          if (doc.files.length > 0) {
+            const response2 = await fetch(doc.files[0].url);
+            const buffer = await response2.arrayBuffer();
+            pdf = {
+              filename: doc.files[0].name,
+              content: Buffer.from(buffer),
+              contentType: "application/pdf"
+            };
+          }
           xml = purchaseToXml(doc, pdf);
         }
         if (!xml) {
           throw new Error(`xml failed: ${doc.type}`);
-        }
-        if (!pdf) {
-          throw new Error(`Unknown document type: ${doc.type}`);
         }
         const filePath = import_path2.default.join(tempDir, xml.filename);
         await (0, import_promises.writeFile)(filePath, xml.content);
@@ -6383,7 +6398,7 @@ var getTempDir = () => {
 // lib/mail/sendAllFilesInDirectory.ts
 var import_node_path = __toESM(require("node:path"));
 var import_promises2 = require("node:fs/promises");
-var MAX_EMAIL_SIZE = 7 * 1024 * 1024;
+var MAX_EMAIL_SIZE = 8.9 * 1024 * 1024;
 var sendAllFilesInDirectory = async ({ recipient, dirPath }) => {
   try {
     const files = await (0, import_promises2.readdir)(dirPath);
@@ -6645,13 +6660,20 @@ var keystone_default = withAuth(
         };
         generateTestXML({ id: "cm5f6jlkt0004jyetrc2nfvcx" });
         generateTestXML({ id: "cm6jd1xop00bz1152hdifh8nb" });
-        const dumpXmls = async ({ types, companyID, recipient }) => {
+        const dumpXmls = async ({
+          types,
+          companyID,
+          recipient,
+          period
+        }) => {
           try {
             const docs = await fetchDocuments({
               companyID,
               docTypes: types,
               all: true,
-              context
+              context,
+              start: period?.from,
+              end: period?.to
             });
             console.info("Found", docs.length, "documents");
             await (0, import_promises3.rm)(`./test/${companyID}`, { recursive: true, force: true });
@@ -6666,13 +6688,13 @@ var keystone_default = withAuth(
           }
         };
         const dump = async () => {
-          await dumpXmls({ types: ["invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5", recipient: "ocr-077080-22-V@import.octopus.be" });
           await dumpXmls({
             types: ["purchase", "credit_note_incoming"],
             companyID: "cm63oyuhn002zbkcezisd9sm5",
             recipient: "ocr-077080-22-A@import.octopus.be"
           });
         };
+        dump();
       }
     },
     lists,

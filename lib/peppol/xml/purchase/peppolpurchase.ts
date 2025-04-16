@@ -5,14 +5,16 @@ import { addDaysToDate } from "../../../calculations/dates/addToDate";
 
 export const purchaseToXml = (
   document: any,
-  pdf: {
+  pdf?: {
     filename: string;
     content: Buffer;
     contentType: string;
   }
 ) => {
   try {
-    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
+    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}_${
+      document.id
+    }.xml`;
 
     const establishment = document.establishment;
     const supplier = document.supplier;
@@ -111,11 +113,15 @@ export const purchaseToXml = (
   <cac:AdditionalDocumentReference>
     <cbc:ID>${filename}</cbc:ID>
     <cbc:DocumentType>CommercialInvoice</cbc:DocumentType>
-    <cac:Attachment>
+    ${
+      pdf
+        ? `<cac:Attachment>
       <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="${pdf.filename}">
       ${pdf.content.toString("base64")}
       </cbc:EmbeddedDocumentBinaryObject>
-  </cac:Attachment>
+  </cac:Attachment>`
+        : ``
+    }
   </cac:AdditionalDocumentReference>
   ${accountingSupplierParty({
     supplierParty: {

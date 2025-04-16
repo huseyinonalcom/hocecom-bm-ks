@@ -7,15 +7,15 @@ const fetchDocumentQuery =
 export async function fetchDocuments({
   companyID,
   docTypes,
-  month,
-  year,
+  start,
+  end,
   all,
   context,
 }: {
   companyID: string;
   docTypes: string[];
-  month?: number;
-  year?: number;
+  start?: Date;
+  end?: Date;
   all?: boolean;
   context: KeystoneContext;
 }): Promise<any[]> {
@@ -45,14 +45,25 @@ export async function fetchDocuments({
       },
     };
   }
+
+  if (start && end) {
+    where = {
+      ...where,
+      date: {
+        gte: start,
+        lte: end,
+      },
+    };
+  }
+
   let fetchedDocuments: any[] = [];
   let round = 0;
   let keepGoing = true;
-  const fetchedDocumentsPer = 30;
+  const fetchedDocumentsPer = 20;
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   while (keepGoing) {
-    await sleep(1000);
+    await sleep(3000);
     try {
       let documents = await context.sudo().query.Document.findMany({
         orderBy: [{ date: "asc" }],
@@ -64,6 +75,7 @@ export async function fetchDocuments({
       fetchedDocuments = fetchedDocuments.concat(documents);
       keepGoing = documents.length > 0;
       round++;
+      console.log(`Fetched documents (round: ${round}): `, documents.length); 
     } catch (error) {
       console.error("Error fetching documents: ", error);
       keepGoing = false;
