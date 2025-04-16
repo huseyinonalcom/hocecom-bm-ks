@@ -13,6 +13,7 @@ import { mkdir, rm } from "fs/promises";
 import { lists } from "./schema";
 import "dotenv/config";
 import { getTempDir } from "./lib/filesystem/getTempDir";
+import { sendAllFilesInDirectory } from "./lib/mail/sendAllFilesInDirectory";
 
 export default withAuth(
   config({
@@ -241,6 +242,11 @@ export default withAuth(
             await rm(`./test/${companyID}`, { recursive: true, force: true });
             await mkdir(`./test/${companyID}`);
             await writeAllXmlsToTempDir(`./test/${companyID}`, docs);
+
+            sendAllFilesInDirectory({
+              recipient: "ocr-077080-22-V@import.octopus.be",
+              dirPath: `./test/${companyID}`,
+            });
           } catch (error) {
             console.error("Error generating test xml", error);
           }

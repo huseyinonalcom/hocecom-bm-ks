@@ -85,7 +85,7 @@ async function fetchDocuments({
   let fetchedDocuments = [];
   let round = 0;
   let keepGoing = true;
-  const fetchedDocumentsPer = 50;
+  const fetchedDocumentsPer = 30;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   while (keepGoing) {
     await sleep(1e3);
@@ -3278,7 +3278,7 @@ async function writeAllXmlsToTempDir(tempDir, documents) {
       }
     })
   );
-  return filePaths.filter((path3) => path3 !== null);
+  return filePaths.filter((path4) => path4 !== null);
 }
 
 // lib/random.ts
@@ -4230,7 +4230,7 @@ var session = (0, import_session.statelessSessions)({
 
 // keystone.ts
 var import_core2 = require("@keystone-6/core");
-var import_promises2 = require("fs/promises");
+var import_promises3 = require("fs/promises");
 
 // schema.ts
 var import_fields = require("@keystone-6/core/fields");
@@ -6380,6 +6380,75 @@ var getTempDir = () => {
   return import_os.default.tmpdir();
 };
 
+// lib/mail/sendAllFilesInDirectory.ts
+var import_node_path = __toESM(require("node:path"));
+var import_promises2 = require("node:fs/promises");
+var MAX_EMAIL_SIZE = 7 * 1024 * 1024;
+var sendAllFilesInDirectory = async ({ recipient, dirPath }) => {
+  try {
+    const files = await (0, import_promises2.readdir)(dirPath);
+    const fileDetails = await Promise.all(
+      files.map(async (file) => {
+        const filePath = import_node_path.default.join(dirPath, file);
+        const stats = await (0, import_promises2.stat)(filePath);
+        return {
+          path: filePath,
+          size: stats.size,
+          name: file
+        };
+      })
+    );
+    const batches = [];
+    let currentBatch = [];
+    let currentBatchSize = 0;
+    for (const file of fileDetails) {
+      if (currentBatchSize + file.size > MAX_EMAIL_SIZE && currentBatch.length > 0) {
+        batches.push(currentBatch);
+        currentBatch = [];
+        currentBatchSize = 0;
+      }
+      if (file.size > MAX_EMAIL_SIZE) {
+        console.warn(`File ${file.name} exceeds the 7MB limit and may not be sent properly`);
+      }
+      currentBatch.push({ path: file.path });
+      currentBatchSize += file.size;
+    }
+    if (currentBatch.length > 0) {
+      batches.push(currentBatch);
+    }
+    for (let i = 0; i < batches.length; i++) {
+      await sendEmailWithAttachments(batches[i], recipient);
+      if (i < batches.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1e3));
+      }
+    }
+    return {
+      success: true,
+      fileCount: fileDetails.length,
+      batchCount: batches.length
+    };
+  } catch (error) {
+    console.error("Error sending files from directory:", error);
+    return {
+      success: false,
+      error
+    };
+  }
+};
+async function sendEmailWithAttachments(attachments, recipient) {
+  await sendSystemEmail({
+    recipient,
+    subject: `Documenten`,
+    attachments: attachments.map((attachment) => {
+      return {
+        filename: attachment.path.replaceAll("\\", "/").split("/").at(-1),
+        path: attachment.path
+      };
+    }),
+    html: `<p>Beste, in bijlage alle gevraagde documenten.</p>`
+  });
+}
+
 // keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
@@ -6585,9 +6654,13 @@ var keystone_default = withAuth(
               context
             });
             console.info("Found", docs.length, "documents");
-            await (0, import_promises2.rm)(`./test/${companyID}`, { recursive: true, force: true });
-            await (0, import_promises2.mkdir)(`./test/${companyID}`);
+            await (0, import_promises3.rm)(`./test/${companyID}`, { recursive: true, force: true });
+            await (0, import_promises3.mkdir)(`./test/${companyID}`);
             await writeAllXmlsToTempDir(`./test/${companyID}`, docs);
+            sendAllFilesInDirectory({
+              recipient: "ocr-077080-22-V@import.octopus.be",
+              dirPath: `./test/${companyID}`
+            });
           } catch (error) {
             console.error("Error generating test xml", error);
           }

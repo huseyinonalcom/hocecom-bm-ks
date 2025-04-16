@@ -48,7 +48,7 @@ export async function fetchDocuments({
   let fetchedDocuments: any[] = [];
   let round = 0;
   let keepGoing = true;
-  const fetchedDocumentsPer = 50;
+  const fetchedDocumentsPer = 30;
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   while (keepGoing) {
