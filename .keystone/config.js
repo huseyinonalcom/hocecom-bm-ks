@@ -48,6 +48,7 @@ function getMondayAndSundayTwoWeeksAgo() {
 }
 
 // lib/fetch/documents.ts
+var fetchDocumentQuery = "id date type total number origin externalId prefix currency comments totalPaid totalTax references totalToPay value externalId origin taxIncluded deliveryDate files { id name url } creator { id email role firstName lastName name } customer { id email role customerCompany preferredLanguage customerTaxNumber firstName lastName name customerAddresses { id street door zip city floor province country } } delAddress { id street door zip city floor province country } docAddress { id street door zip city floor province country } payments { id value isDeleted isVerified reference type timestamp creator { id email role firstName lastName name } } supplier { id name taxId contactMail address { id street door zip city floor province country } } fromDocument { id type number creator { id email role firstName lastName name } } toDocument { id type number creator { id email role firstName lastName name } } products { id amount name tax price pricedBy description reduction totalWithTaxAfterReduction totalTax totalReduction product { id name tax price pricedBy } } establishment { id name phone phone2 taxID bankAccount1 bankAccount2 defaultCurrency bankAccount3 address { id street door zip city floor province country } logo { id url } company { owner { email } } }";
 async function fetchDocuments({
   companyID,
   docTypes,
@@ -93,7 +94,7 @@ async function fetchDocuments({
         orderBy: [{ date: "asc" }],
         take: fetchedDocumentsPer,
         skip: round * fetchedDocumentsPer,
-        query: "id date type total number origin externalId prefix currency comments totalPaid totalTax references totalToPay value externalId origin taxIncluded deliveryDate files { id name url } creator { id email role firstName lastName name } customer { id email role customerCompany preferredLanguage customerTaxNumber firstName lastName name customerAddresses { id street door zip city floor province country } } delAddress { id street door zip city floor province country } docAddress { id street door zip city floor province country } payments { id value isDeleted isVerified reference type timestamp creator { id email role firstName lastName name } } supplier { id name taxId contactMail address { id street door zip city floor province country } } fromDocument { id type number creator { id email role firstName lastName name } } toDocument { id type number creator { id email role firstName lastName name } } products { id amount name tax price pricedBy description reduction totalWithTaxAfterReduction totalTax totalReduction product { id name tax price pricedBy } } establishment { id name phone phone2 taxID bankAccount1 bankAccount2 defaultCurrency bankAccount3 address { id street door zip city floor province country } logo { id url } company { owner { email } } }",
+        query: fetchDocumentQuery,
         where
       });
       fetchedDocuments = fetchedDocuments.concat(documents);
@@ -106,13 +107,27 @@ async function fetchDocuments({
   }
   return Array.from(fetchedDocuments);
 }
-async function fetchDocumentByID(documentID, context) {
-  const fetchedDocument = await context.sudo().query.Document.findOne({
-    query: "id date type total number origin externalId prefix currency comments totalPaid totalTax references totalToPay value externalId origin taxIncluded deliveryDate files { id name url } creator { id email role firstName lastName name } customer { id email role customerCompany preferredLanguage customerTaxNumber firstName lastName name customerAddresses { id street door zip city floor province country } } delAddress { id street door zip city floor province country } docAddress { id street door zip city floor province country } payments { id value isDeleted isVerified reference type timestamp creator { id email role firstName lastName name } } supplier { id name taxId contactMail address { id street door zip city floor province country } } fromDocument { id type number creator { id email role firstName lastName name } } toDocument { id type number creator { id email role firstName lastName name } } products { id amount name tax price pricedBy description reduction totalWithTaxAfterReduction totalTax totalReduction product { id name tax price pricedBy } } establishment { id name phone phone2 taxID bankAccount1 bankAccount2 defaultCurrency bankAccount3 address { id street door zip city floor province country } logo { id url } company { owner { email } } }",
-    where: {
-      id: documentID
+async function fetchDocumentByID({ documentID, context, sudo = false }) {
+  let fetchedDocument;
+  try {
+    if (sudo) {
+      fetchedDocument = await context.sudo().query.Document.findOne({
+        query: fetchDocumentQuery,
+        where: {
+          id: documentID
+        }
+      });
+    } else {
+      fetchedDocument = await context.query.Document.findOne({
+        query: fetchDocumentQuery,
+        where: {
+          id: documentID
+        }
+      });
     }
-  });
+  } catch (e) {
+    console.error(e);
+  }
   return fetchedDocument;
 }
 
@@ -6448,6 +6463,24 @@ var keystone_default = withAuth(
             return;
           }
         });
+        app.post("/rest/documents/xml", async (req, res) => {
+          if (!req.query.id) {
+            return res.status(400).json({ message: "No id provided" });
+          }
+          const keystoneContext = await context.withRequest(req, res);
+          const documentID = req.query.id.toString();
+          let document;
+          try {
+            document = await fetchDocumentByID({
+              documentID,
+              context: keystoneContext
+            });
+            res.status(200);
+          } catch (error) {
+            console.error("Upload error:", error);
+            res.status(500).json({ error: "Upload failed" });
+          }
+        });
         cron.schedule("*/5 * * * *", async () => {
           try {
             syncBolOrders({ context });
@@ -6521,7 +6554,7 @@ var keystone_default = withAuth(
         generateTestPDF({ id: "cm6z0evlf000046uokgw38ksl" });
         const generateTestXML = async ({ id }) => {
           try {
-            const doc = await fetchDocumentByID(id, context);
+            const doc = await fetchDocumentByID({ documentID: id, context });
             await writeAllXmlsToTempDir("./test", [doc]);
           } catch (error) {
             console.error("Error generating test xml", error);

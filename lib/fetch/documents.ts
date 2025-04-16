@@ -1,6 +1,9 @@
 import { getMondayAndSundayTwoWeeksAgo } from "../calculations/dates/getStartAndEnd";
 import { KeystoneContext } from "@keystone-6/core/types";
 
+const fetchDocumentQuery =
+  "id date type total number origin externalId prefix currency comments totalPaid totalTax references totalToPay value externalId origin taxIncluded deliveryDate files { id name url } creator { id email role firstName lastName name } customer { id email role customerCompany preferredLanguage customerTaxNumber firstName lastName name customerAddresses { id street door zip city floor province country } } delAddress { id street door zip city floor province country } docAddress { id street door zip city floor province country } payments { id value isDeleted isVerified reference type timestamp creator { id email role firstName lastName name } } supplier { id name taxId contactMail address { id street door zip city floor province country } } fromDocument { id type number creator { id email role firstName lastName name } } toDocument { id type number creator { id email role firstName lastName name } } products { id amount name tax price pricedBy description reduction totalWithTaxAfterReduction totalTax totalReduction product { id name tax price pricedBy } } establishment { id name phone phone2 taxID bankAccount1 bankAccount2 defaultCurrency bankAccount3 address { id street door zip city floor province country } logo { id url } company { owner { email } } }";
+
 export async function fetchDocuments({
   companyID,
   docTypes,
@@ -55,8 +58,7 @@ export async function fetchDocuments({
         orderBy: [{ date: "asc" }],
         take: fetchedDocumentsPer,
         skip: round * fetchedDocumentsPer,
-        query:
-          "id date type total number origin externalId prefix currency comments totalPaid totalTax references totalToPay value externalId origin taxIncluded deliveryDate files { id name url } creator { id email role firstName lastName name } customer { id email role customerCompany preferredLanguage customerTaxNumber firstName lastName name customerAddresses { id street door zip city floor province country } } delAddress { id street door zip city floor province country } docAddress { id street door zip city floor province country } payments { id value isDeleted isVerified reference type timestamp creator { id email role firstName lastName name } } supplier { id name taxId contactMail address { id street door zip city floor province country } } fromDocument { id type number creator { id email role firstName lastName name } } toDocument { id type number creator { id email role firstName lastName name } } products { id amount name tax price pricedBy description reduction totalWithTaxAfterReduction totalTax totalReduction product { id name tax price pricedBy } } establishment { id name phone phone2 taxID bankAccount1 bankAccount2 defaultCurrency bankAccount3 address { id street door zip city floor province country } logo { id url } company { owner { email } } }",
+        query: fetchDocumentQuery,
         where: where,
       });
       fetchedDocuments = fetchedDocuments.concat(documents);
@@ -71,13 +73,26 @@ export async function fetchDocuments({
   return Array.from(fetchedDocuments);
 }
 
-export async function fetchDocumentByID(documentID: string, context: KeystoneContext): Promise<any> {
-  const fetchedDocument = await context.sudo().query.Document.findOne({
-    query:
-      "id date type total number origin externalId prefix currency comments totalPaid totalTax references totalToPay value externalId origin taxIncluded deliveryDate files { id name url } creator { id email role firstName lastName name } customer { id email role customerCompany preferredLanguage customerTaxNumber firstName lastName name customerAddresses { id street door zip city floor province country } } delAddress { id street door zip city floor province country } docAddress { id street door zip city floor province country } payments { id value isDeleted isVerified reference type timestamp creator { id email role firstName lastName name } } supplier { id name taxId contactMail address { id street door zip city floor province country } } fromDocument { id type number creator { id email role firstName lastName name } } toDocument { id type number creator { id email role firstName lastName name } } products { id amount name tax price pricedBy description reduction totalWithTaxAfterReduction totalTax totalReduction product { id name tax price pricedBy } } establishment { id name phone phone2 taxID bankAccount1 bankAccount2 defaultCurrency bankAccount3 address { id street door zip city floor province country } logo { id url } company { owner { email } } }",
-    where: {
-      id: documentID,
-    },
-  });
+export async function fetchDocumentByID({ documentID, context, sudo = false }: { documentID: string; context: KeystoneContext; sudo?: boolean }): Promise<any> {
+  let fetchedDocument;
+  try {
+    if (sudo) {
+      fetchedDocument = await context.sudo().query.Document.findOne({
+        query: fetchDocumentQuery,
+        where: {
+          id: documentID,
+        },
+      });
+    } else {
+      fetchedDocument = await context.query.Document.findOne({
+        query: fetchDocumentQuery,
+        where: {
+          id: documentID,
+        },
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
   return fetchedDocument;
 }

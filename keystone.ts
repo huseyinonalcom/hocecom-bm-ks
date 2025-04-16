@@ -12,6 +12,7 @@ import { config } from "@keystone-6/core";
 import { mkdir, rm } from "fs/promises";
 import { lists } from "./schema";
 import "dotenv/config";
+import { getTempDir } from "./lib/filesystem/getTempDir";
 
 export default withAuth(
   config({
@@ -113,6 +114,33 @@ export default withAuth(
           }
         });
 
+        app.post("/rest/documents/xml", async (req, res) => {
+          if (!req.query.id) {
+            return res.status(400).json({ message: "No id provided" });
+          }
+          const keystoneContext = await context.withRequest(req, res);
+
+          const documentID = req.query.id.toString();
+
+          let document;
+          try {
+            document = await fetchDocumentByID({
+              documentID,
+              context: keystoneContext,
+            });
+
+            if (document) {
+              const xmlFile = (await writeAllXmlsToTempDir(`${getTempDir()}/${documentID}`, [document])).at(0);
+              res.status(200).sendFile(xmlFile!);
+            } else {
+              res.status(400).json({ error: "This document does not exist or you do not have access to it." });
+            }
+          } catch (error) {
+            console.error("GET XML error:", error);
+            res.status(500).json({ error: "An unknown error occured." });
+          }
+        });
+
         cron.schedule("*/5 * * * *", async () => {
           try {
             syncBolOrders({ context });
@@ -191,7 +219,7 @@ export default withAuth(
 
         const generateTestXML = async ({ id }: { id: string }) => {
           try {
-            const doc = await fetchDocumentByID(id, context);
+            const doc = await fetchDocumentByID({ documentID: id, context, sudo: true });
             await writeAllXmlsToTempDir("./test", [doc]);
           } catch (error) {
             console.error("Error generating test xml", error);

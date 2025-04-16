@@ -2,7 +2,7 @@ import { generateCreditNoteOut } from "../../pdf/document/creditnotepdf";
 import { purchaseToXml } from "../../peppol/xml/purchase/peppolpurchase";
 import { invoiceToXml } from "../../peppol/xml/invoice/peppolinvoice";
 import { generateInvoiceOut } from "../../pdf/document/invoicepdf";
-import fs from "fs-extra";
+import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 
 export async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): Promise<string[]> {
@@ -10,7 +10,8 @@ export async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): 
   const response = await fetch(documents.at(0).establishment.logo.url);
   let logoBuffer = await Buffer.from(await response.arrayBuffer());
 
-  await fs.ensureDir(tempDir);
+  await rm(tempDir, { recursive: true, force: true });
+  await mkdir(tempDir);
 
   // generate the xmls
   // generate/download the pdfs
@@ -63,7 +64,7 @@ export async function writeAllXmlsToTempDir(tempDir: string, documents: any[]): 
         }
 
         const filePath = path.join(tempDir, xml.filename);
-        await fs.writeFile(filePath, xml.content);
+        await writeFile(filePath, xml.content);
 
         return filePath;
       } catch (error) {
