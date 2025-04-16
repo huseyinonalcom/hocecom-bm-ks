@@ -114,7 +114,7 @@ export default withAuth(
           }
         });
 
-        app.post("/rest/documents/xml", async (req, res) => {
+        app.get("/rest/documents/xml", async (req, res) => {
           if (!req.query.id) {
             return res.status(400).json({ message: "No id provided" });
           }
