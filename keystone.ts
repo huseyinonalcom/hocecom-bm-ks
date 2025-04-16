@@ -230,7 +230,7 @@ export default withAuth(
         generateTestXML({ id: "cm5f6jlkt0004jyetrc2nfvcx" });
         generateTestXML({ id: "cm6jd1xop00bz1152hdifh8nb" });
 
-        const dumpXmls = async ({ types, companyID }: { types: string[]; companyID: string }) => {
+        const dumpXmls = async ({ types, companyID, recipient }: { types: string[]; companyID: string; recipient: string }) => {
           try {
             const docs = await fetchDocuments({
               companyID: companyID,
@@ -244,7 +244,7 @@ export default withAuth(
             await writeAllXmlsToTempDir(`./test/${companyID}`, docs);
 
             sendAllFilesInDirectory({
-              recipient: "ocr-077080-22-V@import.octopus.be",
+              recipient: recipient,
               dirPath: `./test/${companyID}`,
             });
           } catch (error) {
@@ -252,8 +252,16 @@ export default withAuth(
           }
         };
 
-        // dumpXmls({ types: ["credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
-        dumpXmls({ types: ["invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5" });
+        const dump = async () => {
+          // dumpXmls({ types: ["purchase", "credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
+          await dumpXmls({ types: ["invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5", recipient: "ocr-077080-22-V@import.octopus.be" });
+          await dumpXmls({
+            types: ["purchase", "credit_note_incoming"],
+            companyID: "cm63oyuhn002zbkcezisd9sm5",
+            recipient: "ocr-077080-22-A@import.octopus.be",
+          });
+        };
+        // dump();
       },
     },
     lists,
