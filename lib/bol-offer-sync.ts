@@ -1,6 +1,6 @@
 import { KeystoneContext } from "@keystone-6/core/types";
 import { generateRandomString } from "./random";
-import { transformEmail } from "./utils";
+import { transformEmail } from "./mail/transformEmail";
 import { eutaxes } from "./eutaxes";
 
 const bolAuthUrl = "https://login.bol.com/token?grant_type=client_credentials";

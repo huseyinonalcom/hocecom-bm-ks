@@ -34,7 +34,7 @@ __export(keystone_exports, {
 });
 module.exports = __toCommonJS(keystone_exports);
 
-// lib/calculations/dates.ts
+// lib/calculations/dates/getStartAndEnd.ts
 function getMondayAndSundayTwoWeeksAgo() {
   const today = /* @__PURE__ */ new Date();
   const dayOfWeek = today.getDay();
@@ -2526,18 +2526,225 @@ var sendDocumentEmail = async ({ documentId, context }) => {
   }
 };
 
-// lib/random.ts
-function generateRandomString(length) {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+// lib/countries.ts
+var countryNameToAbbreviation = (name) => {
+  const abbreviaton = countries.find((country) => country.names.find((countryName) => countryName.toLowerCase() == name.toLowerCase()))?.alpha2;
+  return abbreviaton ?? name;
+};
+var countries = [
+  {
+    id: 40,
+    name: "Austria",
+    names: ["Autriche", "\xD6sterreich", "Austria", "\xC1ustria", "Oostenrijk", "Avusturya"],
+    alpha2: "at",
+    alpha3: "aut"
+  },
+  {
+    id: 56,
+    name: "Belgium",
+    names: ["Belgique", "Belgien", "Belgie", "Belgio", "B\xE9lgica", "Belgi\xEB", "Belgia", "Bel\xE7ika", "Belgium"],
+    alpha2: "be",
+    alpha3: "bel"
+  },
+  {
+    id: 100,
+    name: "Bulgaria",
+    names: ["Bulgarie", "Bulgarien", "Bulg\xE1ria", "Bulgarije", "Bu\u0142garia", "Bulgaristan", "Bulgaria"],
+    alpha2: "bg",
+    alpha3: "bgr"
+  },
+  {
+    id: 191,
+    name: "Croatia",
+    names: ["Croatie", "Kroatien", "Croacia", "Croazia", "Cro\xE1cia", "Kroati\xEB", "Chorwacja", "H\u0131rvatistan", "Croatia"],
+    alpha2: "hr",
+    alpha3: "hrv"
+  },
+  {
+    id: 203,
+    name: "Czechia",
+    names: ["Tch\xE9quie", "Tschechien", "Rep\xFAblica Checa", "Rep. Ceca", "Ch\xE9quia", "Tsjechi\xEB", "Czechy", "\xC7ekya", "Czechia"],
+    alpha2: "cz",
+    alpha3: "cze"
+  },
+  {
+    id: 208,
+    name: "Denmark",
+    names: ["Danemark", "D\xE4nemark", "Dinamarca", "Danimarca", "Denemarken", "Dania", "Danimarka", "Denmark"],
+    alpha2: "dk",
+    alpha3: "dnk"
+  },
+  {
+    id: 233,
+    name: "Estonia",
+    names: ["Estonie", "Estland", "Estonia", "Est\xF3nia", "Estonya"],
+    alpha2: "ee",
+    alpha3: "est"
+  },
+  {
+    id: 246,
+    name: "Finland",
+    names: ["Finlande", "Finnland", "Finlandia", "Finl\xE2ndia", "Finland", "Finlandiya"],
+    alpha2: "fi",
+    alpha3: "fin"
+  },
+  {
+    id: 250,
+    name: "France",
+    names: ["France", "Frankreich", "Francia", "Fran\xE7a", "Frankrijk", "Francja", "Fransa"],
+    alpha2: "fr",
+    alpha3: "fra"
+  },
+  {
+    id: 276,
+    name: "Germany",
+    names: ["Allemagne", "Deutschland", "Alemania", "Germania", "Alemanha", "Duitsland", "Niemcy", "Almanya", "Germany"],
+    alpha2: "de",
+    alpha3: "deu"
+  },
+  {
+    id: 300,
+    name: "Greece",
+    names: ["Gr\xE8ce", "Griechenland", "Grecia", "Gr\xE9cia", "Griekenland", "Grecja", "Yunanistan", "Greece"],
+    alpha2: "gr",
+    alpha3: "grc"
+  },
+  {
+    id: 348,
+    name: "Hungary",
+    names: ["Hongrie", "Ungarn", "Hungr\xEDa", "Ungheria", "Hungria", "Hongarije", "W\u0119gry", "Macaristan", "Hungary"],
+    alpha2: "hu",
+    alpha3: "hun"
+  },
+  {
+    id: 372,
+    name: "Ireland",
+    names: ["Irlande", "Irland", "Irlanda", "Ierland", "Irlandia", "\u0130rlanda", "Ireland"],
+    alpha2: "ie",
+    alpha3: "irl"
+  },
+  {
+    id: 380,
+    name: "Italy",
+    names: ["Italie", "Italien", "Italia", "It\xE1lia", "Itali\xEB", "W\u0142ochy", "\u0130talya", "Italy"],
+    alpha2: "it",
+    alpha3: "ita"
+  },
+  {
+    id: 428,
+    name: "Latvia",
+    names: ["Lettonie", "Lettland", "Letonia", "Lettonia", "Let\xF4nia", "Letland", "\u0141otwa", "Letonya", "Latvia"],
+    alpha2: "lv",
+    alpha3: "lva"
+  },
+  {
+    id: 440,
+    name: "Lithuania",
+    names: ["Lituanie", "Litauen", "Lituania", "Litu\xE2nia", "Litouwen", "Litwa", "Litvanya", "Lithuania"],
+    alpha2: "lt",
+    alpha3: "ltu"
+  },
+  {
+    id: 442,
+    name: "Luxembourg",
+    names: ["Luxembourg", "Luxemburg", "Luxemburgo", "Lussemburgo", "Luksemburg", "L\xFCksemburg"],
+    alpha2: "lu",
+    alpha3: "lux"
+  },
+  {
+    id: 470,
+    name: "Malta",
+    names: ["Malte", "Malta"],
+    alpha2: "mt",
+    alpha3: "mlt"
+  },
+  {
+    id: 528,
+    name: "Netherlands",
+    names: ["Pays-Bas", "Niederlande", "Pa\xEDses Bajos", "Paesi Bassi", "Pa\xEDses Baixos", "Nederland", "Holandia", "Hollanda", "Netherlands"],
+    alpha2: "nl",
+    alpha3: "nld"
+  },
+  {
+    id: 616,
+    name: "Poland",
+    names: ["Pologne", "Polen", "Polonia", "Pol\xF3nia", "Polska", "Polonya", "Poland"],
+    alpha2: "pl",
+    alpha3: "pol"
+  },
+  {
+    id: 620,
+    name: "Portugal",
+    names: ["Portugal", "Portogallo", "Portugalia", "Portekiz"],
+    alpha2: "pt",
+    alpha3: "prt"
+  },
+  {
+    id: 642,
+    name: "Romania",
+    names: ["Roumanie", "Rum\xE4nien", "Rumania", "Romania", "Rom\xE9nia", "Roemeni\xEB", "Rumunia", "Romanya"],
+    alpha2: "ro",
+    alpha3: "rou"
+  },
+  {
+    id: 703,
+    name: "Slovakia",
+    names: ["Slovaquie", "Slowakei", "Eslovaquia", "Slovacchia", "Eslov\xE1quia", "Slowakije", "S\u0142owacja", "Slovakya", "Slovakia"],
+    alpha2: "sk",
+    alpha3: "svk"
+  },
+  {
+    id: 705,
+    name: "Slovenia",
+    names: ["Slov\xE9nie", "Slowenien", "Eslovenia", "Slovenia", "Eslov\xEAnia", "Sloveni\xEB", "S\u0142owenia", "Slovenya"],
+    alpha2: "si",
+    alpha3: "svn"
+  },
+  {
+    id: 724,
+    name: "Spain",
+    names: ["Espagne", "Spanien", "Espa\xF1a", "Spagna", "Espanha", "Spanje", "Hiszpania", "\u0130spanya", "Spain"],
+    alpha2: "es",
+    alpha3: "esp"
+  },
+  {
+    id: 752,
+    name: "Sweden",
+    names: ["Su\xE8de", "Schweden", "Suecia", "Svezia", "Su\xE9cia", "Zweden", "Szwecja", "\u0130sve\xE7", "Sweden"],
+    alpha2: "se",
+    alpha3: "swe"
+  },
+  {
+    id: 756,
+    name: "Switzerland",
+    names: ["Suisse", "Schweiz", "Suiza", "Svizzera", "Su\xED\xE7a", "Zwitserland", "Szwajcaria", "\u0130svi\xE7re", "Switzerland"],
+    alpha2: "ch",
+    alpha3: "che"
+  },
+  {
+    id: 826,
+    name: "United Kingdom of Great Britain and Northern Ireland",
+    names: [
+      "Royaume-Uni",
+      "Vereinigtes K\xF6nigreich",
+      "Reino Unido",
+      "Regno Unito",
+      "Verenigd Koninkrijk",
+      "Wielka Brytania",
+      "Birle\u015Fik Krall\u0131k",
+      "United Kingdom of Great Britain and Northern Ireland"
+    ],
+    alpha2: "gb",
+    alpha3: "gbr"
   }
-  return result;
-}
+];
 
-// lib/utils.ts
+// lib/peppol/xml/utils/sanitization.ts
+var sanitizeText = (text2) => {
+  return text2.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+};
+
+// lib/mail/transformEmail.ts
 var transformEmail = ({ email, companyId }) => {
   let parts = email.split("@");
   let localPart = parts[0].split("+")[0];
@@ -2549,6 +2756,525 @@ var reverseTransformEmail = (email) => {
   let originalLocalPart = localPart.split("+")[0];
   return originalLocalPart + "@" + domainPart;
 };
+
+// lib/peppol/xml/components/party.ts
+var party = ({ party: party2 }) => {
+  const taxIDCleaned = ({ taxID }) => {
+    let cleaned = taxID;
+    if (cleaned.includes(":")) {
+      cleaned = cleaned.split(":").pop() || "";
+    }
+    return cleaned.replace("BE", "").replaceAll(".", "").replaceAll(" ", "");
+  };
+  const taxIDWithCountry = ({ taxID }) => {
+    let cleaned = taxID;
+    if (cleaned.includes(":")) {
+      cleaned = cleaned.split(":").pop() || "";
+    }
+    return cleaned.replaceAll(".", "").replaceAll(" ", "");
+  };
+  return `<cac:Party>
+            ${party2.taxID ? `<cbc:EndpointID schemeID="BE:CBE">${taxIDCleaned({ taxID: party2.taxID })}</cbc:EndpointID>
+                <cac:PartyIdentification>
+                    <cbc:ID schemeAgencyID="BE" schemeAgencyName="KBO" schemeURI="http://www.e-fff.be/KBO">${taxIDCleaned({ taxID: party2.taxID })}</cbc:ID>
+                </cac:PartyIdentification>
+                <cac:PartyTaxScheme>
+                    <cbc:CompanyID>${taxIDWithCountry({ taxID: party2.taxID })}</cbc:CompanyID>
+                    <cac:TaxScheme>
+                        <cbc:ID>VAT</cbc:ID>
+                    </cac:TaxScheme>
+                </cac:PartyTaxScheme>
+                <cac:PartyLegalEntity>
+                    <cbc:RegistrationName>${sanitizeText(party2.name)}</cbc:RegistrationName>
+                    <cbc:CompanyID schemeID="BE:CBE">${taxIDCleaned({ taxID: party2.taxID })}</cbc:CompanyID>
+                </cac:PartyLegalEntity>` : ``}
+            <cac:PartyName>
+                <cbc:Name>${sanitizeText(party2.name)}</cbc:Name>
+            </cac:PartyName>
+            <cac:PostalAddress>
+                <cbc:StreetName>${sanitizeText(party2.address.street ?? "")}</cbc:StreetName>
+                <cbc:BuildingNumber>${sanitizeText(party2.address.door ?? "")}</cbc:BuildingNumber>
+                <cbc:CityName>${sanitizeText(party2.address.city ?? "")}</cbc:CityName>
+                <cbc:PostalZone>${sanitizeText(party2.address.zip ?? "")}</cbc:PostalZone>
+                <cac:Country>
+                    <cbc:IdentificationCode>${countryNameToAbbreviation(party2.address.country)}</cbc:IdentificationCode>
+                    <cbc:Name>${sanitizeText(party2.address.country)}</cbc:Name>
+                </cac:Country>
+            </cac:PostalAddress>
+            <cac:Contact>
+                <cbc:Name>${sanitizeText(party2.name)}</cbc:Name>
+                <cbc:ElectronicMail>${sanitizeText(reverseTransformEmail(party2.email))}</cbc:ElectronicMail>
+            </cac:Contact>
+        </cac:Party>`;
+};
+
+// lib/peppol/xml/components/accountingSupplierParty.ts
+var accountingSupplierParty = ({ supplierParty }) => {
+  return `<cac:AccountingSupplierParty>
+        ${party({
+    party: supplierParty
+  })}
+    </cac:AccountingSupplierParty>`;
+};
+
+// lib/peppol/xml/components/accountingCustomerParty.ts
+var accountingCustomerParty = ({ customerParty }) => {
+  return `<cac:AccountingCustomerParty>
+        ${party({
+    party: {
+      name: customerParty.name,
+      taxID: customerParty.taxID,
+      email: customerParty.email ?? "",
+      address: customerParty.address
+    }
+  })}
+    </cac:AccountingCustomerParty>`;
+};
+
+// lib/calculations/dates/addToDate.ts
+function addDaysToDate(dateStr, daysToAdd) {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + daysToAdd);
+  return date;
+}
+
+// lib/peppol/xml/purchase/peppolpurchase.ts
+var purchaseToXml = (document, pdf) => {
+  try {
+    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
+    const establishment = document.establishment;
+    const supplier = document.supplier;
+    const documentProducts = document.products;
+    let taxRates = [];
+    documentProducts.forEach((product) => {
+      if (!taxRates.includes(Number(product.tax))) {
+        taxRates.push(Number(product.tax));
+      }
+    });
+    taxRates = taxRates.map((tax) => {
+      const totalBeforeTax2 = documentProducts.reduce((acc, product) => {
+        if (Number(product.tax) === tax) {
+          const subTotal = Number(product.totalWithTaxAfterReduction);
+          return acc + subTotal / (1 + tax / 100);
+        }
+        return acc;
+      }, 0);
+      const totalTax2 = documentProducts.reduce((acc, product) => {
+        if (Number(product.tax) === tax) {
+          const subTotal = Number(product.totalWithTaxAfterReduction);
+          const beforeTax = subTotal / (1 + tax / 100);
+          return acc + (subTotal - beforeTax);
+        }
+        return acc;
+      }, 0);
+      return {
+        rate: tax,
+        totalBeforeTax: Number(totalBeforeTax2.toFixed(2)),
+        totalTax: Number(totalTax2.toFixed(2))
+      };
+    });
+    const totalTax = Number(taxRates.reduce((acc, taxRate) => acc + taxRate.totalTax, 0).toFixed(2));
+    const total = Number(
+      documentProducts.reduce((acc, product) => acc + Number(product.totalWithTaxAfterReduction), 0).toFixed(2)
+    );
+    const totalBeforeTax = Number((total - totalTax).toFixed(2));
+    if (isNaN(total) || isNaN(totalBeforeTax) || isNaN(totalTax)) {
+      console.error(
+        "Calculation error purchase:",
+        JSON.stringify({
+          documentNumber: document.number,
+          values: {
+            total,
+            totalBeforeTax,
+            totalTax,
+            taxRates,
+            documentProducts: documentProducts.map(
+              (p) => JSON.stringify({
+                ...p,
+                subTotal: Number(p.totalWithTaxAfterReduction),
+                tax: Number(p.tax)
+              })
+            )
+          }
+        })
+      );
+    }
+    const content = `<?xml version="1.0" encoding="utf-8"?>
+<Invoice xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"
+  xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+  xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+  xmlns:xades="http://uri.etsi.org/01903/v1.3.2#"
+  xmlns:udt="urn:un:unece:uncefact:data:draft:UnqualifiedDataTypesSchemaModule:2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:ccts="urn:oasis:names:specification:ubl:schema:xsd:CoreComponentParameters-2"
+  xmlns:stat="urn:oasis:names:specification:ubl:schema:xsd:DocumentStatusCode-1.0"
+  xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
+  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+  xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>1.0</cbc:CustomizationID>
+  <cbc:ProfileID>E-FFF.BE BILLIT.BE</cbc:ProfileID>
+  <cbc:ID>${document.number}</cbc:ID>
+  <cbc:CopyIndicator>false</cbc:CopyIndicator>
+  <cbc:IssueDate>${dateFormatOnlyDate(document.date)}</cbc:IssueDate>
+  <cbc:InvoiceTypeCode listURI="http://www.E-FFF.be/ubl/2.0/cl/gc/BE-InvoiceCode-1.0.gc">380</cbc:InvoiceTypeCode>
+  <cbc:TaxPointDate>${dateFormatOnlyDate(document.date)}</cbc:TaxPointDate>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>${filename}</cbc:ID>
+    <cbc:DocumentType>CommercialInvoice</cbc:DocumentType>
+    <cac:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="${pdf.filename}">
+      ${pdf.content.toString("base64")}
+      </cbc:EmbeddedDocumentBinaryObject>
+  </cac:Attachment>
+  </cac:AdditionalDocumentReference>
+  ${accountingSupplierParty({
+      supplierParty: {
+        name: supplier.name,
+        taxID: supplier.taxID,
+        email: supplier.contactMail ?? "",
+        address: supplier.address
+      }
+    })}
+   ${accountingCustomerParty({
+      customerParty: {
+        name: establishment.name,
+        taxID: establishment.taxID,
+        email: establishment.company.owner.email,
+        address: establishment.address
+      }
+    })}
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode listID="UN/ECE 4461" listName="Payment Means"
+      listURI="http://docs.oasis-open.org/ubl/os-UBL-2.0-update/cl/gc/default/PaymentMeansCode-2.0.gc">
+      1</cbc:PaymentMeansCode>
+    <cbc:PaymentDueDate>${dateFormatOnlyDate(addDaysToDate(document.date, 15).toString())}</cbc:PaymentDueDate>
+  </cac:PaymentMeans>
+  ${taxRates.map((taxRate) => {
+      return `<cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">${Number(taxRate.totalBeforeTax).toFixed(2)}</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
+      <cbc:Percent>${taxRate.rate}</cbc:Percent>
+      <cac:TaxCategory>
+        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
+        <cbc:Name>OSS-S</cbc:Name>
+        <cbc:Percent>${taxRate.rate}</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+    </cac:TaxTotal>`;
+    })}
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  ${documentProducts.map((docProd, i) => {
+      let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
+      return `<cac:InvoiceLine>
+    <cbc:ID>${i + 1}</cbc:ID>
+    <cbc:Note>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Note>
+    <cbc:InvoicedQuantity>${Number(docProd.amount)}</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
+        <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>   
+        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>   
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
+          <cbc:Name>OSS-S</cbc:Name>
+          <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Name>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
+        <cbc:Name>OSS-S</cbc:Name>
+        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+  </cac:InvoiceLine>`;
+    })}
+</Invoice>`;
+    return {
+      content,
+      filename
+    };
+  } catch (error) {
+    console.error("Error generating xml for purchase document: ", error);
+    return {
+      content: "",
+      filename: ""
+    };
+  }
+};
+
+// lib/peppol/xml/invoice/peppolinvoice.ts
+var invoiceToXml = (document, pdf) => {
+  try {
+    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
+    const establishment = document.establishment;
+    const customer = document.customer;
+    const docAddress = document.docAddress;
+    const documentProducts = document.products;
+    let taxRates = [];
+    documentProducts.forEach((product) => {
+      if (!taxRates.includes(Number(product.tax))) {
+        taxRates.push(Number(product.tax));
+      }
+    });
+    taxRates = taxRates.map((tax) => {
+      const totalBeforeTax2 = documentProducts.reduce((acc, product) => {
+        if (Number(product.tax) === tax) {
+          const subTotal = Number(product.totalWithTaxAfterReduction);
+          return acc + subTotal / (1 + tax / 100);
+        }
+        return acc;
+      }, 0);
+      const totalTax2 = documentProducts.reduce((acc, product) => {
+        if (Number(product.tax) === tax) {
+          const subTotal = Number(product.totalWithTaxAfterReduction);
+          const beforeTax = subTotal / (1 + tax / 100);
+          return acc + (subTotal - beforeTax);
+        }
+        return acc;
+      }, 0);
+      return {
+        rate: tax,
+        totalBeforeTax: Number(totalBeforeTax2.toFixed(2)),
+        totalTax: Number(totalTax2.toFixed(2))
+      };
+    });
+    const totalTax = Number(taxRates.reduce((acc, taxRate) => acc + taxRate.totalTax, 0).toFixed(2));
+    const total = Number(
+      documentProducts.reduce((acc, product) => acc + Number(product.totalWithTaxAfterReduction), 0).toFixed(2)
+    );
+    const totalBeforeTax = Number((total - totalTax).toFixed(2));
+    if (isNaN(total) || isNaN(totalBeforeTax) || isNaN(totalTax)) {
+      console.error("Calculation error:", {
+        documentNumber: document.number,
+        values: {
+          total,
+          totalBeforeTax,
+          totalTax,
+          taxRates,
+          documentProducts: documentProducts.map((p) => ({
+            ...p,
+            subTotal: Number(p.totalWithTaxAfterReduction),
+            tax: Number(p.tax)
+          }))
+        }
+      });
+    }
+    const content = `<?xml version="1.0" encoding="utf-8"?>
+<Invoice xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"
+  xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+  xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+  xmlns:xades="http://uri.etsi.org/01903/v1.3.2#"
+  xmlns:udt="urn:un:unece:uncefact:data:draft:UnqualifiedDataTypesSchemaModule:2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:ccts="urn:oasis:names:specification:ubl:schema:xsd:CoreComponentParameters-2"
+  xmlns:stat="urn:oasis:names:specification:ubl:schema:xsd:DocumentStatusCode-1.0"
+  xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
+  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+  xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#conformant#urn:UBL.BE:1.0.0.20180214</cbc:CustomizationID>
+  <cbc:ProfileID>E-FFF.BE BILLIT.BE</cbc:ProfileID>
+  <cbc:ID>${document.number}</cbc:ID>
+  <cbc:CopyIndicator>false</cbc:CopyIndicator>
+  <cbc:IssueDate>${dateFormatOnlyDate(document.date)}</cbc:IssueDate>
+  <cbc:InvoiceTypeCode listURI="http://www.E-FFF.be/ubl/2.0/cl/gc/BE-InvoiceCode-1.0.gc">380</cbc:InvoiceTypeCode>
+  <cbc:TaxPointDate>${dateFormatOnlyDate(document.date)}</cbc:TaxPointDate>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>${filename}</cbc:ID>
+    <cbc:DocumentType>CommercialInvoice</cbc:DocumentType>
+    <cac:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="${pdf.filename}">
+      ${pdf.content.toString("base64")}
+      </cbc:EmbeddedDocumentBinaryObject>
+    </cac:Attachment>
+  </cac:AdditionalDocumentReference>
+  ${accountingSupplierParty({
+      supplierParty: {
+        name: establishment.name,
+        taxID: establishment.taxID,
+        email: establishment.company.owner.email,
+        address: establishment.address
+      }
+    })}
+  ${accountingCustomerParty({
+      customerParty: {
+        name: customer.firstName + " " + customer.lastName,
+        taxID: customer.customerTaxNumber,
+        email: customer.email,
+        address: docAddress
+      }
+    })}
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode listID="UN/ECE 4461" listName="Payment Means"
+      listURI="http://docs.oasis-open.org/ubl/os-UBL-2.0-update/cl/gc/default/PaymentMeansCode-2.0.gc">
+      1</cbc:PaymentMeansCode>
+    <cbc:PaymentDueDate>${dateFormatOnlyDate(addDaysToDate(document.date, 15).toString())}</cbc:PaymentDueDate>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID schemeName="IBAN">BE07068937722366</cbc:ID>
+      <cac:FinancialInstitutionBranch>
+        <cac:FinancialInstitution>
+          <cbc:ID schemeName="BIC">GKCCBEBB</cbc:ID>
+        </cac:FinancialInstitution>
+      </cac:FinancialInstitutionBranch>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  ${taxRates.map((taxRate) => {
+      return `<cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">${Number(taxRate.totalBeforeTax).toFixed(2)}</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
+      <cbc:Percent>${taxRate.rate}</cbc:Percent>
+      <cac:TaxCategory>
+        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
+        <cbc:Name>OSS-S</cbc:Name>
+        <cbc:Percent>${taxRate.rate}</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+    </cac:TaxTotal>`;
+    })}
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  ${documentProducts.map((docProd, i) => {
+      let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
+      return `<cac:InvoiceLine>
+    <cbc:ID>${i + 1}</cbc:ID>
+    <cbc:Note>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Note>
+    <cbc:InvoicedQuantity>${Number(docProd.amount)}</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
+        <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>   
+        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>   
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
+          <cbc:Name>OSS-S</cbc:Name>
+          <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Name>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
+        <cbc:Name>OSS-S</cbc:Name>
+        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+  </cac:InvoiceLine>`;
+    })}
+</Invoice>`;
+    return {
+      content,
+      filename
+    };
+  } catch (error) {
+    console.error("Error generating xml for invoice document: ", error);
+    return {
+      content: "",
+      filename: ""
+    };
+  }
+};
+
+// lib/peppol/xml/convert.ts
+var import_fs_extra = __toESM(require("fs-extra"));
+var import_path2 = __toESM(require("path"));
+async function writeAllXmlsToTempDir(tempDir, documents) {
+  const response = await fetch(documents.at(0).establishment.logo.url);
+  let logoBuffer = await Buffer.from(await response.arrayBuffer());
+  await import_fs_extra.default.ensureDir(tempDir);
+  const filePaths = await Promise.all(
+    documents.map(async (doc) => {
+      try {
+        let pdf;
+        let xml;
+        if (doc.type == "invoice") {
+          pdf = await generateInvoiceOut({
+            document: doc,
+            logoBuffer
+          });
+          xml = invoiceToXml(doc, pdf);
+        } else if (doc.type == "credit_note") {
+          pdf = await generateCreditNoteOut({
+            document: doc,
+            logoBuffer
+          });
+          xml = invoiceToXml(doc, pdf);
+        } else if (doc.type == "purchase") {
+          const response2 = await fetch(doc.files[0].url);
+          const buffer = await response2.arrayBuffer();
+          pdf = {
+            filename: doc.files[0].name,
+            content: Buffer.from(buffer),
+            contentType: "application/pdf"
+          };
+          xml = purchaseToXml(doc, pdf);
+        } else if (doc.type == "credit_note_incoming") {
+          const response2 = await fetch(doc.files[0].url);
+          const buffer = await response2.arrayBuffer();
+          pdf = {
+            filename: doc.files[0].name,
+            content: Buffer.from(buffer),
+            contentType: "application/pdf"
+          };
+          xml = purchaseToXml(doc, pdf);
+        }
+        if (!xml) {
+          throw new Error(`xml failed: ${doc.type}`);
+        }
+        if (!pdf) {
+          throw new Error(`Unknown document type: ${doc.type}`);
+        }
+        const filePath = import_path2.default.join(tempDir, xml.filename);
+        await import_fs_extra.default.writeFile(filePath, xml.content);
+        return filePath;
+      } catch (error) {
+        console.error("Error generating xml for document: ", doc.number, error);
+        return null;
+      }
+    })
+  );
+  return filePaths.filter((path3) => path3 !== null);
+}
+
+// lib/random.ts
+function generateRandomString(length) {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
 
 // lib/eutaxes.ts
 var eutaxes = [
@@ -3488,6 +4214,7 @@ var session = (0, import_session.statelessSessions)({
 
 // keystone.ts
 var import_core2 = require("@keystone-6/core");
+var import_promises = require("fs/promises");
 
 // schema.ts
 var import_fields = require("@keystone-6/core/fields");
@@ -3495,7 +4222,7 @@ var import_access = require("@keystone-6/core/access");
 var import_core = require("@keystone-6/core");
 var import_types = require("@keystone-6/core/types");
 
-// lib/calculations/documentproducts.ts
+// lib/calculations/documents/documentproducts.ts
 var calculateBaseTotal = ({
   price,
   amount,
@@ -5630,735 +6357,6 @@ var lists = {
 
 // keystone.ts
 var import_config2 = require("dotenv/config");
-
-// lib/countries.ts
-var countryNameToAbbreviation = (name) => {
-  const abbreviaton = countries.find((country) => country.names.find((countryName) => countryName.toLowerCase() == name.toLowerCase()))?.alpha2;
-  return abbreviaton ?? name;
-};
-var countries = [
-  {
-    id: 40,
-    name: "Austria",
-    names: ["Autriche", "\xD6sterreich", "Austria", "\xC1ustria", "Oostenrijk", "Avusturya"],
-    alpha2: "at",
-    alpha3: "aut"
-  },
-  {
-    id: 56,
-    name: "Belgium",
-    names: ["Belgique", "Belgien", "Belgie", "Belgio", "B\xE9lgica", "Belgi\xEB", "Belgia", "Bel\xE7ika", "Belgium"],
-    alpha2: "be",
-    alpha3: "bel"
-  },
-  {
-    id: 100,
-    name: "Bulgaria",
-    names: ["Bulgarie", "Bulgarien", "Bulg\xE1ria", "Bulgarije", "Bu\u0142garia", "Bulgaristan", "Bulgaria"],
-    alpha2: "bg",
-    alpha3: "bgr"
-  },
-  {
-    id: 191,
-    name: "Croatia",
-    names: ["Croatie", "Kroatien", "Croacia", "Croazia", "Cro\xE1cia", "Kroati\xEB", "Chorwacja", "H\u0131rvatistan", "Croatia"],
-    alpha2: "hr",
-    alpha3: "hrv"
-  },
-  {
-    id: 203,
-    name: "Czechia",
-    names: ["Tch\xE9quie", "Tschechien", "Rep\xFAblica Checa", "Rep. Ceca", "Ch\xE9quia", "Tsjechi\xEB", "Czechy", "\xC7ekya", "Czechia"],
-    alpha2: "cz",
-    alpha3: "cze"
-  },
-  {
-    id: 208,
-    name: "Denmark",
-    names: ["Danemark", "D\xE4nemark", "Dinamarca", "Danimarca", "Denemarken", "Dania", "Danimarka", "Denmark"],
-    alpha2: "dk",
-    alpha3: "dnk"
-  },
-  {
-    id: 233,
-    name: "Estonia",
-    names: ["Estonie", "Estland", "Estonia", "Est\xF3nia", "Estonya"],
-    alpha2: "ee",
-    alpha3: "est"
-  },
-  {
-    id: 246,
-    name: "Finland",
-    names: ["Finlande", "Finnland", "Finlandia", "Finl\xE2ndia", "Finland", "Finlandiya"],
-    alpha2: "fi",
-    alpha3: "fin"
-  },
-  {
-    id: 250,
-    name: "France",
-    names: ["France", "Frankreich", "Francia", "Fran\xE7a", "Frankrijk", "Francja", "Fransa"],
-    alpha2: "fr",
-    alpha3: "fra"
-  },
-  {
-    id: 276,
-    name: "Germany",
-    names: ["Allemagne", "Deutschland", "Alemania", "Germania", "Alemanha", "Duitsland", "Niemcy", "Almanya", "Germany"],
-    alpha2: "de",
-    alpha3: "deu"
-  },
-  {
-    id: 300,
-    name: "Greece",
-    names: ["Gr\xE8ce", "Griechenland", "Grecia", "Gr\xE9cia", "Griekenland", "Grecja", "Yunanistan", "Greece"],
-    alpha2: "gr",
-    alpha3: "grc"
-  },
-  {
-    id: 348,
-    name: "Hungary",
-    names: ["Hongrie", "Ungarn", "Hungr\xEDa", "Ungheria", "Hungria", "Hongarije", "W\u0119gry", "Macaristan", "Hungary"],
-    alpha2: "hu",
-    alpha3: "hun"
-  },
-  {
-    id: 372,
-    name: "Ireland",
-    names: ["Irlande", "Irland", "Irlanda", "Ierland", "Irlandia", "\u0130rlanda", "Ireland"],
-    alpha2: "ie",
-    alpha3: "irl"
-  },
-  {
-    id: 380,
-    name: "Italy",
-    names: ["Italie", "Italien", "Italia", "It\xE1lia", "Itali\xEB", "W\u0142ochy", "\u0130talya", "Italy"],
-    alpha2: "it",
-    alpha3: "ita"
-  },
-  {
-    id: 428,
-    name: "Latvia",
-    names: ["Lettonie", "Lettland", "Letonia", "Lettonia", "Let\xF4nia", "Letland", "\u0141otwa", "Letonya", "Latvia"],
-    alpha2: "lv",
-    alpha3: "lva"
-  },
-  {
-    id: 440,
-    name: "Lithuania",
-    names: ["Lituanie", "Litauen", "Lituania", "Litu\xE2nia", "Litouwen", "Litwa", "Litvanya", "Lithuania"],
-    alpha2: "lt",
-    alpha3: "ltu"
-  },
-  {
-    id: 442,
-    name: "Luxembourg",
-    names: ["Luxembourg", "Luxemburg", "Luxemburgo", "Lussemburgo", "Luksemburg", "L\xFCksemburg"],
-    alpha2: "lu",
-    alpha3: "lux"
-  },
-  {
-    id: 470,
-    name: "Malta",
-    names: ["Malte", "Malta"],
-    alpha2: "mt",
-    alpha3: "mlt"
-  },
-  {
-    id: 528,
-    name: "Netherlands",
-    names: ["Pays-Bas", "Niederlande", "Pa\xEDses Bajos", "Paesi Bassi", "Pa\xEDses Baixos", "Nederland", "Holandia", "Hollanda", "Netherlands"],
-    alpha2: "nl",
-    alpha3: "nld"
-  },
-  {
-    id: 616,
-    name: "Poland",
-    names: ["Pologne", "Polen", "Polonia", "Pol\xF3nia", "Polska", "Polonya", "Poland"],
-    alpha2: "pl",
-    alpha3: "pol"
-  },
-  {
-    id: 620,
-    name: "Portugal",
-    names: ["Portugal", "Portogallo", "Portugalia", "Portekiz"],
-    alpha2: "pt",
-    alpha3: "prt"
-  },
-  {
-    id: 642,
-    name: "Romania",
-    names: ["Roumanie", "Rum\xE4nien", "Rumania", "Romania", "Rom\xE9nia", "Roemeni\xEB", "Rumunia", "Romanya"],
-    alpha2: "ro",
-    alpha3: "rou"
-  },
-  {
-    id: 703,
-    name: "Slovakia",
-    names: ["Slovaquie", "Slowakei", "Eslovaquia", "Slovacchia", "Eslov\xE1quia", "Slowakije", "S\u0142owacja", "Slovakya", "Slovakia"],
-    alpha2: "sk",
-    alpha3: "svk"
-  },
-  {
-    id: 705,
-    name: "Slovenia",
-    names: ["Slov\xE9nie", "Slowenien", "Eslovenia", "Slovenia", "Eslov\xEAnia", "Sloveni\xEB", "S\u0142owenia", "Slovenya"],
-    alpha2: "si",
-    alpha3: "svn"
-  },
-  {
-    id: 724,
-    name: "Spain",
-    names: ["Espagne", "Spanien", "Espa\xF1a", "Spagna", "Espanha", "Spanje", "Hiszpania", "\u0130spanya", "Spain"],
-    alpha2: "es",
-    alpha3: "esp"
-  },
-  {
-    id: 752,
-    name: "Sweden",
-    names: ["Su\xE8de", "Schweden", "Suecia", "Svezia", "Su\xE9cia", "Zweden", "Szwecja", "\u0130sve\xE7", "Sweden"],
-    alpha2: "se",
-    alpha3: "swe"
-  },
-  {
-    id: 756,
-    name: "Switzerland",
-    names: ["Suisse", "Schweiz", "Suiza", "Svizzera", "Su\xED\xE7a", "Zwitserland", "Szwajcaria", "\u0130svi\xE7re", "Switzerland"],
-    alpha2: "ch",
-    alpha3: "che"
-  },
-  {
-    id: 826,
-    name: "United Kingdom of Great Britain and Northern Ireland",
-    names: [
-      "Royaume-Uni",
-      "Vereinigtes K\xF6nigreich",
-      "Reino Unido",
-      "Regno Unito",
-      "Verenigd Koninkrijk",
-      "Wielka Brytania",
-      "Birle\u015Fik Krall\u0131k",
-      "United Kingdom of Great Britain and Northern Ireland"
-    ],
-    alpha2: "gb",
-    alpha3: "gbr"
-  }
-];
-
-// lib/peppol/xml/utils/sanitization.ts
-var sanitizeText = (text2) => {
-  return text2.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
-};
-
-// lib/peppol/xml/components/party.ts
-var party = ({ party: party2 }) => {
-  const taxIDCleaned = ({ taxID }) => {
-    let cleaned = taxID;
-    if (cleaned.includes(":")) {
-      cleaned = cleaned.split(":").pop() || "";
-    }
-    return cleaned.replace("BE", "").replaceAll(".", "").replaceAll(" ", "");
-  };
-  const taxIDWithCountry = ({ taxID }) => {
-    let cleaned = taxID;
-    if (cleaned.includes(":")) {
-      cleaned = cleaned.split(":").pop() || "";
-    }
-    return cleaned.replaceAll(".", "").replaceAll(" ", "");
-  };
-  return `<cac:Party>
-            ${party2.taxID ? `<cbc:EndpointID schemeID="BE:CBE">${taxIDCleaned({ taxID: party2.taxID })}</cbc:EndpointID>
-                <cac:PartyIdentification>
-                    <cbc:ID schemeAgencyID="BE" schemeAgencyName="KBO" schemeURI="http://www.e-fff.be/KBO">${taxIDCleaned({ taxID: party2.taxID })}</cbc:ID>
-                </cac:PartyIdentification>
-                <cac:PartyTaxScheme>
-                    <cbc:CompanyID>${taxIDWithCountry({ taxID: party2.taxID })}</cbc:CompanyID>
-                    <cac:TaxScheme>
-                        <cbc:ID>VAT</cbc:ID>
-                    </cac:TaxScheme>
-                </cac:PartyTaxScheme>
-                <cac:PartyLegalEntity>
-                    <cbc:RegistrationName>${sanitizeText(party2.name)}</cbc:RegistrationName>
-                    <cbc:CompanyID schemeID="BE:CBE">${taxIDCleaned({ taxID: party2.taxID })}</cbc:CompanyID>
-                </cac:PartyLegalEntity>` : ``}
-            <cac:PartyName>
-                <cbc:Name>${sanitizeText(party2.name)}</cbc:Name>
-            </cac:PartyName>
-            <cac:PostalAddress>
-                <cbc:StreetName>${sanitizeText(party2.address.street ?? "")}</cbc:StreetName>
-                <cbc:BuildingNumber>${sanitizeText(party2.address.door ?? "")}</cbc:BuildingNumber>
-                <cbc:CityName>${sanitizeText(party2.address.city ?? "")}</cbc:CityName>
-                <cbc:PostalZone>${sanitizeText(party2.address.zip ?? "")}</cbc:PostalZone>
-                <cac:Country>
-                    <cbc:IdentificationCode>${countryNameToAbbreviation(party2.address.country)}</cbc:IdentificationCode>
-                    <cbc:Name>${sanitizeText(party2.address.country)}</cbc:Name>
-                </cac:Country>
-            </cac:PostalAddress>
-            <cac:Contact>
-                <cbc:Name>${sanitizeText(party2.name)}</cbc:Name>
-                <cbc:ElectronicMail>${sanitizeText(reverseTransformEmail(party2.email))}</cbc:ElectronicMail>
-            </cac:Contact>
-        </cac:Party>`;
-};
-
-// lib/peppol/xml/components/accountingSupplierParty.ts
-var accountingSupplierParty = ({ supplierParty }) => {
-  return `<cac:AccountingSupplierParty>
-        ${party({
-    party: supplierParty
-  })}
-    </cac:AccountingSupplierParty>`;
-};
-
-// lib/peppol/xml/components/accountingCustomerParty.ts
-var accountingCustomerParty = ({ customerParty }) => {
-  return `<cac:AccountingCustomerParty>
-        ${party({
-    party: {
-      name: customerParty.name,
-      taxID: customerParty.taxID,
-      email: customerParty.email ?? "",
-      address: customerParty.address
-    }
-  })}
-    </cac:AccountingCustomerParty>`;
-};
-
-// lib/addtodate.ts
-function addDaysToDate(dateStr, daysToAdd) {
-  const date = new Date(dateStr);
-  date.setDate(date.getDate() + daysToAdd);
-  return date;
-}
-
-// lib/peppol/xml/purchase/peppolpurchase.ts
-var purchaseToXml = (document, pdf) => {
-  try {
-    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
-    const establishment = document.establishment;
-    const supplier = document.supplier;
-    const documentProducts = document.products;
-    let taxRates = [];
-    documentProducts.forEach((product) => {
-      if (!taxRates.includes(Number(product.tax))) {
-        taxRates.push(Number(product.tax));
-      }
-    });
-    taxRates = taxRates.map((tax) => {
-      const totalBeforeTax2 = documentProducts.reduce((acc, product) => {
-        if (Number(product.tax) === tax) {
-          const subTotal = Number(product.totalWithTaxAfterReduction);
-          return acc + subTotal / (1 + tax / 100);
-        }
-        return acc;
-      }, 0);
-      const totalTax2 = documentProducts.reduce((acc, product) => {
-        if (Number(product.tax) === tax) {
-          const subTotal = Number(product.totalWithTaxAfterReduction);
-          const beforeTax = subTotal / (1 + tax / 100);
-          return acc + (subTotal - beforeTax);
-        }
-        return acc;
-      }, 0);
-      return {
-        rate: tax,
-        totalBeforeTax: Number(totalBeforeTax2.toFixed(2)),
-        totalTax: Number(totalTax2.toFixed(2))
-      };
-    });
-    const totalTax = Number(taxRates.reduce((acc, taxRate) => acc + taxRate.totalTax, 0).toFixed(2));
-    const total = Number(
-      documentProducts.reduce((acc, product) => acc + Number(product.totalWithTaxAfterReduction), 0).toFixed(2)
-    );
-    const totalBeforeTax = Number((total - totalTax).toFixed(2));
-    if (isNaN(total) || isNaN(totalBeforeTax) || isNaN(totalTax)) {
-      console.error(
-        "Calculation error purchase:",
-        JSON.stringify({
-          documentNumber: document.number,
-          values: {
-            total,
-            totalBeforeTax,
-            totalTax,
-            taxRates,
-            documentProducts: documentProducts.map(
-              (p) => JSON.stringify({
-                ...p,
-                subTotal: Number(p.totalWithTaxAfterReduction),
-                tax: Number(p.tax)
-              })
-            )
-          }
-        })
-      );
-    }
-    const content = `<?xml version="1.0" encoding="utf-8"?>
-<Invoice xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"
-  xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
-  xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
-  xmlns:xades="http://uri.etsi.org/01903/v1.3.2#"
-  xmlns:udt="urn:un:unece:uncefact:data:draft:UnqualifiedDataTypesSchemaModule:2"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns:ccts="urn:oasis:names:specification:ubl:schema:xsd:CoreComponentParameters-2"
-  xmlns:stat="urn:oasis:names:specification:ubl:schema:xsd:DocumentStatusCode-1.0"
-  xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
-  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
-  xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
-  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
-  <cbc:CustomizationID>1.0</cbc:CustomizationID>
-  <cbc:ProfileID>E-FFF.BE BILLIT.BE</cbc:ProfileID>
-  <cbc:ID>${document.number}</cbc:ID>
-  <cbc:CopyIndicator>false</cbc:CopyIndicator>
-  <cbc:IssueDate>${dateFormatOnlyDate(document.date)}</cbc:IssueDate>
-  <cbc:InvoiceTypeCode listURI="http://www.E-FFF.be/ubl/2.0/cl/gc/BE-InvoiceCode-1.0.gc">380</cbc:InvoiceTypeCode>
-  <cbc:TaxPointDate>${dateFormatOnlyDate(document.date)}</cbc:TaxPointDate>
-  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
-  <cac:AdditionalDocumentReference>
-    <cbc:ID>${filename}</cbc:ID>
-    <cbc:DocumentType>CommercialInvoice</cbc:DocumentType>
-    <cac:Attachment>
-      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="${pdf.filename}">
-      ${pdf.content.toString("base64")}
-      </cbc:EmbeddedDocumentBinaryObject>
-  </cac:Attachment>
-  </cac:AdditionalDocumentReference>
-  ${accountingSupplierParty({
-      supplierParty: {
-        name: supplier.name,
-        taxID: supplier.taxID,
-        email: supplier.contactMail ?? "",
-        address: supplier.address
-      }
-    })}
-   ${accountingCustomerParty({
-      customerParty: {
-        name: establishment.name,
-        taxID: establishment.taxID,
-        email: establishment.company.owner.email,
-        address: establishment.address
-      }
-    })}
-  <cac:PaymentMeans>
-    <cbc:PaymentMeansCode listID="UN/ECE 4461" listName="Payment Means"
-      listURI="http://docs.oasis-open.org/ubl/os-UBL-2.0-update/cl/gc/default/PaymentMeansCode-2.0.gc">
-      1</cbc:PaymentMeansCode>
-    <cbc:PaymentDueDate>${dateFormatOnlyDate(addDaysToDate(document.date, 15).toString())}</cbc:PaymentDueDate>
-  </cac:PaymentMeans>
-  ${taxRates.map((taxRate) => {
-      return `<cac:TaxTotal>
-    <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
-    <cac:TaxSubtotal>
-      <cbc:TaxableAmount currencyID="EUR">${Number(taxRate.totalBeforeTax).toFixed(2)}</cbc:TaxableAmount>
-      <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
-      <cbc:Percent>${taxRate.rate}</cbc:Percent>
-      <cac:TaxCategory>
-        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
-        <cbc:Name>OSS-S</cbc:Name>
-        <cbc:Percent>${taxRate.rate}</cbc:Percent>
-        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
-      </cac:TaxCategory>
-    </cac:TaxSubtotal>
-    </cac:TaxTotal>`;
-    })}
-  <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
-    <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
-    <cbc:TaxInclusiveAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:TaxInclusiveAmount>
-    <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
-  </cac:LegalMonetaryTotal>
-  ${documentProducts.map((docProd, i) => {
-      let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
-      return `<cac:InvoiceLine>
-    <cbc:ID>${i + 1}</cbc:ID>
-    <cbc:Note>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Note>
-    <cbc:InvoicedQuantity>${Number(docProd.amount)}</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
-    <cac:TaxTotal>
-      <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>
-      <cac:TaxSubtotal>
-        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
-        <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>   
-        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>   
-        <cac:TaxCategory>
-          <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
-          <cbc:Name>OSS-S</cbc:Name>
-          <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
-        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
-        </cac:TaxCategory>
-      </cac:TaxSubtotal>
-    </cac:TaxTotal>
-    <cac:Item>
-      <cbc:Name>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Name>
-      <cac:ClassifiedTaxCategory>
-        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
-        <cbc:Name>OSS-S</cbc:Name>
-        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
-        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
-      </cac:ClassifiedTaxCategory>
-    </cac:Item>
-  </cac:InvoiceLine>`;
-    })}
-</Invoice>`;
-    return {
-      content,
-      filename
-    };
-  } catch (error) {
-    console.error("Error generating xml for purchase document: ", error);
-    return {
-      content: "",
-      filename: ""
-    };
-  }
-};
-
-// lib/peppol/xml/invoice/peppolinvoice.ts
-var invoiceToXml = (document, pdf) => {
-  try {
-    const filename = `xml_${document.type}_${document.prefix ?? ""}${document.number.replaceAll("\\", "").replaceAll("/", "").replaceAll(" ", "")}.xml`;
-    const establishment = document.establishment;
-    const customer = document.customer;
-    const docAddress = document.docAddress;
-    const documentProducts = document.products;
-    let taxRates = [];
-    documentProducts.forEach((product) => {
-      if (!taxRates.includes(Number(product.tax))) {
-        taxRates.push(Number(product.tax));
-      }
-    });
-    taxRates = taxRates.map((tax) => {
-      const totalBeforeTax2 = documentProducts.reduce((acc, product) => {
-        if (Number(product.tax) === tax) {
-          const subTotal = Number(product.totalWithTaxAfterReduction);
-          return acc + subTotal / (1 + tax / 100);
-        }
-        return acc;
-      }, 0);
-      const totalTax2 = documentProducts.reduce((acc, product) => {
-        if (Number(product.tax) === tax) {
-          const subTotal = Number(product.totalWithTaxAfterReduction);
-          const beforeTax = subTotal / (1 + tax / 100);
-          return acc + (subTotal - beforeTax);
-        }
-        return acc;
-      }, 0);
-      return {
-        rate: tax,
-        totalBeforeTax: Number(totalBeforeTax2.toFixed(2)),
-        totalTax: Number(totalTax2.toFixed(2))
-      };
-    });
-    const totalTax = Number(taxRates.reduce((acc, taxRate) => acc + taxRate.totalTax, 0).toFixed(2));
-    const total = Number(
-      documentProducts.reduce((acc, product) => acc + Number(product.totalWithTaxAfterReduction), 0).toFixed(2)
-    );
-    const totalBeforeTax = Number((total - totalTax).toFixed(2));
-    if (isNaN(total) || isNaN(totalBeforeTax) || isNaN(totalTax)) {
-      console.error("Calculation error:", {
-        documentNumber: document.number,
-        values: {
-          total,
-          totalBeforeTax,
-          totalTax,
-          taxRates,
-          documentProducts: documentProducts.map((p) => ({
-            ...p,
-            subTotal: Number(p.totalWithTaxAfterReduction),
-            tax: Number(p.tax)
-          }))
-        }
-      });
-    }
-    const content = `<?xml version="1.0" encoding="utf-8"?>
-<Invoice xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"
-  xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
-  xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
-  xmlns:xades="http://uri.etsi.org/01903/v1.3.2#"
-  xmlns:udt="urn:un:unece:uncefact:data:draft:UnqualifiedDataTypesSchemaModule:2"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns:ccts="urn:oasis:names:specification:ubl:schema:xsd:CoreComponentParameters-2"
-  xmlns:stat="urn:oasis:names:specification:ubl:schema:xsd:DocumentStatusCode-1.0"
-  xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
-  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
-  xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
-  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
-  <cbc:CustomizationID>urn:cen.eu:en16931:2017#conformant#urn:UBL.BE:1.0.0.20180214</cbc:CustomizationID>
-  <cbc:ProfileID>E-FFF.BE BILLIT.BE</cbc:ProfileID>
-  <cbc:ID>${document.number}</cbc:ID>
-  <cbc:CopyIndicator>false</cbc:CopyIndicator>
-  <cbc:IssueDate>${dateFormatOnlyDate(document.date)}</cbc:IssueDate>
-  <cbc:InvoiceTypeCode listURI="http://www.E-FFF.be/ubl/2.0/cl/gc/BE-InvoiceCode-1.0.gc">380</cbc:InvoiceTypeCode>
-  <cbc:TaxPointDate>${dateFormatOnlyDate(document.date)}</cbc:TaxPointDate>
-  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
-  <cac:AdditionalDocumentReference>
-    <cbc:ID>${filename}</cbc:ID>
-    <cbc:DocumentType>CommercialInvoice</cbc:DocumentType>
-    <cac:Attachment>
-      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="${pdf.filename}">
-      ${pdf.content.toString("base64")}
-      </cbc:EmbeddedDocumentBinaryObject>
-    </cac:Attachment>
-  </cac:AdditionalDocumentReference>
-  ${accountingSupplierParty({
-      supplierParty: {
-        name: establishment.name,
-        taxID: establishment.taxID,
-        email: establishment.company.owner.email,
-        address: establishment.address
-      }
-    })}
-  ${accountingCustomerParty({
-      customerParty: {
-        name: customer.firstName + " " + customer.lastName,
-        taxID: customer.customerTaxNumber,
-        email: customer.email,
-        address: docAddress
-      }
-    })}
-  <cac:PaymentMeans>
-    <cbc:PaymentMeansCode listID="UN/ECE 4461" listName="Payment Means"
-      listURI="http://docs.oasis-open.org/ubl/os-UBL-2.0-update/cl/gc/default/PaymentMeansCode-2.0.gc">
-      1</cbc:PaymentMeansCode>
-    <cbc:PaymentDueDate>${dateFormatOnlyDate(addDaysToDate(document.date, 15).toString())}</cbc:PaymentDueDate>
-    <cac:PayeeFinancialAccount>
-      <cbc:ID schemeName="IBAN">BE07068937722366</cbc:ID>
-      <cac:FinancialInstitutionBranch>
-        <cac:FinancialInstitution>
-          <cbc:ID schemeName="BIC">GKCCBEBB</cbc:ID>
-        </cac:FinancialInstitution>
-      </cac:FinancialInstitutionBranch>
-    </cac:PayeeFinancialAccount>
-  </cac:PaymentMeans>
-  ${taxRates.map((taxRate) => {
-      return `<cac:TaxTotal>
-    <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
-    <cac:TaxSubtotal>
-      <cbc:TaxableAmount currencyID="EUR">${Number(taxRate.totalBeforeTax).toFixed(2)}</cbc:TaxableAmount>
-      <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
-      <cbc:Percent>${taxRate.rate}</cbc:Percent>
-      <cac:TaxCategory>
-        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
-        <cbc:Name>OSS-S</cbc:Name>
-        <cbc:Percent>${taxRate.rate}</cbc:Percent>
-        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
-      </cac:TaxCategory>
-    </cac:TaxSubtotal>
-    </cac:TaxTotal>`;
-    })}
-  <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
-    <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
-    <cbc:TaxInclusiveAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:TaxInclusiveAmount>
-    <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
-  </cac:LegalMonetaryTotal>
-  ${documentProducts.map((docProd, i) => {
-      let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
-      return `<cac:InvoiceLine>
-    <cbc:ID>${i + 1}</cbc:ID>
-    <cbc:Note>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Note>
-    <cbc:InvoicedQuantity>${Number(docProd.amount)}</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:LineExtensionAmount>
-    <cac:TaxTotal>
-      <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>
-      <cac:TaxSubtotal>
-        <cbc:TaxableAmount currencyID="EUR">${(Number(docProd.totalWithTaxAfterReduction) - Number(taxAmount)).toFixed(2)}</cbc:TaxableAmount>        
-        <cbc:TaxAmount currencyID="EUR">${Number(taxAmount).toFixed(2)}</cbc:TaxAmount>   
-        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>   
-        <cac:TaxCategory>
-          <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
-          <cbc:Name>OSS-S</cbc:Name>
-          <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
-        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
-        </cac:TaxCategory>
-      </cac:TaxSubtotal>
-    </cac:TaxTotal>
-    <cac:Item>
-      <cbc:Name>${docProd.name.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;")}</cbc:Name>
-      <cac:ClassifiedTaxCategory>
-        <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
-        <cbc:Name>OSS-S</cbc:Name>
-        <cbc:Percent>${Number(docProd.tax)}</cbc:Percent>
-        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
-      </cac:ClassifiedTaxCategory>
-    </cac:Item>
-  </cac:InvoiceLine>`;
-    })}
-</Invoice>`;
-    return {
-      content,
-      filename
-    };
-  } catch (error) {
-    console.error("Error generating xml for invoice document: ", error);
-    return {
-      content: "",
-      filename: ""
-    };
-  }
-};
-
-// lib/peppol/xml/convert.ts
-var import_fs_extra = __toESM(require("fs-extra"));
-var import_path2 = __toESM(require("path"));
-async function writeAllXmlsToTempDir(tempDir, documents) {
-  const response = await fetch(documents.at(0).establishment.logo.url);
-  let logoBuffer = await Buffer.from(await response.arrayBuffer());
-  await import_fs_extra.default.ensureDir(tempDir);
-  const filePaths = await Promise.all(
-    documents.map(async (doc) => {
-      try {
-        let pdf;
-        let xml;
-        if (doc.type == "invoice") {
-          pdf = await generateInvoiceOut({
-            document: doc,
-            logoBuffer
-          });
-          xml = invoiceToXml(doc, pdf);
-        } else if (doc.type == "credit_note") {
-          pdf = await generateCreditNoteOut({
-            document: doc,
-            logoBuffer
-          });
-          xml = invoiceToXml(doc, pdf);
-        } else if (doc.type == "purchase") {
-          const response2 = await fetch(doc.files[0].url);
-          const buffer = await response2.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf"
-          };
-          xml = purchaseToXml(doc, pdf);
-        } else if (doc.type == "credit_note_incoming") {
-          const response2 = await fetch(doc.files[0].url);
-          const buffer = await response2.arrayBuffer();
-          pdf = {
-            filename: doc.files[0].name,
-            content: Buffer.from(buffer),
-            contentType: "application/pdf"
-          };
-          xml = purchaseToXml(doc, pdf);
-        }
-        if (!xml) {
-          throw new Error(`xml failed: ${doc.type}`);
-        }
-        if (!pdf) {
-          throw new Error(`Unknown document type: ${doc.type}`);
-        }
-        const filePath = import_path2.default.join(tempDir, xml.filename);
-        await import_fs_extra.default.writeFile(filePath, xml.content);
-        return filePath;
-      } catch (error) {
-        console.error("Error generating xml for document: ", doc.number, error);
-        return null;
-      }
-    })
-  );
-  return filePaths.filter((path3) => path3 !== null);
-}
-
-// keystone.ts
-var import_fs_extra2 = __toESM(require("fs-extra"));
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
@@ -6540,12 +6538,14 @@ var keystone_default = withAuth(
               context
             });
             console.info("Found", docs.length, "documents");
-            await import_fs_extra2.default.ensureDir(`./test/${companyID}`);
+            await (0, import_promises.rm)(`./test/${companyID}`, { recursive: true, force: true });
+            await (0, import_promises.mkdir)(`./test/${companyID}`);
             await writeAllXmlsToTempDir(`./test/${companyID}`, docs);
           } catch (error) {
             console.error("Error generating test xml", error);
           }
         };
+        dumpXmls({ types: ["credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
       }
     },
     lists,

@@ -8,7 +8,7 @@ import {
   calculateTotalWithoutTaxAfterReduction,
   calculateTotalWithTaxBeforeReduction,
   calculateTotalWithTaxAfterReduction,
-} from "./lib/calculations/documentproducts";
+} from "./lib/calculations/documents/documentproducts";
 import {
   isAdminAccountantManager,
   isCompanyAdmin,

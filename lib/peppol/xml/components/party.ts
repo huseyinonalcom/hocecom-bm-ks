@@ -1,7 +1,7 @@
 import { countryNameToAbbreviation } from "../../../countries";
 import { sanitizeText } from "../utils/sanitization";
 import { Address } from "../../types/Address";
-import { reverseTransformEmail } from "../../../utils";
+import { reverseTransformEmail } from "../../../mail/transformEmail";
 
 export interface Party {
   address: Address;

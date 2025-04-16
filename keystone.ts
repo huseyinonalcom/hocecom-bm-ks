@@ -1,17 +1,17 @@
 import { bulkSendDocuments } from "./lib/automation/documents/bulkdocumentsenderstart";
+import { fetchDocumentByID, fetchDocuments } from "./lib/fetch/documents";
 import { generateCreditNoteOut } from "./lib/pdf/document/creditnotepdf";
 import { sendDocumentEmail } from "./lib/notifications/documentemail";
 import { generateInvoiceOut } from "./lib/pdf/document/invoicepdf";
+import { writeAllXmlsToTempDir } from "./lib/peppol/xml/convert";
 import { syncBolOrders } from "./lib/bol-offer-sync";
 import { fileUpload } from "./lib/fileupload";
 import { mkdirSync, writeFileSync } from "fs";
 import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
+import { mkdir, rm } from "fs/promises";
 import { lists } from "./schema";
 import "dotenv/config";
-import { fetchDocumentByID, fetchDocuments } from "./lib/fetch/documents";
-import { writeAllXmlsToTempDir } from "./lib/peppol/xml/convert";
-import fs from "fs-extra";
 
 export default withAuth(
   config({
@@ -210,14 +210,15 @@ export default withAuth(
               context,
             });
             console.info("Found", docs.length, "documents");
-            await fs.ensureDir(`./test/${companyID}`);
+            await rm(`./test/${companyID}`, { recursive: true, force: true });
+            await mkdir(`./test/${companyID}`);
             await writeAllXmlsToTempDir(`./test/${companyID}`, docs);
           } catch (error) {
             console.error("Error generating test xml", error);
           }
         };
 
-        // dumpXmls({ types: ["purchase", "credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
+        dumpXmls({ types: ["credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
         // dumpXmls({ types: ["purchase", "credit_note_incoming", "invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5" });
       },
     },

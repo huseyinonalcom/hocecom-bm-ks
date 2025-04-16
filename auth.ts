@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { sendSystemEmail } from "./lib/mail/sendsystememail";
 import { t } from "./lib/localization/localization";
 import { passwordResetTemplate } from "./lib/mail/templates/password-reset/universal";
-import { reverseTransformEmail, transformEmail } from "./lib/utils";
+import { reverseTransformEmail, transformEmail } from "./lib/mail/transformEmail";
 
 let sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret && process.env.NODE_ENV !== "production") {

@@ -2,8 +2,9 @@ import { dateFormatBe, dateFormatOnlyDate } from "../../formatters/dateformatter
 import { writeAllXmlsToTempDir } from "../../peppol/xml/convert";
 import { sendMail } from "../../mail/sendmail";
 import { workerData } from "worker_threads";
+import { mkdir, rm } from "fs/promises";
+import { writeFileSync } from "fs";
 import archiver from "archiver";
-import fs from "fs-extra";
 import path from "path";
 import os from "os";
 
@@ -16,7 +17,8 @@ const run = async () => {
 
     const tempDir = path.join(os.tmpdir(), "pdf_temp" + company.id + dateFormatOnlyDate(documents.at(0).date));
 
-    await fs.emptyDir(tempDir);
+    await rm(tempDir, { recursive: true, force: true });
+    await mkdir(tempDir);
 
     await writeAllXmlsToTempDir(tempDir, documents);
 
@@ -30,7 +32,7 @@ const run = async () => {
         dateFormatOnlyDate(documents.at(-1).date) +
         ".zip"
     );
-    
+
     await createZip(tempDir, zipPath);
     await sendEmailWithAttachment(zipPath);
     console.info(
@@ -63,7 +65,7 @@ async function createZip(tempDir: string, zipPath: string): Promise<void> {
 
     archive.on("end", () => {
       try {
-        fs.writeFileSync(zipPath, new Uint8Array(Buffer.concat(buffers as unknown as Uint8Array[])));
+        writeFileSync(zipPath, new Uint8Array(Buffer.concat(buffers as unknown as Uint8Array[])));
         resolve();
       } catch (error) {
         reject(error);

@@ -1,4 +1,4 @@
-import { getMondayAndSundayTwoWeeksAgo } from "../calculations/dates";
+import { getMondayAndSundayTwoWeeksAgo } from "../calculations/dates/getStartAndEnd";
 import { KeystoneContext } from "@keystone-6/core/types";
 
 export async function fetchDocuments({

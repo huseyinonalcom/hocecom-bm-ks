@@ -1,7 +1,7 @@
 import { accountingSupplierParty } from "../components/accountingSupplierParty";
 import { accountingCustomerParty } from "../components/accountingCustomerParty";
 import { dateFormatOnlyDate } from "../../../formatters/dateformatters";
-import { addDaysToDate } from "../../../addtodate";
+import { addDaysToDate } from "../../../calculations/dates/addToDate";
 
 export const invoiceToXml = (
   document: any,
