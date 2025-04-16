@@ -2981,7 +2981,7 @@ var purchaseToXml = (document, pdf) => {
       </cac:TaxCategory>
     </cac:TaxSubtotal>
     </cac:TaxTotal>`;
-    })}
+    }).join("")}
   <cac:LegalMonetaryTotal>
     <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
     <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
@@ -3019,7 +3019,7 @@ var purchaseToXml = (document, pdf) => {
       </cac:ClassifiedTaxCategory>
     </cac:Item>
   </cac:InvoiceLine>`;
-    })}
+    }).join("")}
 </Invoice>`;
     return {
       content,
@@ -3166,7 +3166,7 @@ var invoiceToXml = (document, pdf) => {
       </cac:TaxCategory>
     </cac:TaxSubtotal>
     </cac:TaxTotal>`;
-    })}
+    }).join("")}
   <cac:LegalMonetaryTotal>
     <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
     <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
@@ -3204,7 +3204,7 @@ var invoiceToXml = (document, pdf) => {
       </cac:ClassifiedTaxCategory>
     </cac:Item>
   </cac:InvoiceLine>`;
-    })}
+    }).join("")}
 </Invoice>`;
     return {
       content,
@@ -3220,12 +3220,13 @@ var invoiceToXml = (document, pdf) => {
 };
 
 // lib/peppol/xml/convert.ts
-var import_fs_extra = __toESM(require("fs-extra"));
+var import_promises = require("fs/promises");
 var import_path2 = __toESM(require("path"));
 async function writeAllXmlsToTempDir(tempDir, documents) {
   const response = await fetch(documents.at(0).establishment.logo.url);
   let logoBuffer = await Buffer.from(await response.arrayBuffer());
-  await import_fs_extra.default.ensureDir(tempDir);
+  await (0, import_promises.rm)(tempDir, { recursive: true, force: true });
+  await (0, import_promises.mkdir)(tempDir);
   const filePaths = await Promise.all(
     documents.map(async (doc) => {
       try {
@@ -3269,7 +3270,7 @@ async function writeAllXmlsToTempDir(tempDir, documents) {
           throw new Error(`Unknown document type: ${doc.type}`);
         }
         const filePath = import_path2.default.join(tempDir, xml.filename);
-        await import_fs_extra.default.writeFile(filePath, xml.content);
+        await (0, import_promises.writeFile)(filePath, xml.content);
         return filePath;
       } catch (error) {
         console.error("Error generating xml for document: ", doc.number, error);
@@ -4229,7 +4230,7 @@ var session = (0, import_session.statelessSessions)({
 
 // keystone.ts
 var import_core2 = require("@keystone-6/core");
-var import_promises = require("fs/promises");
+var import_promises2 = require("fs/promises");
 
 // schema.ts
 var import_fields = require("@keystone-6/core/fields");
@@ -6372,6 +6373,14 @@ var lists = {
 
 // keystone.ts
 var import_config2 = require("dotenv/config");
+
+// lib/filesystem/getTempDir.ts
+var import_os = __toESM(require("os"));
+var getTempDir = () => {
+  return import_os.default.tmpdir();
+};
+
+// keystone.ts
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
@@ -6463,7 +6472,7 @@ var keystone_default = withAuth(
             return;
           }
         });
-        app.post("/rest/documents/xml", async (req, res) => {
+        app.get("/rest/documents/xml", async (req, res) => {
           if (!req.query.id) {
             return res.status(400).json({ message: "No id provided" });
           }
@@ -6475,10 +6484,15 @@ var keystone_default = withAuth(
               documentID,
               context: keystoneContext
             });
-            res.status(200);
+            if (document) {
+              const xmlFile = (await writeAllXmlsToTempDir(`${getTempDir()}/${documentID}`, [document])).at(0);
+              res.status(200).sendFile(xmlFile);
+            } else {
+              res.status(400).json({ error: "This document does not exist or you do not have access to it." });
+            }
           } catch (error) {
-            console.error("Upload error:", error);
-            res.status(500).json({ error: "Upload failed" });
+            console.error("GET XML error:", error);
+            res.status(500).json({ error: "An unknown error occured." });
           }
         });
         cron.schedule("*/5 * * * *", async () => {
@@ -6554,7 +6568,7 @@ var keystone_default = withAuth(
         generateTestPDF({ id: "cm6z0evlf000046uokgw38ksl" });
         const generateTestXML = async ({ id }) => {
           try {
-            const doc = await fetchDocumentByID({ documentID: id, context });
+            const doc = await fetchDocumentByID({ documentID: id, context, sudo: true });
             await writeAllXmlsToTempDir("./test", [doc]);
           } catch (error) {
             console.error("Error generating test xml", error);
@@ -6571,14 +6585,14 @@ var keystone_default = withAuth(
               context
             });
             console.info("Found", docs.length, "documents");
-            await (0, import_promises.rm)(`./test/${companyID}`, { recursive: true, force: true });
-            await (0, import_promises.mkdir)(`./test/${companyID}`);
+            await (0, import_promises2.rm)(`./test/${companyID}`, { recursive: true, force: true });
+            await (0, import_promises2.mkdir)(`./test/${companyID}`);
             await writeAllXmlsToTempDir(`./test/${companyID}`, docs);
           } catch (error) {
             console.error("Error generating test xml", error);
           }
         };
-        dumpXmls({ types: ["credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
+        dumpXmls({ types: ["invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5" });
       }
     },
     lists,

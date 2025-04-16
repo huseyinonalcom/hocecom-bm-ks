@@ -246,8 +246,8 @@ export default withAuth(
           }
         };
 
-        dumpXmls({ types: ["credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
-        // dumpXmls({ types: ["purchase", "credit_note_incoming", "invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5" });
+        // dumpXmls({ types: ["credit_note_incoming"], companyID: "cm3vqgy4k0000xcd4hl0gnco5" });
+        dumpXmls({ types: ["invoice", "credit_note"], companyID: "cm63oyuhn002zbkcezisd9sm5" });
       },
     },
     lists,

@@ -143,8 +143,9 @@ export const invoiceToXml = (
       </cac:FinancialInstitutionBranch>
     </cac:PayeeFinancialAccount>
   </cac:PaymentMeans>
-  ${taxRates.map((taxRate) => {
-    return `<cac:TaxTotal>
+  ${taxRates
+    .map((taxRate) => {
+      return `<cac:TaxTotal>
     <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
     <cac:TaxSubtotal>
       <cbc:TaxableAmount currencyID="EUR">${Number(taxRate.totalBeforeTax).toFixed(2)}</cbc:TaxableAmount>
@@ -158,16 +159,18 @@ export const invoiceToXml = (
       </cac:TaxCategory>
     </cac:TaxSubtotal>
     </cac:TaxTotal>`;
-  })}
+    })
+    .join("")}
   <cac:LegalMonetaryTotal>
     <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
     <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
     <cbc:TaxInclusiveAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:TaxInclusiveAmount>
     <cbc:PayableAmount currencyID="EUR">${Number(total).toFixed(2)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
-  ${documentProducts.map((docProd: { totalWithTaxAfterReduction: any; tax: any; name: string; amount: any }, i: number) => {
-    let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
-    return `<cac:InvoiceLine>
+  ${documentProducts
+    .map((docProd: { totalWithTaxAfterReduction: any; tax: any; name: string; amount: any }, i: number) => {
+      let taxAmount = Number(docProd.totalWithTaxAfterReduction) - Number(docProd.totalWithTaxAfterReduction) / (1 + Number(docProd.tax) / 100);
+      return `<cac:InvoiceLine>
     <cbc:ID>${i + 1}</cbc:ID>
     <cbc:Note>${docProd.name
       .replaceAll("&", "&amp;")
@@ -206,7 +209,8 @@ export const invoiceToXml = (
       </cac:ClassifiedTaxCategory>
     </cac:Item>
   </cac:InvoiceLine>`;
-  })}
+    })
+    .join("")}
 </Invoice>`;
 
     return {
