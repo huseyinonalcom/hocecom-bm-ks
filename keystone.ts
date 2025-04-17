@@ -273,6 +273,11 @@ export default withAuth(
             companyID: "cm63oyuhn002zbkcezisd9sm5",
             recipient: "ocr-077080-22-A@import.octopus.be",
           });
+          await dumpXmls({
+            types: ["invoice", "credit_note"],
+            companyID: "cm63oyuhn002zbkcezisd9sm5",
+            recipient: "ocr-077080-22-V@import.octopus.be",
+          });
         };
         // dump();
       },
