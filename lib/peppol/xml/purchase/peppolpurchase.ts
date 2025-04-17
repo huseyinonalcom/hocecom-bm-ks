@@ -145,24 +145,24 @@ export const purchaseToXml = (
       1</cbc:PaymentMeansCode>
     <cbc:PaymentDueDate>${dateFormatOnlyDate(addDaysToDate(document.date, 15).toString())}</cbc:PaymentDueDate>
   </cac:PaymentMeans>
+ <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">${Number(document.totalTax).toFixed(2)}</cbc:TaxAmount>
   ${taxRates
-    .map((taxRate) => {
-      return `<cac:TaxTotal>
-    <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
-    <cac:TaxSubtotal>
+    .map((taxRate, i) => {
+      return `<cac:TaxSubtotal>
       <cbc:TaxableAmount currencyID="EUR">${Number(taxRate.totalBeforeTax).toFixed(2)}</cbc:TaxableAmount>
       <cbc:TaxAmount currencyID="EUR">${Number(taxRate.totalTax).toFixed(2)}</cbc:TaxAmount>
       <cbc:Percent>${taxRate.rate}</cbc:Percent>
       <cac:TaxCategory>
         <cbc:ID schemeID="UNCL5305" schemeName="Duty or tax or fee category">S</cbc:ID>
-        <cbc:Name>OSS-S</cbc:Name>
+        <cbc:Name>0${i + 1}</cbc:Name>
         <cbc:Percent>${taxRate.rate}</cbc:Percent>
         <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
       </cac:TaxCategory>
-    </cac:TaxSubtotal>
-    </cac:TaxTotal>`;
+    </cac:TaxSubtotal>`;
     })
     .join("")}
+    </cac:TaxTotal>
   <cac:LegalMonetaryTotal>
     <cbc:LineExtensionAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:LineExtensionAmount>
     <cbc:TaxExclusiveAmount currencyID="EUR">${Number(totalBeforeTax).toFixed(2)}</cbc:TaxExclusiveAmount>
