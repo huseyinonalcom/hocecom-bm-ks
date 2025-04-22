@@ -6691,14 +6691,23 @@ var keystone_default = withAuth(
           await dumpXmls({
             types: ["purchase", "credit_note_incoming"],
             companyID: "cm63oyuhn002zbkcezisd9sm5",
-            recipient: "ocr-077080-22-A@import.octopus.be"
+            recipient: "ocr-077080-22-A@import.octopus.be",
+            period: {
+              from: /* @__PURE__ */ new Date("2024-12-31"),
+              to: /* @__PURE__ */ new Date("2025-04-01")
+            }
           });
           await dumpXmls({
             types: ["invoice", "credit_note"],
             companyID: "cm63oyuhn002zbkcezisd9sm5",
-            recipient: "ocr-077080-22-V@import.octopus.be"
+            recipient: "ocr-077080-22-V@import.octopus.be",
+            period: {
+              from: /* @__PURE__ */ new Date("2024-12-31"),
+              to: /* @__PURE__ */ new Date("2025-04-01")
+            }
           });
         };
+        dump();
       }
     },
     lists,
