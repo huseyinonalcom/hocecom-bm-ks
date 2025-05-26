@@ -1735,9 +1735,9 @@ type Payment {
   customer: User
   supplier: Supplier
   company: Company
-  checkCreationDate: DateTime
-  checkNumber: String
-  checkWrittenAddress: String
+  chequeCreationDate: DateTime
+  chequeNumber: String
+  chequeWrittenAddress: String
   extraFields: JSON
 }
 
@@ -1767,9 +1767,9 @@ input PaymentWhereInput {
   customer: UserWhereInput
   supplier: SupplierWhereInput
   company: CompanyWhereInput
-  checkCreationDate: DateTimeNullableFilter
-  checkNumber: StringFilter
-  checkWrittenAddress: StringFilter
+  chequeCreationDate: DateTimeNullableFilter
+  chequeNumber: StringFilter
+  chequeWrittenAddress: StringFilter
 }
 
 input NoteManyRelationFilter {
@@ -1788,9 +1788,9 @@ input PaymentOrderByInput {
   type: OrderDirection
   timestamp: OrderDirection
   currency: OrderDirection
-  checkCreationDate: OrderDirection
-  checkNumber: OrderDirection
-  checkWrittenAddress: OrderDirection
+  chequeCreationDate: OrderDirection
+  chequeNumber: OrderDirection
+  chequeWrittenAddress: OrderDirection
 }
 
 input PaymentUpdateInput {
@@ -1811,9 +1811,9 @@ input PaymentUpdateInput {
   customer: UserRelateToOneForUpdateInput
   supplier: SupplierRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
-  checkCreationDate: DateTime
-  checkNumber: String
-  checkWrittenAddress: String
+  chequeCreationDate: DateTime
+  chequeNumber: String
+  chequeWrittenAddress: String
   extraFields: JSON
 }
 
@@ -1853,9 +1853,9 @@ input PaymentCreateInput {
   customer: UserRelateToOneForCreateInput
   supplier: SupplierRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
-  checkCreationDate: DateTime
-  checkNumber: String
-  checkWrittenAddress: String
+  chequeCreationDate: DateTime
+  chequeNumber: String
+  chequeWrittenAddress: String
   extraFields: JSON
 }
 
