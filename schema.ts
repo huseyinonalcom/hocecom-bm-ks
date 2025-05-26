@@ -1402,6 +1402,7 @@ export const lists: Lists = {
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       checkCreationDate: timestamp(),
       checkNumber: text(),
+      checkWrittenAddress: text(),
       extraFields: json(),
     },
   }),
