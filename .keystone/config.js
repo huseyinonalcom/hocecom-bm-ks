@@ -5794,6 +5794,7 @@ var lists = {
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
       checkCreationDate: (0, import_fields.timestamp)(),
       checkNumber: (0, import_fields.text)(),
+      checkWrittenAddress: (0, import_fields.text)(),
       extraFields: (0, import_fields.json)()
     }
   }),

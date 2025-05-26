@@ -1737,6 +1737,7 @@ type Payment {
   company: Company
   checkCreationDate: DateTime
   checkNumber: String
+  checkWrittenAddress: String
   extraFields: JSON
 }
 
@@ -1768,6 +1769,7 @@ input PaymentWhereInput {
   company: CompanyWhereInput
   checkCreationDate: DateTimeNullableFilter
   checkNumber: StringFilter
+  checkWrittenAddress: StringFilter
 }
 
 input NoteManyRelationFilter {
@@ -1788,6 +1790,7 @@ input PaymentOrderByInput {
   currency: OrderDirection
   checkCreationDate: OrderDirection
   checkNumber: OrderDirection
+  checkWrittenAddress: OrderDirection
 }
 
 input PaymentUpdateInput {
@@ -1810,6 +1813,7 @@ input PaymentUpdateInput {
   company: CompanyRelateToOneForUpdateInput
   checkCreationDate: DateTime
   checkNumber: String
+  checkWrittenAddress: String
   extraFields: JSON
 }
 
@@ -1851,6 +1855,7 @@ input PaymentCreateInput {
   company: CompanyRelateToOneForCreateInput
   checkCreationDate: DateTime
   checkNumber: String
+  checkWrittenAddress: String
   extraFields: JSON
 }
 
