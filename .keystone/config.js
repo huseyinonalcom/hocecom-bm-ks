@@ -5792,6 +5792,8 @@ var lists = {
       customer: (0, import_fields.relationship)({ ref: "User.customerPayments", many: false }),
       supplier: (0, import_fields.relationship)({ ref: "Supplier.payments", many: false }),
       company: (0, import_fields.relationship)({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      checkCreationDate: (0, import_fields.timestamp)(),
+      checkNumber: (0, import_fields.text)(),
       extraFields: (0, import_fields.json)()
     }
   }),
@@ -6707,7 +6709,6 @@ var keystone_default = withAuth(
             }
           });
         };
-        dump();
       }
     },
     lists,
