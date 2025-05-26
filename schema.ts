@@ -1400,6 +1400,8 @@ export const lists: Lists = {
       customer: relationship({ ref: "User.customerPayments", many: false }),
       supplier: relationship({ ref: "Supplier.payments", many: false }),
       company: relationship({ ref: "Company", many: false, access: { update: isSuperAdmin } }),
+      checkCreationDate: timestamp(),
+      checkNumber: text(),
       extraFields: json(),
     },
   }),
