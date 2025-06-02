@@ -559,7 +559,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType,
+                  reductionType: docProd.reductionType ?? "percentage",
                 });
                 if (isNaN(total)) {
                   total = 0;
@@ -626,7 +626,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType,
+                  reductionType: docProd.reductionType ?? "percentage",
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -686,7 +686,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType,
+                  reductionType: docProd.reductionType ?? "percentage",
                 });
                 totalValue -= calculateTotalWithoutTaxAfterReduction({
                   price: Number(docProd.price),
@@ -694,7 +694,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType,
+                  reductionType: docProd.reductionType ?? "percentage",
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -840,7 +840,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType,
+                  reductionType: item.reductionType ?? "percentage",
                 })
               );
             } catch (e) {
@@ -890,7 +890,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType,
+                  reductionType: item.reductionType ?? "percentage",
                 })
               );
             } catch (e) {
@@ -916,7 +916,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType,
+                  reductionType: item.reductionType ?? "percentage",
                 }) -
                   calculateTotalWithoutTaxAfterReduction({
                     price: Number(item.price),
@@ -924,7 +924,7 @@ export const lists: Lists = {
                     tax: Number(item.tax),
                     reduction: Number(item.reduction) ?? 0,
                     taxIncluded,
-                    reductionType: item.reductionType,
+                    reductionType: item.reductionType ?? "percentage",
                   })
               );
             } catch (e) {
@@ -956,7 +956,7 @@ export const lists: Lists = {
                     tax: Number(item.tax),
                     reduction: Number(item.reduction) ?? 0,
                     taxIncluded,
-                    reductionType: item.reductionType,
+                    reductionType: item.reductionType ?? "percentage",
                   })
               );
             } catch (e) {
