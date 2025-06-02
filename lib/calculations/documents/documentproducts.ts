@@ -4,12 +4,13 @@ interface PriceAmountParams {
   taxIncluded: boolean;
 }
 
-interface ReductionParams extends PriceAmountParams {
-  reduction: number;
+interface TaxParams extends PriceAmountParams {
+  tax: number;
 }
 
-interface TaxParams extends ReductionParams {
-  tax: number;
+interface ReductionParams extends TaxParams {
+  reduction: number;
+  reductionType: "percentage" | "onTotal" | "onAmount";
 }
 
 export const calculateBaseTotal = ({
@@ -28,29 +29,37 @@ export const calculateTotalWithoutTaxBeforeReduction = ({ price, amount, taxIncl
   return calculateBaseTotal({ price, amount, taxIncluded, tax });
 };
 
-export const calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax }: TaxParams): number => {
+export const calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax, reductionType }: ReductionParams): number => {
   const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
-  return Number(total * (reduction / 100));
+  switch (reductionType) {
+    case "percentage":
+      return Number(total * (reduction / 100));
+    case "onTotal":
+      return Number(total - reduction);
+    case "onAmount":
+      return Number(total - amount * reduction);
+  }
 };
 
-export const calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax }: TaxParams): number => {
+export const calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax, reductionType }: ReductionParams): number => {
   const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
-  const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax });
+  const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax, reductionType });
   return Number((total - reductionAmount).toFixed(2));
 };
 
-export const calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax }: TaxParams): number => {
+export const calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax, reductionType }: ReductionParams): number => {
   const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
     price,
     amount,
     taxIncluded,
     reduction,
     tax,
+    reductionType,
   });
   return Number(totalAfterReduction * (tax / 100));
 };
 
-export const calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }: Omit<TaxParams, "reduction">): number => {
+export const calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }: TaxParams): number => {
   if (taxIncluded) {
     return Number(price * amount);
   }
@@ -62,13 +71,14 @@ export const calculateTotalWithTaxBeforeReduction = ({ price, amount, taxInclude
   return Number(totalBeforeReduction * (1 + tax / 100));
 };
 
-export const calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax }: TaxParams): number => {
+export const calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reduction, reductionType, tax }: ReductionParams): number => {
   const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
     price,
     amount,
     taxIncluded,
     reduction,
     tax,
+    reductionType,
   });
   return Number(totalAfterReduction * (1 + tax / 100));
 };

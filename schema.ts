@@ -30,9 +30,9 @@ import {
 } from "./lib/accesscontrol/tenantac";
 
 interface documentExtra {
-  type: string;
   price: number;
   value: number;
+  type: string;
   tax: number;
 }
 
@@ -559,6 +559,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType,
                 });
                 if (isNaN(total)) {
                   total = 0;
@@ -625,6 +626,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType,
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -684,6 +686,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType,
                 });
                 totalValue -= calculateTotalWithoutTaxAfterReduction({
                   price: Number(docProd.price),
@@ -691,6 +694,7 @@ export const lists: Lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType,
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -790,6 +794,11 @@ export const lists: Lists = {
         defaultValue: "amount",
       }),
       reduction: decimal({ defaultValue: "0" }),
+      reductionType: select({
+        type: "string",
+        options: ["percentage", "onTotal", "onAmount"],
+        defaultValue: "percentage",
+      }),
       totalWithoutTaxBeforeReduction: virtual({
         field: graphql.field({
           type: graphql.Decimal,
@@ -831,6 +840,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
+                  reductionType: item.reductionType,
                 })
               );
             } catch (e) {
@@ -880,6 +890,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
+                  reductionType: item.reductionType,
                 })
               );
             } catch (e) {
@@ -905,6 +916,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
+                  reductionType: item.reductionType,
                 }) -
                   calculateTotalWithoutTaxAfterReduction({
                     price: Number(item.price),
@@ -912,6 +924,7 @@ export const lists: Lists = {
                     tax: Number(item.tax),
                     reduction: Number(item.reduction) ?? 0,
                     taxIncluded,
+                    reductionType: item.reductionType,
                   })
               );
             } catch (e) {
@@ -943,6 +956,7 @@ export const lists: Lists = {
                     tax: Number(item.tax),
                     reduction: Number(item.reduction) ?? 0,
                     taxIncluded,
+                    reductionType: item.reductionType,
                   })
               );
             } catch (e) {
