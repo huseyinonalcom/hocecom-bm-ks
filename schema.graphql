@@ -808,6 +808,7 @@ type DocumentProduct {
   price: Decimal
   pricedBy: String
   reduction: Decimal
+  reductionType: String
   totalWithoutTaxBeforeReduction: Decimal
   totalWithoutTaxAfterReduction: Decimal
   totalWithTaxBeforeReduction: Decimal
@@ -838,6 +839,7 @@ input DocumentProductWhereInput {
   price: DecimalFilter
   pricedBy: StringNullableFilter
   reduction: DecimalNullableFilter
+  reductionType: StringNullableFilter
   document: DocumentWhereInput
   company: CompanyWhereInput
 }
@@ -889,6 +891,7 @@ input DocumentProductOrderByInput {
   price: OrderDirection
   pricedBy: OrderDirection
   reduction: OrderDirection
+  reductionType: OrderDirection
 }
 
 input DocumentProductUpdateInput {
@@ -902,6 +905,7 @@ input DocumentProductUpdateInput {
   price: Decimal
   pricedBy: String
   reduction: Decimal
+  reductionType: String
   document: DocumentRelateToOneForUpdateInput
   company: CompanyRelateToOneForUpdateInput
   extraFields: JSON
@@ -929,6 +933,7 @@ input DocumentProductCreateInput {
   price: Decimal
   pricedBy: String
   reduction: Decimal
+  reductionType: String
   document: DocumentRelateToOneForCreateInput
   company: CompanyRelateToOneForCreateInput
   extraFields: JSON

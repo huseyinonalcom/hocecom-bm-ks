@@ -4269,13 +4269,20 @@ var calculateBaseTotal = ({
 var calculateTotalWithoutTaxBeforeReduction = ({ price, amount, taxIncluded, tax = 0 }) => {
   return calculateBaseTotal({ price, amount, taxIncluded, tax });
 };
-var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax }) => {
+var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax, reductionType }) => {
   const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
-  return Number(total * (reduction / 100));
+  switch (reductionType) {
+    case "percentage":
+      return Number(total * (reduction / 100));
+    case "onTotal":
+      return Number(total - reduction);
+    case "onAmount":
+      return Number(total - amount * reduction);
+  }
 };
-var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax }) => {
+var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax, reductionType }) => {
   const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
-  const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax });
+  const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax, reductionType });
   return Number((total - reductionAmount).toFixed(2));
 };
 var calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }) => {
@@ -4289,13 +4296,14 @@ var calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax })
   });
   return Number(totalBeforeReduction * (1 + tax / 100));
 };
-var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax }) => {
+var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reduction, reductionType, tax }) => {
   const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
     price,
     amount,
     taxIncluded,
     reduction,
-    tax
+    tax,
+    reductionType
   });
   return Number(totalAfterReduction * (1 + tax / 100));
 };
@@ -4967,7 +4975,8 @@ var lists = {
                   amount: Number(docProd.amount),
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
-                  taxIncluded: item.taxIncluded
+                  taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType
                 });
                 if (isNaN(total)) {
                   total = 0;
@@ -5033,7 +5042,8 @@ var lists = {
                   amount: Number(docProd.amount),
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
-                  taxIncluded: item.taxIncluded
+                  taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -5092,14 +5102,16 @@ var lists = {
                   amount: Number(docProd.amount),
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
-                  taxIncluded: item.taxIncluded
+                  taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType
                 });
                 totalValue -= calculateTotalWithoutTaxAfterReduction({
                   price: Number(docProd.price),
                   amount: Number(docProd.amount),
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
-                  taxIncluded: item.taxIncluded
+                  taxIncluded: item.taxIncluded,
+                  reductionType: docProd.reductionType
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -5184,6 +5196,11 @@ var lists = {
         defaultValue: "amount"
       }),
       reduction: (0, import_fields.decimal)({ defaultValue: "0" }),
+      reductionType: (0, import_fields.select)({
+        type: "string",
+        options: ["percentage", "onTotal", "onAmount"],
+        defaultValue: "percentage"
+      }),
       totalWithoutTaxBeforeReduction: (0, import_fields.virtual)({
         field: import_core.graphql.field({
           type: import_core.graphql.Decimal,
@@ -5224,7 +5241,8 @@ var lists = {
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
-                  taxIncluded
+                  taxIncluded,
+                  reductionType: item.reductionType
                 })
               );
             } catch (e) {
@@ -5273,7 +5291,8 @@ var lists = {
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
-                  taxIncluded
+                  taxIncluded,
+                  reductionType: item.reductionType
                 })
               );
             } catch (e) {
@@ -5298,13 +5317,15 @@ var lists = {
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
-                  taxIncluded
+                  taxIncluded,
+                  reductionType: item.reductionType
                 }) - calculateTotalWithoutTaxAfterReduction({
                   price: Number(item.price),
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
-                  taxIncluded
+                  taxIncluded,
+                  reductionType: item.reductionType
                 })
               );
             } catch (e) {
@@ -5334,7 +5355,8 @@ var lists = {
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
-                  taxIncluded
+                  taxIncluded,
+                  reductionType: item.reductionType
                 })
               );
             } catch (e) {

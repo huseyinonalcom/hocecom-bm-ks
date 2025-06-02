@@ -181,6 +181,7 @@ model DocumentProduct {
   price           Decimal        @postgresql.Decimal(18, 4)
   pricedBy        String?        @default("amount")
   reduction       Decimal?       @default("0") @postgresql.Decimal(18, 4)
+  reductionType   String?        @default("percentage")
   document        Document?      @relation("DocumentProduct_document", fields: [documentId], references: [id])
   documentId      String?        @map("document")
   company         Company?       @relation("DocumentProduct_company", fields: [companyId], references: [id])
