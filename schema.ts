@@ -1,14 +1,21 @@
 import { text, relationship, password, timestamp, select, multiselect, virtual, checkbox, integer, json, decimal } from "@keystone-6/core/fields";
 import { allowAll, denyAll } from "@keystone-6/core/access";
-import { graphql, list } from "@keystone-6/core";
-import { Decimal } from "@keystone-6/core/types";
-import type { Lists } from ".keystone/types";
 import {
   calculateTotalWithoutTaxBeforeReduction,
   calculateTotalWithoutTaxAfterReduction,
   calculateTotalWithTaxBeforeReduction,
   calculateTotalWithTaxAfterReduction,
 } from "./lib/calculations/documents/documentproducts";
+import { graphql, list } from "@keystone-6/core";
+import { Decimal } from "@keystone-6/core/types";
+import type { Lists } from ".keystone/types";
+import {
+  filterOnCompanyRelationOrCompanyAccountancyRelation,
+  filterOnIdAccountancyOrAccountancyCompanyRelation,
+  filterOnIdCompanyOrCompanyAccountancyRelation,
+  filterOnCompanyRelation,
+  filterOnIdAccountancy,
+} from "./lib/accesscontrol/tenantac";
 import {
   isAdminAccountantManager,
   isCompanyAdmin,
@@ -21,13 +28,6 @@ import {
   isIntern,
   isUser,
 } from "./lib/accesscontrol/rbac";
-import {
-  filterOnCompanyRelationOrCompanyAccountancyRelation,
-  filterOnIdAccountancyOrAccountancyCompanyRelation,
-  filterOnIdCompanyOrCompanyAccountancyRelation,
-  filterOnCompanyRelation,
-  filterOnIdAccountancy,
-} from "./lib/accesscontrol/tenantac";
 
 interface documentExtra {
   price: number;
