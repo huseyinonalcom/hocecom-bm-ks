@@ -4966,7 +4966,7 @@ var lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "price amount reduction tax"
+                query: "price amount reduction tax reductionType"
               });
               let total = 0;
               materials.forEach((docProd) => {
@@ -4976,7 +4976,7 @@ var lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType
+                  reductionType: docProd.reductionType ?? "percentage"
                 });
                 if (isNaN(total)) {
                   total = 0;
@@ -5033,7 +5033,7 @@ var lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "price amount reduction tax"
+                query: "price amount reduction tax reductionType"
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
@@ -5043,7 +5043,7 @@ var lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType
+                  reductionType: docProd.reductionType ?? "percentage"
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -5093,7 +5093,7 @@ var lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "price amount reduction tax"
+                query: "price amount reduction tax reductionType"
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
@@ -5103,7 +5103,7 @@ var lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType
+                  reductionType: docProd.reductionType ?? "percentage"
                 });
                 totalValue -= calculateTotalWithoutTaxAfterReduction({
                   price: Number(docProd.price),
@@ -5111,7 +5111,7 @@ var lists = {
                   tax: Number(docProd.tax),
                   reduction: Number(docProd.reduction ?? "0"),
                   taxIncluded: item.taxIncluded,
-                  reductionType: docProd.reductionType
+                  reductionType: docProd.reductionType ?? "percentage"
                 });
                 if (isNaN(totalValue)) {
                   totalValue = 0;
@@ -5242,7 +5242,7 @@ var lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType
+                  reductionType: item.reductionType ?? "percentage"
                 })
               );
             } catch (e) {
@@ -5292,7 +5292,7 @@ var lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType
+                  reductionType: item.reductionType ?? "percentage"
                 })
               );
             } catch (e) {
@@ -5318,14 +5318,14 @@ var lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType
+                  reductionType: item.reductionType ?? "percentage"
                 }) - calculateTotalWithoutTaxAfterReduction({
                   price: Number(item.price),
                   amount: Number(item.amount),
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType
+                  reductionType: item.reductionType ?? "percentage"
                 })
               );
             } catch (e) {
@@ -5356,7 +5356,7 @@ var lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType
+                  reductionType: item.reductionType ?? "percentage"
                 })
               );
             } catch (e) {
