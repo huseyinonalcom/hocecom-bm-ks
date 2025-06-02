@@ -549,7 +549,7 @@ export const lists: Lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "price amount reduction tax",
+                query: "price amount reduction tax reductionType",
               });
               let total = 0;
               materials.forEach((docProd) => {
@@ -616,7 +616,7 @@ export const lists: Lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "price amount reduction tax",
+                query: "price amount reduction tax reductionType",
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
@@ -676,7 +676,7 @@ export const lists: Lists = {
             try {
               const materials = await context.query.DocumentProduct.findMany({
                 where: { document: { id: { equals: item.id } } },
-                query: "price amount reduction tax",
+                query: "price amount reduction tax reductionType",
               });
               let totalValue = 0;
               materials.forEach((docProd) => {
