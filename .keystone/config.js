@@ -4250,8 +4250,6 @@ var import_promises3 = require("fs/promises");
 // schema.ts
 var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
-var import_core = require("@keystone-6/core");
-var import_types = require("@keystone-6/core/types");
 
 // lib/calculations/documents/documentproducts.ts
 var calculateBaseTotal = ({
@@ -4275,9 +4273,9 @@ var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax, re
     case "percentage":
       return Number(total * (reduction / 100));
     case "onTotal":
-      return Number(total - reduction);
+      return Number(reduction);
     case "onAmount":
-      return Number(total - amount * reduction);
+      return Number(amount * reduction);
   }
 };
 var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax, reductionType }) => {
@@ -4307,6 +4305,10 @@ var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reducti
   });
   return Number(totalAfterReduction * (1 + tax / 100));
 };
+
+// schema.ts
+var import_core = require("@keystone-6/core");
+var import_types = require("@keystone-6/core/types");
 
 // lib/accesscontrol/rbac.ts
 var isSuperAdmin = ({ session: session2 }) => {
