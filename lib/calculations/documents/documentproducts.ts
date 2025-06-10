@@ -35,9 +35,9 @@ export const calculateReductionAmount = ({ price, amount, taxIncluded, reduction
     case "percentage":
       return Number(total * (reduction / 100));
     case "onTotal":
-      return Number(total - reduction);
+      return Number(reduction);
     case "onAmount":
-      return Number(total - amount * reduction);
+      return Number(amount * reduction);
   }
 };
 
