@@ -5,6 +5,8 @@ import {
   calculateTotalWithoutTaxAfterReduction,
   calculateTotalWithTaxBeforeReduction,
   calculateTotalWithTaxAfterReduction,
+  calculateTaxAmount,
+  calculateReductionAmount,
 } from "./lib/calculations/documents/documentproducts";
 import { graphql, list } from "@keystone-6/core";
 import { Decimal } from "@keystone-6/core/types";
@@ -840,7 +842,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType ?? "percentage",
+                  reductionType: (item.reductionType as "percentage" | "onTotal" | "onAmount") ?? "percentage",
                 })
               );
             } catch (e) {
@@ -890,7 +892,7 @@ export const lists: Lists = {
                   tax: Number(item.tax),
                   reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType ?? "percentage",
+                  reductionType: (item.reductionType as "percentage" | "onTotal" | "onAmount") ?? "percentage",
                 })
               );
             } catch (e) {
@@ -910,22 +912,14 @@ export const lists: Lists = {
                 query: "taxIncluded",
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
-                calculateTotalWithTaxAfterReduction({
+                calculateTaxAmount({
                   price: Number(item.price),
                   amount: Number(item.amount),
-                  tax: Number(item.tax),
-                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType ?? "percentage",
-                }) -
-                  calculateTotalWithoutTaxAfterReduction({
-                    price: Number(item.price),
-                    amount: Number(item.amount),
-                    tax: Number(item.tax),
-                    reduction: Number(item.reduction) ?? 0,
-                    taxIncluded,
-                    reductionType: item.reductionType ?? "percentage",
-                  })
+                  reduction: Number(item.reduction),
+                  tax: Number(item.tax),
+                  reductionType: (item.reductionType as "percentage" | "onTotal" | "onAmount") ?? "percentage",
+                })
               );
             } catch (e) {
               return new Decimal(0);
@@ -944,20 +938,14 @@ export const lists: Lists = {
                 query: "taxIncluded",
               }).then((res) => (taxIncluded = res.taxIncluded));
               return new Decimal(
-                calculateTotalWithTaxBeforeReduction({
+                calculateReductionAmount({
                   price: Number(item.price),
                   amount: Number(item.amount),
-                  tax: Number(item.tax),
                   taxIncluded,
-                }) -
-                  calculateTotalWithTaxAfterReduction({
-                    price: Number(item.price),
-                    amount: Number(item.amount),
-                    tax: Number(item.tax),
-                    reduction: Number(item.reduction) ?? 0,
-                    taxIncluded,
-                    reductionType: item.reductionType ?? "percentage",
-                  })
+                  reduction: Number(item.reduction),
+                  tax: Number(item.tax),
+                  reductionType: (item.reductionType as "percentage" | "onTotal" | "onAmount") ?? "percentage",
+                })
               );
             } catch (e) {
               return new Decimal(0);

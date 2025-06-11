@@ -13,12 +13,7 @@ interface ReductionParams extends TaxParams {
   reductionType: "percentage" | "onTotal" | "onAmount";
 }
 
-export const calculateBaseTotal = ({
-  price,
-  amount,
-  taxIncluded,
-  tax, // optional for when we need to calculate base from tax-included price
-}: TaxParams): number => {
+export const calculateBaseTotal = ({ price, amount, taxIncluded, tax }: TaxParams): number => {
   if (taxIncluded) {
     return Number((price * amount) / (1 + tax / 100));
   }
