@@ -67,6 +67,7 @@ export const calculateTotalWithTaxBeforeReduction = ({ price, amount, taxInclude
     price,
     amount,
     taxIncluded,
+    tax,
   });
   return Number(totalBeforeReduction * (1 + tax / 100));
 };
