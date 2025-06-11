@@ -4252,19 +4252,13 @@ var import_fields = require("@keystone-6/core/fields");
 var import_access = require("@keystone-6/core/access");
 
 // lib/calculations/documents/documentproducts.ts
-var calculateBaseTotal = ({
-  price,
-  amount,
-  taxIncluded,
-  tax = 0
-  // optional for when we need to calculate base from tax-included price
-}) => {
+var calculateBaseTotal = ({ price, amount, taxIncluded, tax }) => {
   if (taxIncluded) {
     return Number(price * amount / (1 + tax / 100));
   }
   return Number(price * amount);
 };
-var calculateTotalWithoutTaxBeforeReduction = ({ price, amount, taxIncluded, tax = 0 }) => {
+var calculateTotalWithoutTaxBeforeReduction = ({ price, amount, taxIncluded, tax }) => {
   return calculateBaseTotal({ price, amount, taxIncluded, tax });
 };
 var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax, reductionType }) => {
@@ -4281,16 +4275,25 @@ var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax, re
 var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax, reductionType }) => {
   const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
   const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax, reductionType });
-  return Number((total - reductionAmount).toFixed(2));
+  return Number(total - reductionAmount);
+};
+var calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax, reductionType }) => {
+  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
+    price,
+    amount,
+    taxIncluded,
+    reduction,
+    tax,
+    reductionType
+  });
+  return Number(totalAfterReduction * (tax / 100));
 };
 var calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }) => {
-  if (taxIncluded) {
-    return Number(price * amount);
-  }
   const totalBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
     price,
     amount,
-    taxIncluded
+    taxIncluded,
+    tax
   });
   return Number(totalBeforeReduction * (1 + tax / 100));
 };
@@ -5314,19 +5317,12 @@ var lists = {
                 query: "taxIncluded"
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
-                calculateTotalWithTaxAfterReduction({
+                calculateTaxAmount({
                   price: Number(item.price),
                   amount: Number(item.amount),
-                  tax: Number(item.tax),
-                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
-                  reductionType: item.reductionType ?? "percentage"
-                }) - calculateTotalWithoutTaxAfterReduction({
-                  price: Number(item.price),
-                  amount: Number(item.amount),
+                  reduction: Number(item.reduction),
                   tax: Number(item.tax),
-                  reduction: Number(item.reduction) ?? 0,
-                  taxIncluded,
                   reductionType: item.reductionType ?? "percentage"
                 })
               );
@@ -5347,17 +5343,12 @@ var lists = {
                 query: "taxIncluded"
               }).then((res) => taxIncluded = res.taxIncluded);
               return new import_types.Decimal(
-                calculateTotalWithTaxBeforeReduction({
+                calculateReductionAmount({
                   price: Number(item.price),
                   amount: Number(item.amount),
-                  tax: Number(item.tax),
-                  taxIncluded
-                }) - calculateTotalWithTaxAfterReduction({
-                  price: Number(item.price),
-                  amount: Number(item.amount),
-                  tax: Number(item.tax),
-                  reduction: Number(item.reduction) ?? 0,
                   taxIncluded,
+                  reduction: Number(item.reduction),
+                  tax: Number(item.tax),
                   reductionType: item.reductionType ?? "percentage"
                 })
               );
