@@ -17,15 +17,15 @@ export const calculateBaseTotal = ({
   price,
   amount,
   taxIncluded,
-  tax = 0, // optional for when we need to calculate base from tax-included price
-}: PriceAmountParams & { tax?: number }): number => {
+  tax, // optional for when we need to calculate base from tax-included price
+}: TaxParams): number => {
   if (taxIncluded) {
     return Number((price * amount) / (1 + tax / 100));
   }
   return Number(price * amount);
 };
 
-export const calculateTotalWithoutTaxBeforeReduction = ({ price, amount, taxIncluded, tax = 0 }: PriceAmountParams & { tax?: number }): number => {
+export const calculateTotalWithoutTaxBeforeReduction = ({ price, amount, taxIncluded, tax }: TaxParams): number => {
   return calculateBaseTotal({ price, amount, taxIncluded, tax });
 };
 
@@ -44,7 +44,7 @@ export const calculateReductionAmount = ({ price, amount, taxIncluded, reduction
 export const calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax, reductionType }: ReductionParams): number => {
   const total = calculateTotalWithoutTaxBeforeReduction({ price, amount, taxIncluded, tax });
   const reductionAmount = calculateReductionAmount({ price, amount, taxIncluded, reduction, tax, reductionType });
-  return Number((total - reductionAmount));
+  return Number(total - reductionAmount);
 };
 
 export const calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax, reductionType }: ReductionParams): number => {
