@@ -945,7 +945,8 @@ export const lists: Lists = {
                   reduction: Number(item.reduction),
                   tax: Number(item.tax),
                   reductionType: (item.reductionType as "percentage" | "onTotal" | "onAmount") ?? "percentage",
-                })
+                }) *
+                  (1 + Number(item.tax) / 100)
               );
             } catch (e) {
               return new Decimal(0);
