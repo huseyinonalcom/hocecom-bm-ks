@@ -1,11 +1,8 @@
-interface PriceAmountParams {
+interface TaxParams {
+  tax: number;
   price: number;
   amount: number;
   taxIncluded: boolean;
-}
-
-interface TaxParams extends PriceAmountParams {
-  tax: number;
 }
 
 interface ReductionParams extends TaxParams {
@@ -33,6 +30,8 @@ export const calculateReductionAmount = ({ price, amount, taxIncluded, reduction
       return Number(reduction);
     case "onAmount":
       return Number(amount * reduction);
+    default:
+      return Number(total * (reduction / 100));
   }
 };
 
@@ -55,17 +54,17 @@ export const calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax,
 };
 
 export const calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }: TaxParams): number => {
-  const totalBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
+  const totalWithoutTaxBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
     price,
     amount,
     taxIncluded,
     tax,
   });
-  return Number(totalBeforeReduction * (1 + tax / 100));
+  return Number(totalWithoutTaxBeforeReduction * (1 + tax / 100));
 };
 
 export const calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reduction, reductionType, tax }: ReductionParams): number => {
-  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
+  const totalWithoutTaxAfterReduction = calculateTotalWithoutTaxAfterReduction({
     price,
     amount,
     taxIncluded,
@@ -73,5 +72,5 @@ export const calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded
     tax,
     reductionType,
   });
-  return Number(totalAfterReduction * (1 + tax / 100));
+  return Number(totalWithoutTaxAfterReduction * (1 + tax / 100));
 };

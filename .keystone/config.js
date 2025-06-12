@@ -4270,6 +4270,8 @@ var calculateReductionAmount = ({ price, amount, taxIncluded, reduction, tax, re
       return Number(reduction);
     case "onAmount":
       return Number(amount * reduction);
+    default:
+      return Number(total * (reduction / 100));
   }
 };
 var calculateTotalWithoutTaxAfterReduction = ({ price, amount, taxIncluded, reduction, tax, reductionType }) => {
@@ -4289,16 +4291,16 @@ var calculateTaxAmount = ({ price, amount, taxIncluded, reduction, tax, reductio
   return Number(totalAfterReduction * (tax / 100));
 };
 var calculateTotalWithTaxBeforeReduction = ({ price, amount, taxIncluded, tax }) => {
-  const totalBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
+  const totalWithoutTaxBeforeReduction = calculateTotalWithoutTaxBeforeReduction({
     price,
     amount,
     taxIncluded,
     tax
   });
-  return Number(totalBeforeReduction * (1 + tax / 100));
+  return Number(totalWithoutTaxBeforeReduction * (1 + tax / 100));
 };
 var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reduction, reductionType, tax }) => {
-  const totalAfterReduction = calculateTotalWithoutTaxAfterReduction({
+  const totalWithoutTaxAfterReduction = calculateTotalWithoutTaxAfterReduction({
     price,
     amount,
     taxIncluded,
@@ -4306,7 +4308,7 @@ var calculateTotalWithTaxAfterReduction = ({ price, amount, taxIncluded, reducti
     tax,
     reductionType
   });
-  return Number(totalAfterReduction * (1 + tax / 100));
+  return Number(totalWithoutTaxAfterReduction * (1 + tax / 100));
 };
 
 // schema.ts
