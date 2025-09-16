@@ -31,6 +31,8 @@ export default withAuth(
           "http://localhost:3454",
           "https://acc.digitalforge.be",
           "https://dfa.huseyinonal.com",
+          "https://huseyinonal.com",
+          "https://www.huseyinonal.com",
           "https://bm.huseyinonal.com",
           "https://web.digitalforge.be",
         ],
