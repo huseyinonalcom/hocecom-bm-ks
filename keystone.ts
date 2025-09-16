@@ -17,15 +17,12 @@ import { sendAllFilesInDirectory } from "./lib/mail/sendAllFilesInDirectory";
 
 const serverCors = {
   origin: [
-    "https://dfatest.huseyinonal.com",
-    "http://localhost:3399",
-    "http://localhost:3454",
-    "https://acc.digitalforge.be",
-    "https://dfa.huseyinonal.com",
     "https://huseyinonal.com",
     "https://www.huseyinonal.com",
     "https://bm.huseyinonal.com",
-    "https://web.digitalforge.be",
+    "https://acc.digitalforge.be",
+    "http://localhost:3399",
+    "https://dfa.huseyinonal.com",
   ],
   credentials: true,
 };
