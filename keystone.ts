@@ -23,6 +23,7 @@ const serverCors = {
     "https://acc.digitalforge.be",
     "http://localhost:3399",
     "https://dfa.huseyinonal.com",
+    "https://hoc-portfolio.pages.dev",
   ],
   credentials: true,
 };
