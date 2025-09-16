@@ -15,6 +15,21 @@ import "dotenv/config";
 import { getTempDir } from "./lib/filesystem/getTempDir";
 import { sendAllFilesInDirectory } from "./lib/mail/sendAllFilesInDirectory";
 
+const serverCors = {
+  origin: [
+    "https://dfatest.huseyinonal.com",
+    "http://localhost:3399",
+    "http://localhost:3454",
+    "https://acc.digitalforge.be",
+    "https://dfa.huseyinonal.com",
+    "https://huseyinonal.com",
+    "https://www.huseyinonal.com",
+    "https://bm.huseyinonal.com",
+    "https://web.digitalforge.be",
+  ],
+  credentials: true,
+};
+
 export default withAuth(
   config({
     db: {
@@ -24,23 +39,18 @@ export default withAuth(
     },
     server: {
       port: 3399,
-      cors: {
-        origin: [
-          "https://dfatest.huseyinonal.com",
-          "http://localhost:3399",
-          "http://localhost:3454",
-          "https://acc.digitalforge.be",
-          "https://dfa.huseyinonal.com",
-          "https://huseyinonal.com",
-          "https://www.huseyinonal.com",
-          "https://bm.huseyinonal.com",
-          "https://web.digitalforge.be",
-        ],
-        credentials: true,
-      },
+      cors: serverCors,
       extendExpressApp: (app, context) => {
         var cron = require("node-cron");
         const multer = require("multer");
+        const cors = require("cors");
+
+        // Ensure cookies survive when Keystone is behind a proxy/SSL terminator.
+        app.set("trust proxy", true);
+
+        // Apply the same CORS configuration to custom Express endpoints.
+        app.use(cors(serverCors));
+        app.options("*", cors(serverCors));
 
         const upload = multer({
           storage: multer.memoryStorage(),
