@@ -304,6 +304,7 @@ export default withAuth(
     lists,
     session,
     graphql: {
+      cors: serverCors,
       bodyParser: {
         limit: "20mb",
       },
