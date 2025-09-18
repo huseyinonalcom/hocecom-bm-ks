@@ -378,7 +378,6 @@ type Company {
 input CompanyWhereUniqueInput {
   id: ID
   pincode: String
-  owner: UserWhereUniqueInput
 }
 
 input CompanyWhereInput {
@@ -564,8 +563,6 @@ scalar Decimal
 
 input DocumentWhereUniqueInput {
   id: ID
-  fromDocument: DocumentWhereUniqueInput
-  toDocument: DocumentWhereUniqueInput
 }
 
 input DocumentWhereInput {
@@ -825,7 +822,6 @@ type DocumentProduct {
 
 input DocumentProductWhereUniqueInput {
   id: ID
-  stockMovement: StockMovementWhereUniqueInput
 }
 
 input DocumentProductWhereInput {
@@ -2112,7 +2108,6 @@ type StockMovement {
 
 input StockMovementWhereUniqueInput {
   id: ID
-  documentProduct: DocumentProductWhereUniqueInput
 }
 
 input StockMovementWhereInput {
@@ -2446,7 +2441,6 @@ type PasswordState {
 input UserWhereUniqueInput {
   id: ID
   email: String
-  ownedCompany: CompanyWhereUniqueInput
 }
 
 input UserWhereInput {
