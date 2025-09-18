@@ -6486,6 +6486,18 @@ async function sendEmailWithAttachments(attachments, recipient) {
 }
 
 // keystone.ts
+var serverCors = {
+  origin: [
+    "https://huseyinonal.com",
+    "https://www.huseyinonal.com",
+    "https://bm.huseyinonal.com",
+    "https://acc.digitalforge.be",
+    "http://localhost:3399",
+    "https://dfa.huseyinonal.com",
+    "https://hoc-portfolio.pages.dev"
+  ],
+  credentials: true
+};
 var keystone_default = withAuth(
   (0, import_core2.config)({
     db: {
@@ -6495,20 +6507,14 @@ var keystone_default = withAuth(
     },
     server: {
       port: 3399,
-      cors: {
-        origin: [
-          "https://dfatest.huseyinonal.com",
-          "http://localhost:3399",
-          "http://localhost:3454",
-          "https://acc.digitalforge.be",
-          "https://dfa.huseyinonal.com",
-          "https://web.digitalforge.be"
-        ],
-        credentials: true
-      },
+      cors: serverCors,
       extendExpressApp: (app, context) => {
         var cron = require("node-cron");
         const multer = require("multer");
+        const cors = require("cors");
+        app.set("trust proxy", true);
+        app.use(cors(serverCors));
+        app.options("*", cors(serverCors));
         const upload = multer({
           storage: multer.memoryStorage(),
           limits: {
@@ -6733,6 +6739,7 @@ var keystone_default = withAuth(
     lists,
     session,
     graphql: {
+      cors: serverCors,
       bodyParser: {
         limit: "20mb"
       }
