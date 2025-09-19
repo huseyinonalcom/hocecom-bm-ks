@@ -1,11 +1,10 @@
 import { statelessSessions } from "@keystone-6/core/session";
-import { sendMail } from "./lib/mail/sendmail";
 import { createAuth } from "@keystone-6/auth";
 import { randomBytes } from "crypto";
 import { sendSystemEmail } from "./lib/mail/sendsystememail";
 import { t } from "./lib/localization/localization";
 import { passwordResetTemplate } from "./lib/mail/templates/password-reset/universal";
-import { reverseTransformEmail, transformEmail } from "./lib/mail/transformEmail";
+import { reverseTransformEmail } from "./lib/mail/transformEmail";
 
 let sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret && process.env.NODE_ENV !== "production") {
@@ -24,7 +23,7 @@ const { withAuth } = createAuth({
     sendToken: async ({ itemId, identity, token, context }) => {
       const recipient = await context.sudo().query.User.findOne({
         where: { id: itemId as string },
-        query: "id preferredLanguage",
+        query: "id preferredLanguage company { name logo { url } }",
       });
       const email = reverseTransformEmail(identity);
       const preferredLanguage = recipient.preferredLanguage ?? "en";
@@ -35,6 +34,8 @@ const { withAuth } = createAuth({
           resetToken: token,
           preferredLanguage: preferredLanguage,
           email: identity,
+          logo: recipient.company.logo.url,
+          company: recipient.company.name,
         }),
       });
     },

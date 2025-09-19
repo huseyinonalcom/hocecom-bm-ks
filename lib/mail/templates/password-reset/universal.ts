@@ -4,10 +4,14 @@ export function passwordResetTemplate({
   resetToken,
   preferredLanguage,
   email,
+  logo,
+  company,
 }: {
   resetToken: string;
   preferredLanguage: "en" | "nl" | "fr" | "tr";
   email: string;
+  logo?: string;
+  company?: string;
 }) {
   const resetLink = encodeURI(`${process.env.WEB_URL}/reset-password?token=${resetToken}&email=${email}`);
   return ` 
@@ -42,7 +46,9 @@ export function passwordResetTemplate({
                       <tbody>
                         <tr>
                           <td style="line-height: 24px; font-size: 16px; margin: 0;" align="left">
-                            <img class="img-fluid" src="https://cdn.digitalforge.be/digitalforgelogo.png" alt="Digital Forge Logo" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; max-width: 100%; width: 100%; border-style: none; border-width: 0;" width="100%">
+                            <img class="img-fluid" src="${
+                              logo ?? "https://r2.hocecomv1.com/logo.png"
+                            }" alt="Logo" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; max-width: 100%; width: 100%; border-style: none; border-width: 0;" width="100%">
                             <table class="s-10 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
                               <tbody>
                                 <tr>
@@ -60,7 +66,7 @@ export function passwordResetTemplate({
                                       <tbody>
                                         <tr>
                                           <td style="line-height: 24px; font-size: 16px; width: 100%; margin: 0; padding: 20px;" align="left">
-                                            <h1 class="h3" style="padding-top: 0; padding-bottom: 0; font-weight: 500; vertical-align: baseline; font-size: 28px; line-height: 33.6px; margin: 0;" align="left">Digital Forge Accountancy Platform</h1>
+                                            <h1 class="h3" style="padding-top: 0; padding-bottom: 0; font-weight: 500; vertical-align: baseline; font-size: 28px; line-height: 33.6px; margin: 0;" align="left">${company}</h1>
                                             <table class="s-2 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
                                               <tbody>
                                                 <tr>

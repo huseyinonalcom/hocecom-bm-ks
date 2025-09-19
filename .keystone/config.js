@@ -570,7 +570,7 @@ var enjson = {
   "purchase-no-file": "Please upload the this purchase in PDF format.",
   "return-package": "Return Package",
   "password-reset-request": "Password reset request",
-  "password-reset-request-message": "A password reset request has been submitted for your account on the Digital Forge Accountancy Platform.",
+  "password-reset-request-message": "A password reset request has been submitted for your account on our digital platform.",
   "to-password-reset-form": "To password reset form",
   "password-reset-alternate": "In case the button did not work, click here or use the following link to reset your password"
 };
@@ -894,7 +894,7 @@ var frjson = {
   "purchase-no-file": "Veuillez t\xE9l\xE9charger le document PDF de cet achat.",
   "return-package": "Retour Emballage",
   "password-reset-request": "Demande de r\xE9initialisation du mot de passe",
-  "password-reset-request-message": "Une demande de r\xE9initialisation du mot de passe a \xE9t\xE9 soumise pour votre compte sur la plateforme Digital Forge Accountancy.",
+  "password-reset-request-message": "Une demande de r\xE9initialisation du mot de passe a \xE9t\xE9 soumise pour votre compte sur notre platforme digitale.",
   "to-password-reset-form": "Formulaire de r\xE9initialisation du mot de passe",
   "password-reset-alternate": "Si le bouton ne fonctionne pas, cliquez ici ou utilisez le lien suivant pour r\xE9initialiser votre mot de passe"
 };
@@ -1218,7 +1218,7 @@ var nljson = {
   "purchase-no-file": "Voeg het aankoop toe aan deze document in PDF formaat.",
   "return-package": "Retour Emballage",
   "password-reset-request": "Wachtwoord reset verzoek",
-  "password-reset-request-message": "Een wachtwoord reset verzoek is ingediend voor uw account op de Digital Forge Accountancy Platform.",
+  "password-reset-request-message": "Een wachtwoord reset verzoek is ingediend voor uw account op ons digitale platform.",
   "to-password-reset-form": "Naar wachtwoord reset formulier",
   "password-reset-alternate": "In het geval de knop niet werkt, klik hier of gebruik de volgende link om uw wachtwoord te resetten"
 };
@@ -1542,7 +1542,7 @@ var trjson = {
   "purchase-no-file": "Sat\u0131n Alma faturas\u0131n\u0131 PDF bi\xE7iminde y\xFCkleyin.",
   "return-package": "Ambalaj \u0130adesi",
   "password-reset-request": "\u015Eifre s\u0131f\u0131rlama iste\u011Fi",
-  "password-reset-request-message": "Hesab\u0131n\u0131z i\xE7in Digital Forge Accountancy Platform'ta bir \u015Fifre s\u0131f\u0131rlama iste\u011Fi g\xF6nderildi.",
+  "password-reset-request-message": "Hesab\u0131n\u0131z i\xE7in dijital platformumuzda bir \u015Fifre s\u0131f\u0131rlama iste\u011Fi g\xF6nderildi.",
   "to-password-reset-form": "\u015Eifre s\u0131f\u0131rlama formuna git",
   "password-reset-alternate": "E\u011Fer d\xFC\u011Fme \xE7al\u0131\u015Fm\u0131yorsa, buraya t\u0131klay\u0131n veya \u015Fifrenizi s\u0131f\u0131rlamak i\xE7in bu ba\u011Flant\u0131y\u0131 kullan\u0131n"
 };
@@ -4019,7 +4019,9 @@ var sendSystemEmail = async ({
 function passwordResetTemplate({
   resetToken,
   preferredLanguage,
-  email
+  email,
+  logo,
+  company
 }) {
   const resetLink = encodeURI(`${process.env.WEB_URL}/reset-password?token=${resetToken}&email=${email}`);
   return ` 
@@ -4054,7 +4056,7 @@ function passwordResetTemplate({
                       <tbody>
                         <tr>
                           <td style="line-height: 24px; font-size: 16px; margin: 0;" align="left">
-                            <img class="img-fluid" src="https://cdn.digitalforge.be/digitalforgelogo.png" alt="Digital Forge Logo" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; max-width: 100%; width: 100%; border-style: none; border-width: 0;" width="100%">
+                            <img class="img-fluid" src="${logo ?? "https://r2.hocecomv1.com/logo.png"}" alt="Logo" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; max-width: 100%; width: 100%; border-style: none; border-width: 0;" width="100%">
                             <table class="s-10 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
                               <tbody>
                                 <tr>
@@ -4072,7 +4074,7 @@ function passwordResetTemplate({
                                       <tbody>
                                         <tr>
                                           <td style="line-height: 24px; font-size: 16px; width: 100%; margin: 0; padding: 20px;" align="left">
-                                            <h1 class="h3" style="padding-top: 0; padding-bottom: 0; font-weight: 500; vertical-align: baseline; font-size: 28px; line-height: 33.6px; margin: 0;" align="left">Digital Forge Accountancy Platform</h1>
+                                            <h1 class="h3" style="padding-top: 0; padding-bottom: 0; font-weight: 500; vertical-align: baseline; font-size: 28px; line-height: 33.6px; margin: 0;" align="left">${company}</h1>
                                             <table class="s-2 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
                                               <tbody>
                                                 <tr>
@@ -4220,7 +4222,7 @@ var { withAuth } = (0, import_auth.createAuth)({
     sendToken: async ({ itemId, identity, token, context }) => {
       const recipient = await context.sudo().query.User.findOne({
         where: { id: itemId },
-        query: "id preferredLanguage"
+        query: "id preferredLanguage company { name logo { url } }"
       });
       const email = reverseTransformEmail(identity);
       const preferredLanguage = recipient.preferredLanguage ?? "en";
@@ -4230,7 +4232,9 @@ var { withAuth } = (0, import_auth.createAuth)({
         html: passwordResetTemplate({
           resetToken: token,
           preferredLanguage,
-          email: identity
+          email: identity,
+          logo: recipient.company.logo.url,
+          company: recipient.company.name
         })
       });
     },

@@ -316,7 +316,7 @@ export const nljson = {
   "purchase-no-file": "Voeg het aankoop toe aan deze document in PDF formaat.",
   "return-package": "Retour Emballage",
   "password-reset-request": "Wachtwoord reset verzoek",
-  "password-reset-request-message": "Een wachtwoord reset verzoek is ingediend voor uw account op de Digital Forge Accountancy Platform.",
+  "password-reset-request-message": "Een wachtwoord reset verzoek is ingediend voor uw account op ons digitale platform.",
   "to-password-reset-form": "Naar wachtwoord reset formulier",
   "password-reset-alternate": "In het geval de knop niet werkt, klik hier of gebruik de volgende link om uw wachtwoord te resetten",
 };

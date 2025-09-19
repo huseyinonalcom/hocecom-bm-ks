@@ -317,7 +317,7 @@ export const frjson = {
   "return-package": "Retour Emballage",
   "password-reset-request": "Demande de réinitialisation du mot de passe",
   "password-reset-request-message":
-    "Une demande de réinitialisation du mot de passe a été soumise pour votre compte sur la plateforme Digital Forge Accountancy.",
+    "Une demande de réinitialisation du mot de passe a été soumise pour votre compte sur notre platforme digitale.",
   "to-password-reset-form": "Formulaire de réinitialisation du mot de passe",
   "password-reset-alternate": "Si le bouton ne fonctionne pas, cliquez ici ou utilisez le lien suivant pour réinitialiser votre mot de passe",
 };

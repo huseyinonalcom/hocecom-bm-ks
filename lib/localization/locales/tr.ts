@@ -316,7 +316,7 @@ export const trjson = {
   "purchase-no-file": "Satın Alma faturasını PDF biçiminde yükleyin.",
   "return-package": "Ambalaj İadesi",
   "password-reset-request": "Şifre sıfırlama isteği",
-  "password-reset-request-message": "Hesabınız için Digital Forge Accountancy Platform'ta bir şifre sıfırlama isteği gönderildi.",
+  "password-reset-request-message": "Hesabınız için dijital platformumuzda bir şifre sıfırlama isteği gönderildi.",
   "to-password-reset-form": "Şifre sıfırlama formuna git",
   "password-reset-alternate": "Eğer düğme çalışmıyorsa, buraya tıklayın veya şifrenizi sıfırlamak için bu bağlantıyı kullanın",
 };

@@ -316,7 +316,7 @@ export const enjson = {
   "purchase-no-file": "Please upload the this purchase in PDF format.",
   "return-package": "Return Package",
   "password-reset-request": "Password reset request",
-  "password-reset-request-message": "A password reset request has been submitted for your account on the Digital Forge Accountancy Platform.",
+  "password-reset-request-message": "A password reset request has been submitted for your account on our digital platform.",
   "to-password-reset-form": "To password reset form",
   "password-reset-alternate": "In case the button did not work, click here or use the following link to reset your password",
 };
