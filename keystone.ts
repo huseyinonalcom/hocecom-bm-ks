@@ -153,6 +153,87 @@ export default withAuth(
           }
         });
 
+        app.get("/rest/admin/documents/set-phase", async (req, res) => {
+          const parsedBatchSize = Number(req.query.batchSize ?? 250);
+          const parsedDelayMs = Number(req.query.delayMs ?? 200);
+          const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? Math.min(Math.floor(parsedBatchSize), 1000) : 250;
+          const delayMs = Number.isFinite(parsedDelayMs) && parsedDelayMs >= 0 ? Math.floor(parsedDelayMs) : 200;
+          const logs: string[] = [];
+          const startedAt = new Date().toISOString();
+          logs.push(`Starting phase update at ${startedAt} with batchSize=${batchSize}, delayMs=${delayMs}`);
+
+          try {
+            const sudoContext = context.sudo();
+            let processed = 0;
+            let cursor: string | undefined;
+
+            while (true) {
+              const documents = await sudoContext.query.Document.findMany({
+                where: { isDeleted: { equals: false } },
+                orderBy: { id: "asc" },
+                take: batchSize,
+                ...(cursor
+                  ? {
+                      cursor: { id: cursor },
+                      skip: 1,
+                    }
+                  : {}),
+                query: "id phase",
+              });
+
+              if (documents.length === 0) {
+                logs.push("No more documents to process. Exiting loop.");
+                break;
+              }
+
+              cursor = documents[documents.length - 1].id;
+
+              let updatedThisBatch = 0;
+              for (const doc of documents) {
+                if (doc.phase !== 10) {
+                  await sudoContext.db.Document.updateOne({
+                    where: { id: doc.id },
+                    data: { phase: 10 },
+                  });
+                  updatedThisBatch += 1;
+                }
+              }
+
+              processed += updatedThisBatch;
+              const logLine = `Batch size ${documents.length}: updated ${updatedThisBatch}, total updated ${processed}`;
+              console.info(logLine);
+              logs.push(logLine);
+
+              if (documents.length < batchSize) {
+                logs.push("Last batch smaller than batchSize; finishing.");
+                break;
+              }
+
+              if (delayMs > 0) {
+                logs.push(`Waiting ${delayMs}ms before next batch.`);
+                await new Promise((resolve) => setTimeout(resolve, delayMs));
+              }
+            }
+
+            const finishedAt = new Date().toISOString();
+            logs.push(`Completed phase update at ${finishedAt}`);
+            console.info(`Document phase update completed at ${finishedAt}. Total updated: ${processed}`);
+
+            res.status(200).json({
+              updated: processed,
+              batchSize,
+              delayMs,
+              startedAt,
+              finishedAt,
+              logs,
+            });
+          } catch (error) {
+            console.error("Failed to update document phases", error);
+            logs.push(`Failed with error: ${(error as Error).message}`);
+            res.status(500).json({ error: "Failed to update document phases", logs });
+          }
+        });
+
         cron.schedule("*/5 * * * *", async () => {
           try {
             syncBolOrders({ context });

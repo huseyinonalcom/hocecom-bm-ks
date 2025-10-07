@@ -65,6 +65,61 @@ const setCompany = (operation: "create" | "update" | "delete", context: any, res
   return newResolvedDataCompany;
 };
 
+const recalculateCustomerBalance = async (context: any, customerId?: string | null) => {
+  if (!customerId) {
+    return;
+  }
+  try {
+    const sudoContext = context.sudo?.() ?? context;
+    const user = await sudoContext.query.User.findOne({
+      where: { id: customerId },
+      query: "id role",
+    });
+    if (!user || user.role !== "customer") {
+      return;
+    }
+    const documents = await sudoContext.query.Document.findMany({
+      where: {
+        customer: { id: { equals: customerId } },
+        type: { in: ["sale", "invoice"] },
+        isDeleted: { equals: false },
+      },
+      query: "id type balance toDocument { id type }",
+    });
+
+    const invoiceIds = new Set<string>();
+    documents.forEach((doc: any) => {
+      if (doc.type === "invoice") {
+        invoiceIds.add(doc.id);
+      }
+    });
+
+    let total = 0;
+    documents.forEach((doc: any) => {
+      if (doc.type === "sale") {
+        const relatedInvoiceId = doc.toDocument?.id ?? undefined;
+        if (relatedInvoiceId && invoiceIds.has(relatedInvoiceId)) {
+          return;
+        }
+      }
+      const balanceNumber = Number(doc.balance ?? "0");
+      if (!Number.isFinite(balanceNumber)) {
+        return;
+      }
+      total += balanceNumber;
+    });
+
+    const balanceValue = Number.isFinite(total) ? total.toFixed(4) : "0";
+
+    await sudoContext.db.User.updateOne({
+      where: { id: customerId },
+      data: { customerBalance: balanceValue },
+    });
+  } catch (error) {
+    console.error("Failed to recalculate customer balance", error);
+  }
+};
+
 const recalculateDocumentBalance = async (context: any, documentId?: string | null) => {
   if (!documentId) {
     return;
@@ -73,7 +128,7 @@ const recalculateDocumentBalance = async (context: any, documentId?: string | nu
     const sudoContext = context.sudo?.() ?? context;
     const document = await sudoContext.query.Document.findOne({
       where: { id: documentId },
-      query: "id extras taxIncluded balance",
+      query: "id extras taxIncluded balance customer { id }",
     });
     if (!document) {
       return;
@@ -127,13 +182,15 @@ const recalculateDocumentBalance = async (context: any, documentId?: string | nu
       total = 0;
     }
     const balanceValue = Number.isFinite(total) ? total.toFixed(4) : "0";
-    if (document.balance === balanceValue) {
-      return;
+    if (document.balance !== balanceValue) {
+      await sudoContext.db.Document.updateOne({
+        where: { id: documentId },
+        data: { balance: balanceValue },
+      });
     }
-    await sudoContext.db.Document.updateOne({
-      where: { id: documentId },
-      data: { balance: balanceValue },
-    });
+    const customerId = document.customer?.id ?? undefined;
+    await recalculateCustomerBalance(context, customerId);
+    return { documentId, customerId };
   } catch (error) {
     console.error("Failed to recalculate document balance", error);
   }
@@ -465,7 +522,7 @@ export const lists: Lists = {
           console.error(error);
         }
       },
-      afterOperation: async ({ operation, resolvedData, inputData, item, context }) => {
+      afterOperation: async ({ operation, resolvedData, inputData, item, originalItem, context }) => {
         if (resolvedData?.type != "purchase" && resolvedData?.type != "credit_note_incoming") {
           if (operation === "create") {
             try {
@@ -490,7 +547,21 @@ export const lists: Lists = {
           }
         }
         if (operation === "create" || operation === "update") {
-          await recalculateDocumentBalance(context, item?.id);
+          if (item?.id) {
+            const result = await recalculateDocumentBalance(context, item.id);
+            if (operation === "update") {
+              const originalCustomerId = originalItem?.customerId ?? originalItem?.customer?.id ?? undefined;
+              const newCustomerId = result?.customerId;
+              if (originalCustomerId && originalCustomerId !== newCustomerId) {
+                await recalculateCustomerBalance(context, originalCustomerId);
+              }
+            }
+          }
+        } else if (operation === "delete") {
+          const originalCustomerId = originalItem?.customerId ?? originalItem?.customer?.id ?? undefined;
+          if (originalCustomerId) {
+            await recalculateCustomerBalance(context, originalCustomerId);
+          }
         }
       },
     },
@@ -2049,7 +2120,7 @@ export const lists: Lists = {
         ref: "StockMovement.customer",
         many: true,
       }),
-      customerBalance: decimal(),
+      customerBalance: decimal({ defaultValue: "0" }),
       preferredLanguage: text(),
       customerCompany: text(),
       firstName: text(),
