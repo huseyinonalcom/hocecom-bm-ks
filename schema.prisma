@@ -147,6 +147,7 @@ model Document {
   prefix          String            @default("")
   phase           Int?
   number          String            @default("")
+  balance         Decimal           @default("0") @postgresql.Decimal(18, 4)
   extras          Json?             @default("{\"values\":[]}")
   comments        String            @default("")
   references      String            @default("")

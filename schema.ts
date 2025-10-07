@@ -65,6 +65,99 @@ const setCompany = (operation: "create" | "update" | "delete", context: any, res
   return newResolvedDataCompany;
 };
 
+const recalculateDocumentBalance = async (context: any, documentId?: string | null) => {
+  if (!documentId) {
+    return;
+  }
+  try {
+    const sudoContext = context.sudo?.() ?? context;
+    const document = await sudoContext.query.Document.findOne({
+      where: { id: documentId },
+      query: "id extras taxIncluded balance",
+    });
+    if (!document) {
+      return;
+    }
+    let extrasValue = 0;
+    try {
+      const extras: documentExtra[] = (document.extras as unknown as { values: documentExtra[] })?.values ?? [];
+      extras.forEach((extra) => {
+        extrasValue += extra.value;
+        if (!document.taxIncluded) {
+          extrasValue += extra.value * (extra.tax / 100);
+        }
+      });
+    } catch (error) {
+      extrasValue = 0;
+      console.error(error);
+    }
+    const [materials, payments] = await Promise.all([
+      sudoContext.query.DocumentProduct.findMany({
+        where: { document: { id: { equals: documentId } } },
+        query: "price amount reduction tax reductionType",
+      }),
+      sudoContext.query.Payment.findMany({
+        where: { document: { some: { id: { equals: documentId } } }, isDeleted: { equals: false } },
+        query: "value",
+      }),
+    ]);
+    let totalValue = 0;
+    materials.forEach((docProd) => {
+      totalValue += calculateTotalWithTaxAfterReduction({
+        price: Number(docProd.price),
+        amount: Number(docProd.amount),
+        tax: Number(docProd.tax),
+        reduction: Number(docProd.reduction ?? "0"),
+        taxIncluded: document.taxIncluded,
+        reductionType: docProd.reductionType ?? "percentage",
+      });
+      if (isNaN(totalValue)) {
+        totalValue = 0;
+      }
+    });
+    let totalPaid = 0;
+    payments.forEach((payment) => {
+      totalPaid += Number(payment.value);
+    });
+    if (isNaN(extrasValue)) {
+      extrasValue = 0;
+    }
+    let total = totalValue - totalPaid + extrasValue;
+    if (total < 0.02 && total > -0.02) {
+      total = 0;
+    }
+    const balanceValue = Number.isFinite(total) ? total.toFixed(4) : "0";
+    if (document.balance === balanceValue) {
+      return;
+    }
+    await sudoContext.db.Document.updateOne({
+      where: { id: documentId },
+      data: { balance: balanceValue },
+    });
+  } catch (error) {
+    console.error("Failed to recalculate document balance", error);
+  }
+};
+
+const getPaymentDocumentIds = async (context: any, paymentId?: string | null) => {
+  if (!paymentId) {
+    return [] as string[];
+  }
+  try {
+    const sudoContext = context.sudo?.() ?? context;
+    const payment = await sudoContext.query.Payment.findOne({
+      where: { id: paymentId },
+      query: "id document { id }",
+    });
+    return payment?.document?.map((doc: { id: string }) => doc.id) ?? [];
+  } catch (error) {
+    console.error("Failed to fetch payment document relations", error);
+    return [];
+  }
+};
+
+const paymentDocumentCacheKey = "__paymentDocumentIds";
+
 export const lists: Lists = {
   Accountancy: list({
     access: {
@@ -396,6 +489,9 @@ export const lists: Lists = {
             }
           }
         }
+        if (operation === "create" || operation === "update") {
+          await recalculateDocumentBalance(context, item?.id);
+        }
       },
     },
     fields: {
@@ -656,6 +752,7 @@ export const lists: Lists = {
           },
         }),
       }),
+      balance: decimal({ defaultValue: "0", validation: { isRequired: true } }),
       extras: json({
         defaultValue: {
           values: [],
@@ -757,22 +854,25 @@ export const lists: Lists = {
           console.error(error);
         }
       },
-      afterOperation: async ({ operation, item, context }) => {
-        // if (operation === "create") {
-        //   const generalStorage = await context.query.Storage.findMany({
-        //     where: { name: { equals: "Genel" } },
-        //     query: "id",
-        //   });
-        //   await context.query.StockMovement.createOne({
-        //     data: {
-        //       material: { connect: { id: item.productId } },
-        //       storage: { connect: { id: generalStorage.at(0)!.id } },
-        //       amount: item.amount,
-        //       movementType: "çıkış",
-        //       documentProduct: { connect: { id: item.id } },
-        //     },
-        //   });
-        // }
+      afterOperation: async ({ operation, item, originalItem, context }) => {
+        const documentIds = new Set<string>();
+        if (operation === "create" && item?.documentId) {
+          documentIds.add(item.documentId);
+        }
+        if (operation === "update") {
+          if (originalItem?.documentId) {
+            documentIds.add(originalItem.documentId);
+          }
+          if (item?.documentId) {
+            documentIds.add(item.documentId);
+          }
+        }
+        if (operation === "delete" && originalItem?.documentId) {
+          documentIds.add(originalItem.documentId);
+        }
+        for (const documentId of documentIds) {
+          await recalculateDocumentBalance(context, documentId);
+        }
       },
     },
     fields: {
@@ -1340,9 +1440,35 @@ export const lists: Lists = {
       },
     },
     hooks: {
-      beforeOperation: async ({ operation, context, resolvedData }) => {
+      beforeOperation: async ({ operation, context, resolvedData, item }) => {
         if (operation === "create") {
           resolvedData.company = setCompany(operation, context, resolvedData);
+        }
+        if (operation === "update" || operation === "delete") {
+          const cache: Map<string, string[]> =
+            ((context as any)[paymentDocumentCacheKey] as Map<string, string[]>) ??
+            (((context as any)[paymentDocumentCacheKey] = new Map<string, string[]>()) as Map<string, string[]>);
+          const documentIds = await getPaymentDocumentIds(context, item?.id);
+          if (item?.id) {
+            cache.set(item.id, documentIds);
+          }
+        }
+      },
+      afterOperation: async ({ operation, item, originalItem, context }) => {
+        const cache = (context as any)[paymentDocumentCacheKey] as Map<string, string[]> | undefined;
+        const documentIds = new Set<string>();
+        const cacheKey = (operation === "delete" ? originalItem?.id : item?.id) ?? originalItem?.id;
+        if ((operation === "update" || operation === "delete") && cacheKey && cache) {
+          const cached = cache.get(cacheKey) ?? [];
+          cached.forEach((id) => documentIds.add(id));
+          cache.delete(cacheKey);
+        }
+        if ((operation === "create" || operation === "update") && item?.id) {
+          const current = await getPaymentDocumentIds(context, item.id);
+          current.forEach((id) => documentIds.add(id));
+        }
+        for (const documentId of documentIds) {
+          await recalculateDocumentBalance(context, documentId);
         }
       },
     },

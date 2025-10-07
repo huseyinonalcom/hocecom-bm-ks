@@ -546,6 +546,7 @@ type Document {
   total: Decimal
   totalPaid: Decimal
   totalToPay: Decimal
+  balance: Decimal
   extras: JSON
   totalTax: Decimal
   comments: String
@@ -591,6 +592,7 @@ input DocumentWhereInput {
   prefix: StringFilter
   phase: IntNullableFilter
   number: StringFilter
+  balance: DecimalFilter
   comments: StringFilter
   references: StringFilter
   managerNotes: StringFilter
@@ -628,6 +630,17 @@ input PaymentManyRelationFilter {
   none: PaymentWhereInput
 }
 
+input DecimalFilter {
+  equals: Decimal
+  in: [Decimal!]
+  notIn: [Decimal!]
+  lt: Decimal
+  lte: Decimal
+  gt: Decimal
+  gte: Decimal
+  not: DecimalFilter
+}
+
 input DocumentOrderByInput {
   id: OrderDirection
   date: OrderDirection
@@ -641,6 +654,7 @@ input DocumentOrderByInput {
   prefix: OrderDirection
   phase: OrderDirection
   number: OrderDirection
+  balance: OrderDirection
   comments: OrderDirection
   references: OrderDirection
   managerNotes: OrderDirection
@@ -669,6 +683,7 @@ input DocumentUpdateInput {
   prefix: String
   phase: Int
   number: String
+  balance: Decimal
   extras: JSON
   comments: String
   references: String
@@ -751,6 +766,7 @@ input DocumentCreateInput {
   prefix: String
   phase: Int
   number: String
+  balance: Decimal
   extras: JSON
   comments: String
   references: String
@@ -842,17 +858,6 @@ input DocumentProductWhereInput {
   reductionType: StringNullableFilter
   document: DocumentWhereInput
   company: CompanyWhereInput
-}
-
-input DecimalFilter {
-  equals: Decimal
-  in: [Decimal!]
-  notIn: [Decimal!]
-  lt: Decimal
-  lte: Decimal
-  gt: Decimal
-  gte: Decimal
-  not: DecimalFilter
 }
 
 input StringNullableFilter {
