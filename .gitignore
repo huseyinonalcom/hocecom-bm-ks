@@ -7,4 +7,5 @@ data.db
 .keystone/config.js.map
 /.keystone/uploads
 /.keystone/backup
-/test
+test/.DS_Store
+.DS_Store
