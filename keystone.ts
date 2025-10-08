@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { mkdir, rm } from "fs/promises";
-import { lists } from "./schema";
+import { lists, recalculateCustomerBalance } from "./schema";
 import "dotenv/config";
 import { getTempDir } from "./lib/filesystem/getTempDir";
 import { sendAllFilesInDirectory } from "./lib/mail/sendAllFilesInDirectory";
@@ -153,84 +153,78 @@ export default withAuth(
           }
         });
 
-        app.get("/rest/admin/documents/set-phase", async (req, res) => {
-          const parsedBatchSize = Number(req.query.batchSize ?? 250);
-          const parsedDelayMs = Number(req.query.delayMs ?? 200);
-          const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? Math.min(Math.floor(parsedBatchSize), 1000) : 250;
-          const delayMs = Number.isFinite(parsedDelayMs) && parsedDelayMs >= 0 ? Math.floor(parsedDelayMs) : 200;
-          const logs: string[] = [];
-          const startedAt = new Date().toISOString();
-          logs.push(`Starting phase update at ${startedAt} with batchSize=${batchSize}, delayMs=${delayMs}`);
+        app.get("/rest/recalculate-customer-balances", async (req, res) => {
+          const requestContext = await context.withRequest(req, res);
+          const sudoContext = requestContext.sudo?.() ?? context.sudo?.() ?? context;
+          const BATCH_SIZE = 100;
+          const CHUNK_SIZE = 10;
+          const CHUNK_DELAY_MS = 200;
+          const BATCH_DELAY_MS = 1000;
+          const delay = (ms: number) =>
+            new Promise<void>((resolve) => {
+              setTimeout(resolve, ms);
+            });
 
           try {
-            const sudoContext = context.sudo();
+            const where = { role: { equals: "customer" } };
+            const totalCustomers = await sudoContext.db.User.count({ where });
+            console.info(`[recalculateCustomerBalance] Starting run for ${totalCustomers} customers`);
+
+            if (totalCustomers === 0) {
+              res.status(200).json({ totalCustomers, processedCustomers: 0, batches: 0 });
+              return;
+            }
+
             let processed = 0;
-            let cursor: string | undefined;
+            let batchIndex = 0;
+            let skip = 0;
 
             while (true) {
-              const documents = await sudoContext.query.Document.findMany({
-                where: { isDeleted: { equals: false } },
-                orderBy: { id: "asc" },
-                take: batchSize,
-                ...(cursor
-                  ? {
-                      cursor: { id: cursor },
-                      skip: 1,
-                    }
-                  : {}),
-                query: "id phase",
+              const customers = await sudoContext.query.User.findMany({
+                where,
+                query: "id",
+                take: BATCH_SIZE,
+                skip,
               });
 
-              if (documents.length === 0) {
-                logs.push("No more documents to process. Exiting loop.");
+              if (!customers.length) {
                 break;
               }
 
-              cursor = documents[documents.length - 1].id;
+              batchIndex += 1;
+              console.info(`[recalculateCustomerBalance] Batch ${batchIndex} - processing ${customers.length} customers`);
 
-              let updatedThisBatch = 0;
-              for (const doc of documents) {
-                if (doc.phase !== 10) {
-                  await sudoContext.db.Document.updateOne({
-                    where: { id: doc.id },
-                    data: { phase: 10 },
-                  });
-                  updatedThisBatch += 1;
+              for (let i = 0; i < customers.length; i += CHUNK_SIZE) {
+                const chunk = customers.slice(i, i + CHUNK_SIZE);
+                await Promise.all(chunk.map((customer) => recalculateCustomerBalance(sudoContext, customer.id)));
+
+                processed += chunk.length;
+                console.info(`[recalculateCustomerBalance] Processed ${processed}/${totalCustomers} customers`);
+
+                if (processed < totalCustomers && i + CHUNK_SIZE < customers.length) {
+                  console.info(`[recalculateCustomerBalance] Waiting ${CHUNK_DELAY_MS}ms before next chunk`);
+                  await delay(CHUNK_DELAY_MS);
                 }
               }
 
-              processed += updatedThisBatch;
-              const logLine = `Batch size ${documents.length}: updated ${updatedThisBatch}, total updated ${processed}`;
-              console.info(logLine);
-              logs.push(logLine);
+              skip += customers.length;
 
-              if (documents.length < batchSize) {
-                logs.push("Last batch smaller than batchSize; finishing.");
-                break;
+              if (processed < totalCustomers) {
+                console.info(`[recalculateCustomerBalance] Waiting ${BATCH_DELAY_MS}ms before next batch`);
+                await delay(BATCH_DELAY_MS);
               }
 
-              if (delayMs > 0) {
-                logs.push(`Waiting ${delayMs}ms before next batch.`);
-                await new Promise((resolve) => setTimeout(resolve, delayMs));
-              }
             }
 
-            const finishedAt = new Date().toISOString();
-            logs.push(`Completed phase update at ${finishedAt}`);
-            console.info(`Document phase update completed at ${finishedAt}. Total updated: ${processed}`);
-
+            console.info(`[recalculateCustomerBalance] Completed recalculation run for ${processed} customers`);
             res.status(200).json({
-              updated: processed,
-              batchSize,
-              delayMs,
-              startedAt,
-              finishedAt,
-              logs,
+              totalCustomers,
+              processedCustomers: processed,
+              batches: batchIndex,
             });
           } catch (error) {
-            console.error("Failed to update document phases", error);
-            logs.push(`Failed with error: ${(error as Error).message}`);
-            res.status(500).json({ error: "Failed to update document phases", logs });
+            console.error("[recalculateCustomerBalance] Failed to process customers", error);
+            res.status(500).json({ error: "Failed to recalculate customer balances" });
           }
         });
 

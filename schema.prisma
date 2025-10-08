@@ -521,7 +521,7 @@ model User {
   documents               Document[]      @relation("Document_creator")
   customerDocuments       Document[]      @relation("Document_customer")
   customerMovements       StockMovement[] @relation("StockMovement_customer")
-  customerBalance         Decimal?        @postgresql.Decimal(18, 4)
+  customerBalance         Decimal?        @default("0") @postgresql.Decimal(18, 4)
   preferredLanguage       String          @default("")
   customerCompany         String          @default("")
   firstName               String          @default("")

@@ -65,7 +65,7 @@ const setCompany = (operation: "create" | "update" | "delete", context: any, res
   return newResolvedDataCompany;
 };
 
-const recalculateCustomerBalance = async (context: any, customerId?: string | null) => {
+export const recalculateCustomerBalance = async (context: any, customerId?: string | null) => {
   if (!customerId) {
     return;
   }
@@ -94,7 +94,7 @@ const recalculateCustomerBalance = async (context: any, customerId?: string | nu
       }
     });
 
-    let total = 0;
+    let documentsBalance = 0;
     documents.forEach((doc: any) => {
       if (doc.type === "sale") {
         const relatedInvoiceId = doc.toDocument?.id ?? undefined;
@@ -106,10 +106,32 @@ const recalculateCustomerBalance = async (context: any, customerId?: string | nu
       if (!Number.isFinite(balanceNumber)) {
         return;
       }
-      total += balanceNumber;
+      documentsBalance += balanceNumber;
     });
 
-    const balanceValue = Number.isFinite(total) ? total.toFixed(4) : "0";
+    const payments = await sudoContext.query.Payment.findMany({
+      where: {
+        customer: { id: { equals: customerId } },
+        isDeleted: { equals: false },
+      },
+      query: "id value document { id }",
+    });
+
+    let unallocatedTotal = 0;
+    payments.forEach((payment: any) => {
+      const relatedDocuments = payment.document ?? [];
+      if (Array.isArray(relatedDocuments) && relatedDocuments.length > 0) {
+        return;
+      }
+      const paymentValue = Number(payment.value ?? "0");
+      if (!Number.isFinite(paymentValue)) {
+        return;
+      }
+      unallocatedTotal += paymentValue;
+    });
+
+    const netBalance = documentsBalance - unallocatedTotal;
+    const balanceValue = Number.isFinite(netBalance) ? netBalance.toFixed(4) : "0";
 
     await sudoContext.db.User.updateOne({
       where: { id: customerId },
@@ -550,7 +572,7 @@ export const lists: Lists = {
           if (item?.id) {
             const result = await recalculateDocumentBalance(context, item.id);
             if (operation === "update") {
-              const originalCustomerId = originalItem?.customerId ?? originalItem?.customer?.id ?? undefined;
+              const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? undefined;
               const newCustomerId = result?.customerId;
               if (originalCustomerId && originalCustomerId !== newCustomerId) {
                 await recalculateCustomerBalance(context, originalCustomerId);
@@ -558,7 +580,7 @@ export const lists: Lists = {
             }
           }
         } else if (operation === "delete") {
-          const originalCustomerId = originalItem?.customerId ?? originalItem?.customer?.id ?? undefined;
+          const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? undefined;
           if (originalCustomerId) {
             await recalculateCustomerBalance(context, originalCustomerId);
           }
@@ -2025,11 +2047,11 @@ export const lists: Lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
-        if (operation === "create" || operation === "update") {
+        if (operation === "create") {
           resolvedData.company = setCompany(operation, context, resolvedData);
         }
         try {
-          if (operation === "create" || operation === "update") {
+          if (operation === "create") {
             if (!resolvedData.company) {
               console.error("No company during user mutation");
               if (!resolvedData.accountancy) {
