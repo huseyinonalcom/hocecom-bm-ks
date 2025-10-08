@@ -154,6 +154,7 @@ export default withAuth(
         });
 
         app.get("/rest/recalculate-customer-balances", async (req, res) => {
+          return res.status(404).json({ error: "Not found." });
           const requestContext = await context.withRequest(req, res);
           const sudoContext = requestContext.sudo?.() ?? context.sudo?.() ?? context;
           const BATCH_SIZE = 100;
@@ -213,7 +214,6 @@ export default withAuth(
                 console.info(`[recalculateCustomerBalance] Waiting ${BATCH_DELAY_MS}ms before next batch`);
                 await delay(BATCH_DELAY_MS);
               }
-
             }
 
             console.info(`[recalculateCustomerBalance] Completed recalculation run for ${processed} customers`);

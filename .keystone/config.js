@@ -6833,6 +6833,7 @@ var keystone_default = withAuth(
           }
         });
         app.get("/rest/recalculate-customer-balances", async (req, res) => {
+          return res.status(404).json({ error: "Not found." });
           const requestContext = await context.withRequest(req, res);
           const sudoContext = requestContext.sudo?.() ?? context.sudo?.() ?? context;
           const BATCH_SIZE = 100;
