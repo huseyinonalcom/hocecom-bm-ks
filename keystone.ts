@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { withAuth, session } from "./auth";
 import { config } from "@keystone-6/core";
 import { mkdir, rm } from "fs/promises";
-import { lists } from "./schema";
+import { lists, recalculateCustomerBalance } from "./schema";
 import "dotenv/config";
 import { getTempDir } from "./lib/filesystem/getTempDir";
 import { sendAllFilesInDirectory } from "./lib/mail/sendAllFilesInDirectory";
@@ -150,6 +150,81 @@ export default withAuth(
           } catch (error) {
             console.error("GET XML error:", error);
             res.status(500).json({ error: "An unknown error occured." });
+          }
+        });
+
+        app.get("/rest/recalculate-customer-balances", async (req, res) => {
+          return res.status(404).json({ error: "Not found." });
+          const requestContext = await context.withRequest(req, res);
+          const sudoContext = requestContext.sudo?.() ?? context.sudo?.() ?? context;
+          const BATCH_SIZE = 100;
+          const CHUNK_SIZE = 10;
+          const CHUNK_DELAY_MS = 200;
+          const BATCH_DELAY_MS = 1000;
+          const delay = (ms: number) =>
+            new Promise<void>((resolve) => {
+              setTimeout(resolve, ms);
+            });
+
+          try {
+            const where = { role: { equals: "customer" } };
+            const totalCustomers = await sudoContext.db.User.count({ where });
+            console.info(`[recalculateCustomerBalance] Starting run for ${totalCustomers} customers`);
+
+            if (totalCustomers === 0) {
+              res.status(200).json({ totalCustomers, processedCustomers: 0, batches: 0 });
+              return;
+            }
+
+            let processed = 0;
+            let batchIndex = 0;
+            let skip = 0;
+
+            while (true) {
+              const customers = await sudoContext.query.User.findMany({
+                where,
+                query: "id",
+                take: BATCH_SIZE,
+                skip,
+              });
+
+              if (!customers.length) {
+                break;
+              }
+
+              batchIndex += 1;
+              console.info(`[recalculateCustomerBalance] Batch ${batchIndex} - processing ${customers.length} customers`);
+
+              for (let i = 0; i < customers.length; i += CHUNK_SIZE) {
+                const chunk = customers.slice(i, i + CHUNK_SIZE);
+                await Promise.all(chunk.map((customer) => recalculateCustomerBalance(sudoContext, customer.id)));
+
+                processed += chunk.length;
+                console.info(`[recalculateCustomerBalance] Processed ${processed}/${totalCustomers} customers`);
+
+                if (processed < totalCustomers && i + CHUNK_SIZE < customers.length) {
+                  console.info(`[recalculateCustomerBalance] Waiting ${CHUNK_DELAY_MS}ms before next chunk`);
+                  await delay(CHUNK_DELAY_MS);
+                }
+              }
+
+              skip += customers.length;
+
+              if (processed < totalCustomers) {
+                console.info(`[recalculateCustomerBalance] Waiting ${BATCH_DELAY_MS}ms before next batch`);
+                await delay(BATCH_DELAY_MS);
+              }
+            }
+
+            console.info(`[recalculateCustomerBalance] Completed recalculation run for ${processed} customers`);
+            res.status(200).json({
+              totalCustomers,
+              processedCustomers: processed,
+              batches: batchIndex,
+            });
+          } catch (error) {
+            console.error("[recalculateCustomerBalance] Failed to process customers", error);
+            res.status(500).json({ error: "Failed to recalculate customer balances" });
           }
         });
 

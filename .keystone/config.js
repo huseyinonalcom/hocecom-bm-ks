@@ -4493,6 +4493,168 @@ var setCompany = (operation, context, resolvedData) => {
   }
   return newResolvedDataCompany;
 };
+var recalculateCustomerBalance = async (context, customerId) => {
+  if (!customerId) {
+    return;
+  }
+  try {
+    const sudoContext = context.sudo?.() ?? context;
+    const user = await sudoContext.query.User.findOne({
+      where: { id: customerId },
+      query: "id role"
+    });
+    if (!user || user.role !== "customer") {
+      return;
+    }
+    const documents = await sudoContext.query.Document.findMany({
+      where: {
+        customer: { id: { equals: customerId } },
+        type: { in: ["sale", "invoice"] },
+        isDeleted: { equals: false }
+      },
+      query: "id type balance toDocument { id type }"
+    });
+    const invoiceIds = /* @__PURE__ */ new Set();
+    documents.forEach((doc) => {
+      if (doc.type === "invoice") {
+        invoiceIds.add(doc.id);
+      }
+    });
+    let documentsBalance = 0;
+    documents.forEach((doc) => {
+      if (doc.type === "sale") {
+        const relatedInvoiceId = doc.toDocument?.id ?? void 0;
+        if (relatedInvoiceId && invoiceIds.has(relatedInvoiceId)) {
+          return;
+        }
+      }
+      const balanceNumber = Number(doc.balance ?? "0");
+      if (!Number.isFinite(balanceNumber)) {
+        return;
+      }
+      documentsBalance += balanceNumber;
+    });
+    const payments = await sudoContext.query.Payment.findMany({
+      where: {
+        customer: { id: { equals: customerId } },
+        isDeleted: { equals: false }
+      },
+      query: "id value document { id }"
+    });
+    let unallocatedTotal = 0;
+    payments.forEach((payment) => {
+      const relatedDocuments = payment.document ?? [];
+      if (Array.isArray(relatedDocuments) && relatedDocuments.length > 0) {
+        return;
+      }
+      const paymentValue = Number(payment.value ?? "0");
+      if (!Number.isFinite(paymentValue)) {
+        return;
+      }
+      unallocatedTotal += paymentValue;
+    });
+    const netBalance = documentsBalance - unallocatedTotal;
+    const balanceValue = Number.isFinite(netBalance) ? netBalance.toFixed(4) : "0";
+    await sudoContext.db.User.updateOne({
+      where: { id: customerId },
+      data: { customerBalance: balanceValue }
+    });
+  } catch (error) {
+    console.error("Failed to recalculate customer balance", error);
+  }
+};
+var recalculateDocumentBalance = async (context, documentId) => {
+  if (!documentId) {
+    return;
+  }
+  try {
+    const sudoContext = context.sudo?.() ?? context;
+    const document = await sudoContext.query.Document.findOne({
+      where: { id: documentId },
+      query: "id extras taxIncluded balance customer { id }"
+    });
+    if (!document) {
+      return;
+    }
+    let extrasValue = 0;
+    try {
+      const extras = document.extras?.values ?? [];
+      extras.forEach((extra) => {
+        extrasValue += extra.value;
+        if (!document.taxIncluded) {
+          extrasValue += extra.value * (extra.tax / 100);
+        }
+      });
+    } catch (error) {
+      extrasValue = 0;
+      console.error(error);
+    }
+    const [materials, payments] = await Promise.all([
+      sudoContext.query.DocumentProduct.findMany({
+        where: { document: { id: { equals: documentId } } },
+        query: "price amount reduction tax reductionType"
+      }),
+      sudoContext.query.Payment.findMany({
+        where: { document: { some: { id: { equals: documentId } } }, isDeleted: { equals: false } },
+        query: "value"
+      })
+    ]);
+    let totalValue = 0;
+    materials.forEach((docProd) => {
+      totalValue += calculateTotalWithTaxAfterReduction({
+        price: Number(docProd.price),
+        amount: Number(docProd.amount),
+        tax: Number(docProd.tax),
+        reduction: Number(docProd.reduction ?? "0"),
+        taxIncluded: document.taxIncluded,
+        reductionType: docProd.reductionType ?? "percentage"
+      });
+      if (isNaN(totalValue)) {
+        totalValue = 0;
+      }
+    });
+    let totalPaid = 0;
+    payments.forEach((payment) => {
+      totalPaid += Number(payment.value);
+    });
+    if (isNaN(extrasValue)) {
+      extrasValue = 0;
+    }
+    let total = totalValue - totalPaid + extrasValue;
+    if (total < 0.02 && total > -0.02) {
+      total = 0;
+    }
+    const balanceValue = Number.isFinite(total) ? total.toFixed(4) : "0";
+    if (document.balance !== balanceValue) {
+      await sudoContext.db.Document.updateOne({
+        where: { id: documentId },
+        data: { balance: balanceValue }
+      });
+    }
+    const customerId = document.customer?.id ?? void 0;
+    await recalculateCustomerBalance(context, customerId);
+    return { documentId, customerId };
+  } catch (error) {
+    console.error("Failed to recalculate document balance", error);
+  }
+};
+var getPaymentDocumentIds = async (context, paymentId) => {
+  if (!paymentId) {
+    return [];
+  }
+  try {
+    const sudoContext = context.sudo?.() ?? context;
+    const payment = await sudoContext.query.Payment.findOne({
+      where: { id: paymentId },
+      query: "id document { id }"
+    });
+    return payment?.document?.map((doc) => doc.id) ?? [];
+  } catch (error) {
+    console.error("Failed to fetch payment document relations", error);
+    return [];
+  }
+};
+var paymentDocumentCacheKey = "__paymentDocumentIds";
 var lists = {
   Accountancy: (0, import_core.list)({
     access: {
@@ -4799,7 +4961,7 @@ var lists = {
           console.error(error);
         }
       },
-      afterOperation: async ({ operation, resolvedData, inputData, item, context }) => {
+      afterOperation: async ({ operation, resolvedData, inputData, item, originalItem, context }) => {
         if (resolvedData?.type != "purchase" && resolvedData?.type != "credit_note_incoming") {
           if (operation === "create") {
             try {
@@ -4821,6 +4983,23 @@ var lists = {
             } catch (error) {
               console.error(error);
             }
+          }
+        }
+        if (operation === "create" || operation === "update") {
+          if (item?.id) {
+            const result = await recalculateDocumentBalance(context, item.id);
+            if (operation === "update") {
+              const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? void 0;
+              const newCustomerId = result?.customerId;
+              if (originalCustomerId && originalCustomerId !== newCustomerId) {
+                await recalculateCustomerBalance(context, originalCustomerId);
+              }
+            }
+          }
+        } else if (operation === "delete") {
+          const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? void 0;
+          if (originalCustomerId) {
+            await recalculateCustomerBalance(context, originalCustomerId);
           }
         }
       }
@@ -5083,6 +5262,7 @@ var lists = {
           }
         })
       }),
+      balance: (0, import_fields.decimal)({ defaultValue: "0", validation: { isRequired: true } }),
       extras: (0, import_fields.json)({
         defaultValue: {
           values: []
@@ -5184,7 +5364,25 @@ var lists = {
           console.error(error);
         }
       },
-      afterOperation: async ({ operation, item, context }) => {
+      afterOperation: async ({ operation, item, originalItem, context }) => {
+        const documentIds = /* @__PURE__ */ new Set();
+        if (operation === "create" && item?.documentId) {
+          documentIds.add(item.documentId);
+        }
+        if (operation === "update") {
+          if (originalItem?.documentId) {
+            documentIds.add(originalItem.documentId);
+          }
+          if (item?.documentId) {
+            documentIds.add(item.documentId);
+          }
+        }
+        if (operation === "delete" && originalItem?.documentId) {
+          documentIds.add(originalItem.documentId);
+        }
+        for (const documentId of documentIds) {
+          await recalculateDocumentBalance(context, documentId);
+        }
       }
     },
     fields: {
@@ -5751,9 +5949,33 @@ var lists = {
       }
     },
     hooks: {
-      beforeOperation: async ({ operation, context, resolvedData }) => {
+      beforeOperation: async ({ operation, context, resolvedData, item }) => {
         if (operation === "create") {
           resolvedData.company = setCompany(operation, context, resolvedData);
+        }
+        if (operation === "update" || operation === "delete") {
+          const cache = context[paymentDocumentCacheKey] ?? (context[paymentDocumentCacheKey] = /* @__PURE__ */ new Map());
+          const documentIds = await getPaymentDocumentIds(context, item?.id);
+          if (item?.id) {
+            cache.set(item.id, documentIds);
+          }
+        }
+      },
+      afterOperation: async ({ operation, item, originalItem, context }) => {
+        const cache = context[paymentDocumentCacheKey];
+        const documentIds = /* @__PURE__ */ new Set();
+        const cacheKey = (operation === "delete" ? originalItem?.id : item?.id) ?? originalItem?.id;
+        if ((operation === "update" || operation === "delete") && cacheKey && cache) {
+          const cached = cache.get(cacheKey) ?? [];
+          cached.forEach((id) => documentIds.add(id));
+          cache.delete(cacheKey);
+        }
+        if ((operation === "create" || operation === "update") && item?.id) {
+          const current = await getPaymentDocumentIds(context, item.id);
+          current.forEach((id) => documentIds.add(id));
+        }
+        for (const documentId of documentIds) {
+          await recalculateDocumentBalance(context, documentId);
         }
       }
     },
@@ -6146,11 +6368,11 @@ var lists = {
     },
     hooks: {
       beforeOperation: async ({ operation, inputData, context, resolvedData }) => {
-        if (operation === "create" || operation === "update") {
+        if (operation === "create") {
           resolvedData.company = setCompany(operation, context, resolvedData);
         }
         try {
-          if (operation === "create" || operation === "update") {
+          if (operation === "create") {
             if (!resolvedData.company) {
               console.error("No company during user mutation");
               if (!resolvedData.accountancy) {
@@ -6240,7 +6462,7 @@ var lists = {
         ref: "StockMovement.customer",
         many: true
       }),
-      customerBalance: (0, import_fields.decimal)(),
+      customerBalance: (0, import_fields.decimal)({ defaultValue: "0" }),
       preferredLanguage: (0, import_fields.text)(),
       customerCompany: (0, import_fields.text)(),
       firstName: (0, import_fields.text)(),
@@ -6608,6 +6830,67 @@ var keystone_default = withAuth(
           } catch (error) {
             console.error("GET XML error:", error);
             res.status(500).json({ error: "An unknown error occured." });
+          }
+        });
+        app.get("/rest/recalculate-customer-balances", async (req, res) => {
+          return res.status(404).json({ error: "Not found." });
+          const requestContext = await context.withRequest(req, res);
+          const sudoContext = requestContext.sudo?.() ?? context.sudo?.() ?? context;
+          const BATCH_SIZE = 100;
+          const CHUNK_SIZE = 10;
+          const CHUNK_DELAY_MS = 200;
+          const BATCH_DELAY_MS = 1e3;
+          const delay = (ms) => new Promise((resolve) => {
+            setTimeout(resolve, ms);
+          });
+          try {
+            const where = { role: { equals: "customer" } };
+            const totalCustomers = await sudoContext.db.User.count({ where });
+            console.info(`[recalculateCustomerBalance] Starting run for ${totalCustomers} customers`);
+            if (totalCustomers === 0) {
+              res.status(200).json({ totalCustomers, processedCustomers: 0, batches: 0 });
+              return;
+            }
+            let processed = 0;
+            let batchIndex = 0;
+            let skip = 0;
+            while (true) {
+              const customers = await sudoContext.query.User.findMany({
+                where,
+                query: "id",
+                take: BATCH_SIZE,
+                skip
+              });
+              if (!customers.length) {
+                break;
+              }
+              batchIndex += 1;
+              console.info(`[recalculateCustomerBalance] Batch ${batchIndex} - processing ${customers.length} customers`);
+              for (let i = 0; i < customers.length; i += CHUNK_SIZE) {
+                const chunk = customers.slice(i, i + CHUNK_SIZE);
+                await Promise.all(chunk.map((customer) => recalculateCustomerBalance(sudoContext, customer.id)));
+                processed += chunk.length;
+                console.info(`[recalculateCustomerBalance] Processed ${processed}/${totalCustomers} customers`);
+                if (processed < totalCustomers && i + CHUNK_SIZE < customers.length) {
+                  console.info(`[recalculateCustomerBalance] Waiting ${CHUNK_DELAY_MS}ms before next chunk`);
+                  await delay(CHUNK_DELAY_MS);
+                }
+              }
+              skip += customers.length;
+              if (processed < totalCustomers) {
+                console.info(`[recalculateCustomerBalance] Waiting ${BATCH_DELAY_MS}ms before next batch`);
+                await delay(BATCH_DELAY_MS);
+              }
+            }
+            console.info(`[recalculateCustomerBalance] Completed recalculation run for ${processed} customers`);
+            res.status(200).json({
+              totalCustomers,
+              processedCustomers: processed,
+              batches: batchIndex
+            });
+          } catch (error) {
+            console.error("[recalculateCustomerBalance] Failed to process customers", error);
+            res.status(500).json({ error: "Failed to recalculate customer balances" });
           }
         });
         cron.schedule("*/5 * * * *", async () => {
