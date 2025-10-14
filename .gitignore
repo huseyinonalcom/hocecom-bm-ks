@@ -9,3 +9,4 @@ data.db
 /.keystone/backup
 test/.DS_Store
 .DS_Store
+*.pdf
