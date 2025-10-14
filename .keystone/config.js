@@ -4632,7 +4632,7 @@ var recalculateDocumentBalance = async (context, documentId) => {
       });
     }
     const customerId = document.customer?.id ?? void 0;
-    await recalculateCustomerBalance(context, customerId);
+    recalculateCustomerBalance(context, customerId);
     return { documentId, customerId };
   } catch (error) {
     console.error("Failed to recalculate document balance", error);
@@ -4989,17 +4989,17 @@ var lists = {
           if (item?.id) {
             const result = await recalculateDocumentBalance(context, item.id);
             if (operation === "update") {
-              const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? void 0;
+              const originalCustomerId = originalItem?.customerId ?? void 0;
               const newCustomerId = result?.customerId;
               if (originalCustomerId && originalCustomerId !== newCustomerId) {
-                await recalculateCustomerBalance(context, originalCustomerId);
+                recalculateCustomerBalance(context, originalCustomerId);
               }
             }
           }
         } else if (operation === "delete") {
-          const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? void 0;
+          const originalCustomerId = originalItem?.customerId ?? void 0;
           if (originalCustomerId) {
-            await recalculateCustomerBalance(context, originalCustomerId);
+            recalculateCustomerBalance(context, originalCustomerId);
           }
         }
       }
@@ -5977,6 +5977,10 @@ var lists = {
         for (const documentId of documentIds) {
           await recalculateDocumentBalance(context, documentId);
         }
+        try {
+          recalculateCustomerBalance(context, item?.customerId);
+        } catch (e) {
+        }
       }
     },
     fields: {
@@ -6833,7 +6837,6 @@ var keystone_default = withAuth(
           }
         });
         app.get("/rest/recalculate-customer-balances", async (req, res) => {
-          return res.status(404).json({ error: "Not found." });
           const requestContext = await context.withRequest(req, res);
           const sudoContext = requestContext.sudo?.() ?? context.sudo?.() ?? context;
           const BATCH_SIZE = 100;
