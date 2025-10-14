@@ -5981,7 +5981,7 @@ var lists = {
           await recalculateDocumentBalance(context, documentId);
         }
         try {
-          recalculateCustomerBalance(context, item?.customerId);
+          recalculateCustomerBalance(context, originalItem?.customerId);
         } catch (e) {
         }
       }
