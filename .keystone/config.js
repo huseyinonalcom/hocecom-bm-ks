@@ -4498,7 +4498,7 @@ var recalculateCustomerBalance = async (context, customerId) => {
     return;
   }
   try {
-    const sudoContext = context.sudo?.() ?? context;
+    const sudoContext = context.sudo();
     const user = await sudoContext.query.User.findOne({
       where: { id: customerId },
       query: "id role"
@@ -4631,8 +4631,11 @@ var recalculateDocumentBalance = async (context, documentId) => {
         data: { balance: balanceValue }
       });
     }
-    const customerId = document.customer?.id ?? void 0;
-    await recalculateCustomerBalance(context, customerId);
+    const customerId = document.customer?.id ?? document.customerId;
+    try {
+      recalculateCustomerBalance(context, customerId);
+    } catch (e) {
+    }
     return { documentId, customerId };
   } catch (error) {
     console.error("Failed to recalculate document balance", error);
@@ -4989,17 +4992,17 @@ var lists = {
           if (item?.id) {
             const result = await recalculateDocumentBalance(context, item.id);
             if (operation === "update") {
-              const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? void 0;
+              const originalCustomerId = originalItem?.customerId ?? void 0;
               const newCustomerId = result?.customerId;
               if (originalCustomerId && originalCustomerId !== newCustomerId) {
-                await recalculateCustomerBalance(context, originalCustomerId);
+                recalculateCustomerBalance(context, originalCustomerId);
               }
             }
           }
         } else if (operation === "delete") {
-          const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? void 0;
+          const originalCustomerId = originalItem?.customerId ?? void 0;
           if (originalCustomerId) {
-            await recalculateCustomerBalance(context, originalCustomerId);
+            recalculateCustomerBalance(context, originalCustomerId);
           }
         }
       }
@@ -5976,6 +5979,10 @@ var lists = {
         }
         for (const documentId of documentIds) {
           await recalculateDocumentBalance(context, documentId);
+        }
+        try {
+          recalculateCustomerBalance(context, item?.customerId);
+        } catch (e) {
         }
       }
     },
