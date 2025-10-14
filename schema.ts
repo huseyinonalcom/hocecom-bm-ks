@@ -70,14 +70,16 @@ export const recalculateCustomerBalance = async (context: any, customerId?: stri
     return;
   }
   try {
-    const sudoContext = context.sudo?.() ?? context;
+    const sudoContext = context.sudo();
     const user = await sudoContext.query.User.findOne({
       where: { id: customerId },
       query: "id role",
     });
+
     if (!user || user.role !== "customer") {
       return;
     }
+
     const documents = await sudoContext.query.Document.findMany({
       where: {
         customer: { id: { equals: customerId } },
@@ -179,7 +181,7 @@ const recalculateDocumentBalance = async (context: any, documentId?: string | nu
       }),
     ]);
     let totalValue = 0;
-    materials.forEach((docProd) => {
+    materials.forEach((docProd: { price: any; amount: any; tax: any; reduction: any; reductionType: any }) => {
       totalValue += calculateTotalWithTaxAfterReduction({
         price: Number(docProd.price),
         amount: Number(docProd.amount),
@@ -193,7 +195,7 @@ const recalculateDocumentBalance = async (context: any, documentId?: string | nu
       }
     });
     let totalPaid = 0;
-    payments.forEach((payment) => {
+    payments.forEach((payment: { value: any }) => {
       totalPaid += Number(payment.value);
     });
     if (isNaN(extrasValue)) {
@@ -210,8 +212,11 @@ const recalculateDocumentBalance = async (context: any, documentId?: string | nu
         data: { balance: balanceValue },
       });
     }
-    const customerId = document.customer?.id ?? undefined;
-    recalculateCustomerBalance(context, customerId);
+    const customerId = document.customer?.id ?? document.customerId;
+
+    try {
+      recalculateCustomerBalance(context, customerId);
+    } catch (e) {}
     return { documentId, customerId };
   } catch (error) {
     console.error("Failed to recalculate document balance", error);
@@ -1558,7 +1563,7 @@ export const lists: Lists = {
         }
         if ((operation === "create" || operation === "update") && item?.id) {
           const current = await getPaymentDocumentIds(context, item.id);
-          current.forEach((id) => documentIds.add(id));
+          current.forEach((id: string) => documentIds.add(id));
         }
         for (const documentId of documentIds) {
           await recalculateDocumentBalance(context, documentId);

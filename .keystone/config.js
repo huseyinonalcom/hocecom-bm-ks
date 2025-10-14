@@ -4498,7 +4498,7 @@ var recalculateCustomerBalance = async (context, customerId) => {
     return;
   }
   try {
-    const sudoContext = context.sudo?.() ?? context;
+    const sudoContext = context.sudo();
     const user = await sudoContext.query.User.findOne({
       where: { id: customerId },
       query: "id role"
@@ -4631,8 +4631,11 @@ var recalculateDocumentBalance = async (context, documentId) => {
         data: { balance: balanceValue }
       });
     }
-    const customerId = document.customer?.id ?? void 0;
-    recalculateCustomerBalance(context, customerId);
+    const customerId = document.customer?.id ?? document.customerId;
+    try {
+      recalculateCustomerBalance(context, customerId);
+    } catch (e) {
+    }
     return { documentId, customerId };
   } catch (error) {
     console.error("Failed to recalculate document balance", error);
@@ -6837,6 +6840,7 @@ var keystone_default = withAuth(
           }
         });
         app.get("/rest/recalculate-customer-balances", async (req, res) => {
+          return res.status(404).json({ error: "Not found." });
           const requestContext = await context.withRequest(req, res);
           const sudoContext = requestContext.sudo?.() ?? context.sudo?.() ?? context;
           const BATCH_SIZE = 100;
