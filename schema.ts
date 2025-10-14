@@ -211,7 +211,7 @@ const recalculateDocumentBalance = async (context: any, documentId?: string | nu
       });
     }
     const customerId = document.customer?.id ?? undefined;
-    await recalculateCustomerBalance(context, customerId);
+    recalculateCustomerBalance(context, customerId);
     return { documentId, customerId };
   } catch (error) {
     console.error("Failed to recalculate document balance", error);
@@ -572,17 +572,17 @@ export const lists: Lists = {
           if (item?.id) {
             const result = await recalculateDocumentBalance(context, item.id);
             if (operation === "update") {
-              const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? undefined;
+              const originalCustomerId = originalItem?.customerId ?? undefined;
               const newCustomerId = result?.customerId;
               if (originalCustomerId && originalCustomerId !== newCustomerId) {
-                await recalculateCustomerBalance(context, originalCustomerId);
+                recalculateCustomerBalance(context, originalCustomerId);
               }
             }
           }
         } else if (operation === "delete") {
-          const originalCustomerId = originalItem?.customerId ?? originalItem?.customerId ?? undefined;
+          const originalCustomerId = originalItem?.customerId ?? undefined;
           if (originalCustomerId) {
-            await recalculateCustomerBalance(context, originalCustomerId);
+            recalculateCustomerBalance(context, originalCustomerId);
           }
         }
       },
@@ -1563,6 +1563,9 @@ export const lists: Lists = {
         for (const documentId of documentIds) {
           await recalculateDocumentBalance(context, documentId);
         }
+        try {
+          recalculateCustomerBalance(context, item?.customerId);
+        } catch (e) {}
       },
     },
     fields: {
