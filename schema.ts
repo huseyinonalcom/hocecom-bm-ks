@@ -1569,7 +1569,7 @@ export const lists: Lists = {
           await recalculateDocumentBalance(context, documentId);
         }
         try {
-          recalculateCustomerBalance(context, item?.customerId);
+          recalculateCustomerBalance(context, originalItem?.customerId);
         } catch (e) {}
       },
     },
